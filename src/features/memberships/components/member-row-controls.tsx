@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 
+import { useRefreshOnSuccess } from '@/hooks/use-refresh-on-success'
 import type { Result } from '@/lib/errors'
 
 import {
@@ -42,6 +43,10 @@ export function MemberRowControls({
     removeRoleAction,
     null,
   )
+
+  // The table is rendered by a Server Component, so a committed mutation is
+  // only visible once the route is refetched (R-1-06).
+  useRefreshOnSuccess([statusState, assignState, removeState])
 
   const errorMessage =
     [statusState, assignState, removeState]

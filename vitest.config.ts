@@ -63,6 +63,7 @@ export default defineConfig({
       include: [
         'src/lib/**/*.ts',
         'src/utils/**/*.ts',
+        'src/hooks/**/*.ts',
         'src/features/*/rules/**/*.ts',
         'src/features/*/schemas/**/*.ts',
       ],

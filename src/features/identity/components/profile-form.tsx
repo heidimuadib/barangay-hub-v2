@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 
+import { useRefreshOnSuccess } from '@/hooks/use-refresh-on-success'
 import type { Result } from '@/lib/errors'
 
 import { updateProfileAction } from '../actions/update-profile'
@@ -11,6 +12,10 @@ export function ProfileForm({ initialDisplayName }: { initialDisplayName: string
     Result<{ displayName: string }> | null,
     FormData
   >(updateProfileAction, null)
+
+  // The form shows the saved value from action state, but the surrounding
+  // server-rendered shell still holds the previous name until refetched.
+  useRefreshOnSuccess([state])
 
   const fieldError = state && !state.ok ? (state.error.fieldErrors?.displayName?.[0] ?? null) : null
   const errorMessage = state && !state.ok && fieldError === null ? state.error.message : null
