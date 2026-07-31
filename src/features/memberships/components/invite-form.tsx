@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 
+import { useRefreshOnSuccess } from '@/hooks/use-refresh-on-success'
 import type { Result } from '@/lib/errors'
 
 import { inviteMemberAction } from '../actions/manage-membership'
@@ -11,6 +12,10 @@ export function InviteForm({ barangayId }: { barangayId: string }) {
     inviteMemberAction,
     null,
   )
+
+  // A newly invited member must appear in the roster below without a manual
+  // reload (R-1-06).
+  useRefreshOnSuccess([state])
 
   const errorMessage = state && !state.ok ? state.error.message : null
   const fieldError = state && !state.ok ? (state.error.fieldErrors?.email?.[0] ?? null) : null

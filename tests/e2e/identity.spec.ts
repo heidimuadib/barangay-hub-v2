@@ -121,6 +121,17 @@ test.describe('barangay administrator', () => {
     // The status CHIP is the second cell; the select in the manage cell also
     // contains the status words, so the assertion must target the chip.
     const statusChip = invitedRow.getByRole('cell').nth(1).locator('span')
+
+    // Arrange. This test mutates shared seed state, so an earlier run that was
+    // interrupted between the two writes would otherwise leave the fixture
+    // 'active' and fail every later run at the assertion below — a false
+    // signal that costs real debugging time. Normalising first makes the run
+    // independent of how the previous one ended, without weakening anything:
+    // the activate/restore assertions are unchanged.
+    if ((await statusChip.textContent())?.trim() !== 'invited') {
+      await invitedRow.getByLabel(/change status/i).selectOption('invited')
+      await invitedRow.getByRole('button', { name: /set status/i }).click()
+    }
     await expect(statusChip).toHaveText('invited')
 
     // Activate.

@@ -49,6 +49,45 @@ proposals until the owner marks them decided.
 - **Owner:** Product owner
 - **Deadline:** with the resident-registration slice (Slice 2+), which cannot start without this ruling.
 
+## DEC-SCOPE-01 — Slice 2 scope is not defined in this repository
+
+- **Status:** OPEN — blocks any Slice 2 feature work
+- **Owner:** Product owner + tech lead
+- **Raised:** 2026-08-01, when Slice 2 was requested.
+
+**Finding.** The repository contains no roadmap, slice plan or backlog. `docs/`
+holds ADRs, architecture notes, the Slice 0b assessment, this log, the risk
+register, the placeholder register and runbooks — and nothing that defines
+Slice 2. `git log --all` confirms no such file was ever committed or deleted.
+
+The authoritative artefacts are **Phase 1–6 documents that live outside the
+repository**: they are cited by section (Phase 4 §16.4, Phase 5 §11.2,
+Phase 6 §25.6, §30.3, §22.2) and their story IDs (`US-STF-003`, `US-RES-004`,
+`US-DOC-002`, `US-PLT-002`) reference a backlog nothing here contains.
+
+**The three in-repo references to Slice 2 are mutually circular**, so a scope
+cannot be inferred from them:
+
+| Reference | Says Slice 2 delivers | Problem |
+| --- | --- | --- |
+| `src/app/(staff)/staff/page.tsx` | staff queues, SLA breach counts, pending approvals (US-STF-003) | the things queued — document requests, fees, SLAs — are assigned to **Slice 3** (DOC-001, B-08) |
+| `next.config.ts` | registry and case routes tightened to `no-referrer` | "cases" (complaints/mediation) are assigned to **Slice 6** (B-09) |
+| `README.md` | resident and walk-in transactions share a domain service | the transactions are document requests — **Slice 3** again |
+
+**Hard stop already recorded.** `docs/placeholders.yaml` marks `DEC-AUTH-01`
+(public resident self-registration) `blocking_level: slice-2`, and this log
+states the resident-registration slice "cannot start without this ruling".
+`DEC-AUTH-01` is OPEN.
+
+**Resolution requires one of:** the Phase 1–6 documents added to the repository
+(or their Slice 2 section transcribed into `docs/`); or an owner ruling on
+`DEC-AUTH-01` plus an explicit Slice 2 feature list recorded as an ADR.
+
+**Consequence.** The post-Slice-1 branch delivered documented **hardening only**
+— the work the risk register already assigns to the "Slice 2 implementer"
+(R-1-06) — and started no feature work. That was a deliberate choice to avoid
+inventing scope, not an omission.
+
 ## Slice 1 scope deferrals (recorded, not silent)
 
 | Item | Reason | Arrives |
