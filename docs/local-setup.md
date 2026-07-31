@@ -18,9 +18,13 @@ pinned version is what CI uses.
 ## 1. Install
 
 ```bash
-cd v2
+git clone <your-fork-or-origin>/barangay-hub-v2.git
+cd barangay-hub-v2
 pnpm install
 ```
+
+`pnpm install` also installs the Git hooks (Husky) automatically — this
+repository is its own Git root since DEC-REPO-01 was resolved.
 
 ## 2. Start the local database
 
@@ -124,11 +128,18 @@ so database tests never leave state behind.
 
 ## Git hooks
 
-Hooks live in `.husky/` but are **not installed** while the application is a
-subdirectory of the legacy repository — Husky requires the package to sit at the
-Git root (`DEC-REPO-01`). `pnpm install` prints a notice explaining this rather
-than failing. Until it is resolved, run `pnpm verify` before committing; CI runs
-the same gates.
+Installed automatically by `pnpm install` (`prepare` → `scripts/setup-husky.mjs`;
+active since the repository promotion, DEC-REPO-01). The split keeps everyday
+commits fast — nothing on the commit path needs Docker:
+
+| Hook | Runs |
+| --- | --- |
+| `pre-commit` | `lint-staged` — ESLint `--fix` + Prettier on staged files |
+| `commit-msg` | `commitlint` — Conventional Commits (Phase 6 §18.1) |
+| `pre-push` | `pnpm run typecheck` |
+
+Full verification (database tests, e2e, build) runs via `pnpm verify` /
+`pnpm verify:full` and in CI on every push and pull request.
 
 ## Resetting everything
 

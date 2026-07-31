@@ -1,11 +1,10 @@
 # =============================================================================
 # Pull-request pipeline (Phase 6 §21)
 #
-# PLACEMENT: this file assumes the repository root is the directory containing
-# package.json. While DEC-REPO-01 is unresolved and the application lives in a
-# `v2/` subdirectory of the legacy repository, GitHub will NOT run it — Actions
-# only reads `.github/workflows/` at the repository root. Resolving DEC-REPO-01
-# by promoting `v2/` to its own repository activates this file unchanged.
+# PLACEMENT: resolved. DEC-REPO-01 promoted the application to its own
+# standalone repository (see docs/runbooks/repository-promotion.md), so this
+# file sits at the repository root and runs on every push and pull request to
+# main — exactly as written in Slice 0a, with no path changes required.
 #
 # No secret of any kind is required. Every value below is a public setting or a
 # deliberately fake fixture, because Slice 0a touches no hosted environment.

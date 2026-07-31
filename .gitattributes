@@ -1,0 +1,18 @@
+# Line-ending policy: LF in the repository AND in every working tree.
+#
+# Prettier enforces LF (`endOfLine: 'lf'` default) and CI runs on Linux, so a
+# Windows checkout with core.autocrlf=true would fail `pnpm format:check` on
+# every file before a single line is changed. Pinning eol here makes clones
+# deterministic regardless of any developer's global autocrlf setting.
+* text=auto eol=lf
+
+# Binary safety net for future assets — never re-encoded.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary

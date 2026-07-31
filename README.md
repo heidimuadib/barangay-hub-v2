@@ -2,11 +2,18 @@
 
 Multi-tenant civic services platform for Philippine barangays.
 
-**Current state: Phase 7, Slice 1 — identity, access control, RLS and audit
-foundation.** Authentication, memberships, roles/permissions, forced RLS and
-the append-only audit trail are live; business features (requests,
+**Current state: Phase 7, Slice 1 complete — identity, access control, RLS and
+audit foundation.** Authentication, memberships, roles/permissions, forced RLS
+and the append-only audit trail are live; business features (requests,
 certificates, payments) are not. See `docs/local-setup.md` to get running and
 `docs/architecture/identity-and-access.md` for the access model.
+
+**This is the STANDALONE v2 repository** (DEC-REPO-01, resolved). It was
+promoted out of the legacy `barangayhub` repository with v2 history preserved
+via `git subtree split` — see `docs/runbooks/repository-promotion.md`. The
+legacy PHP application stays in its original repository and is never modified
+from here. Git hooks (Husky) and the GitHub Actions pipeline activate
+automatically in this layout.
 
 ## Non-negotiables
 

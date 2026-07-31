@@ -57,11 +57,18 @@ proposals until the owner marks them decided.
 | PLT-08 authenticated readiness endpoint | No job queues exist to probe; a DB-touching public endpoint is an amplification vector (health route comment) | Platform slice |
 | US-UI-002 full shell chrome (bottom nav, notification centre, density controls) | Slice 1 builds the minimal verification UI only; broad UI work is out of its security-foundation scope | UI slice |
 
-## DEC-REPO-01 — application location vs Git root (Husky hooks inactive)
+## DEC-REPO-01 — application location vs Git root
 
-- **Status:** OPEN (pre-existing; see ADR-0004 and `docs/local-setup.md`)
+- **Status:** **RESOLVED** — 2026-07-31, ADR-0004 Option 1 executed
 - **Owner:** Repository owner
-- **Note:** carried here for visibility; not a Slice 0b finding.
+- **Method:** `git subtree split --prefix=v2` in a temporary clone; standalone
+  repository created with the three v2 commits preserved (`6b80f00`,
+  `6016f78`, `1412fc4` ← `500ca57`, `4a0e411`, `52cd9c9`). Legacy repository
+  untouched. Evidence and recovery: `docs/runbooks/repository-promotion.md`.
+- **Outcome:** Husky hooks active; `pr.yml` valid at the repository root.
+- **Remaining action:** create the standalone GitHub remote (recommended name
+  `barangay-hub-v2`) and push — until then CI is READY TO ACTIVATE ON FIRST
+  PUSH, not active (see R-1-03).
 
 ## Operational actions arising from Slice 0b (no ADR required)
 

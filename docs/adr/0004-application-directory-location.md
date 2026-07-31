@@ -1,8 +1,27 @@
 # ADR-0004 — Application directory location
 
-- **Status:** **Open** (`DEC-REPO-01`) — awaiting owner decision
-- **Date:** Phase 7, Slice 0a
+- **Status:** **Resolved** (`DEC-REPO-01`) — Option 1 executed, Phase 7 post-Slice-1
+- **Date:** Phase 7, Slice 0a; resolved 2026-07-31
 - **Decision owner:** Tech lead / repository owner
+
+## Resolution (2026-07-31)
+
+**Option 1 was executed.** The application was promoted to its own standalone
+repository with v2 history preserved:
+
+- Method: `git subtree split --prefix=v2` run in a TEMPORARY clone of the
+  legacy repository — the legacy repository itself was never rewritten,
+  reset, or modified.
+- The three v2 commits (Slice 0a `500ca57`, Slice 0b `4a0e411`, Slice 1
+  `52cd9c9`) map to the standalone commits `6b80f00`, `6016f78`, `1412fc4`
+  with messages preserved and every path re-rooted (no `v2/` wrapper).
+- Both measured consequences resolved exactly as predicted: Husky installs
+  via the unchanged `prepare` script, and `.github/workflows/pr.yml` is now
+  at a repository root where Actions reads it.
+- Procedure and recovery: `docs/runbooks/repository-promotion.md`.
+
+The legacy repository remains intact at its original location with the legacy
+application and its own remote, unmodified.
 
 ## Context
 
