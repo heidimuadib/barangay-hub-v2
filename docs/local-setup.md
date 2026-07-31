@@ -114,11 +114,17 @@ and a `.env.local` carrying the local stack keys.
 
 Synthetic fixtures only. Password for every account: `password123-local`.
 The full matrix, including the negative-case accounts, is documented in
-`docs/architecture/identity-and-access.md`.
+`docs/architecture/identity-and-access.md`; the Slice 2 registry personas
+(including the account-less walk-in, the duplicate pair and the cross-tenant
+name twin) are in
+`docs/architecture/resident-registry-and-verification.md`.
 
 | Email | What it demonstrates |
 | --- | --- |
-| `admin.sanisidro@barangay-hub.test` | Barangay administrator — full member/role/audit admin |
+| `admin.sanisidro@barangay-hub.test` | Barangay administrator — full member/role/audit admin, plus all Slice 2 registry capabilities |
+| `applicant.sanisidro@barangay-hub.test` | Submitted verification application with evidence (Slice 2) |
+| `inforeq.sanisidro@barangay-hub.test` | Application returned for more information (Slice 2) |
+| `rejected.sanisidro@barangay-hub.test` | Rejected application — terminal state (Slice 2) |
 | `staff.sanisidro@barangay-hub.test` | Read-only staff |
 | `resident.sanisidro@barangay-hub.test` | Resident self-service |
 | `platform.admin@barangay-hub.test` | Platform console WITHOUT tenant access |

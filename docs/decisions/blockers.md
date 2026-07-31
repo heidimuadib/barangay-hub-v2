@@ -75,6 +75,13 @@ authoritative wording in
 | **D2-03** evidence uploads | Private bucket; server-brokered signed upload URLs; metadata row before upload; path `{barangay}/{application}/{evidence}`; short-lived authorized read URLs; synthetic files only |
 | **D2-04** capabilities | Ten `registry.*`/`verification.*` keys; staff get read/review/request-info; administrators get all; residents RLS-self-scope only; platform none |
 
+**Implementation status (2026-08-02):** D2-01, D2-02 and D2-04 are
+**implemented and test-covered** in Slice 2A (migrations `20260802010000`–
+`20260802050000`; pgTAP suites 05–07). **D2-03 is partially implemented** —
+the metadata schema, opaque path convention, MIME allow-list, size ceiling
+and checksum fields exist and are enforced; the private bucket and
+signed-URL brokering land in subpart 2F.
+
 ## DEC-SCOPE-01 — Slice 2 scope is not defined in this repository
 
 - **Status:** **RESOLVED** — 2026-08-01. The product owner supplied the

@@ -18,6 +18,13 @@ dist/
 .env.*
 !.env.example
 
+# OAuth client-secret downloads. These land in the working directory with
+# their default filenames and are real credentials — ignored so that a broad
+# `git add` can never commit one. Keep them outside the repository.
+client_secret*.json
+*credentials*.json
+service-account*.json
+
 # supabase local state
 supabase/.temp/
 supabase/.branches/

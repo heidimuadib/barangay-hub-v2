@@ -8,3 +8,8 @@ supabase/.branches/
 src/types/database.types.ts
 pnpm-lock.yaml
 *.md
+
+# Credential downloads (also gitignored) — never read or rewritten by tooling.
+client_secret*.json
+*credentials*.json
+service-account*.json

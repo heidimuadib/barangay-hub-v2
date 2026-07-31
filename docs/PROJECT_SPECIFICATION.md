@@ -484,7 +484,9 @@ For each slice: scope as recorded in-repo, and status.
 - **Slice 1 — Implemented.** §5 and §8–§13 in full, plus minimal verification
   UI (§3), seeds for nine personas across two synthetic tenants, and the four
   test suites. Recorded deferrals: outbox, PLT-08, full shell chrome.
-- **Slice 2 — Defined, READY TO START
+- **Slice 2 — IN PROGRESS (2A complete: registry, verification, outbox
+  foundation — see
+  [architecture](./architecture/resident-registry-and-verification.md))
   ([roadmap](./IMPLEMENTATION_ROADMAP.md); provisioning ruled Option C and
   D2-01…04 approved,
   [ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)).**
