@@ -1,0 +1,90 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   Print foundation — Phase 5 §35.
+
+   Paper: A4 (210×297mm). Margins 20mm sides, 25mm top, 20mm bottom.
+   Status is NEVER conveyed by colour on paper. Document-specific layouts
+   (certificate, summons, CFA, tracking slip, reports) arrive with their slices.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@page {
+  size: A4;
+  margin: 25mm 20mm 20mm 20mm;
+}
+
+@media print {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+    line-height: 1.45;
+  }
+
+  /* Chrome that must never reach paper. */
+  nav,
+  aside,
+  [data-print='hide'],
+  button:not([data-print='show']) {
+    display: none !important;
+  }
+
+  a[href]::after {
+    content: ' (' attr(href) ')';
+    font-size: 9pt;
+  }
+
+  a[href^='#']::after,
+  a[data-print='no-url']::after {
+    content: '';
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  thead {
+    display: table-header-group; /* repeat headers across pages */
+  }
+
+  tr,
+  img,
+  figure {
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  .print-confidential::before {
+    content: 'CONFIDENTIAL';
+    display: block;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-align: center;
+    border-bottom: 1pt solid #000;
+    padding-bottom: 2mm;
+    margin-bottom: 4mm;
+  }
+
+  /* Applied while a value is an unconfirmed placeholder or a template is
+     unapproved (Phase 6 §28.4, C-E). */
+  .print-draft-watermark::after {
+    content: 'DRAFT — NOT FOR ISSUANCE';
+    position: fixed;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 42pt;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: rgb(0 0 0 / 0.12);
+    pointer-events: none;
+  }
+}

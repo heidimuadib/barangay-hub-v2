@@ -1,0 +1,150 @@
+@import 'tailwindcss';
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Barangay Hub v2 — design token foundation
+   Source: Phase 5 §8 (Design System Foundations)
+
+   Slice 0a establishes the semantic scale and the DEFAULT tenant accent
+   ("Barangay Teal"). The remaining seven curated accent palettes ship in
+   Slice 1 / US-UI-001 together with their automated contrast + colour-distance
+   test — an unvalidated palette must not exist (Phase 6 §4.9 / P6-C-D).
+
+   Tenant branding may change the accent ramp only. Semantic colours, status
+   meanings, and the focus indicator are NOT tenant-configurable (Phase 2 §8.1).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* ── Brand accent — default palette: Barangay Teal ─────────────────────── */
+  --color-brand-50: #f0faf8;
+  --color-brand-100: #dcf2ee;
+  --color-brand-600: #0f7266;
+  --color-brand-700: #0e5d52; /* 7.4:1 on white */
+  --color-brand-800: #0a463e;
+
+  /* ── Semantic — locked, never tenant-configurable ──────────────────────── */
+  --color-success-100: #dcfce7;
+  --color-success-700: #166534; /* 7.5:1 */
+  --color-warning-100: #fef3c7;
+  --color-warning-700: #92400e; /* 7.2:1 */
+  --color-danger-100: #fee2e2;
+  --color-danger-700: #991b1b; /* 8.2:1 */
+  --color-info-100: #dbeafe;
+  --color-info-700: #1e40af; /* 8.6:1 */
+
+  /* ── Neutral ──────────────────────────────────────────────────────────── */
+  --color-neutral-50: #f9fafb;
+  --color-neutral-100: #f3f4f6;
+  --color-neutral-200: #e5e7eb;
+  --color-neutral-300: #d1d5db;
+  --color-neutral-400: #9ca3af; /* decorative only — never text */
+  --color-neutral-500: #6b7280; /* 4.8:1 — minimum for body text */
+  --color-neutral-700: #374151;
+  --color-neutral-900: #111827;
+
+  /* ── Focus — locked ───────────────────────────────────────────────────── */
+  --color-focus: #2563eb;
+
+  /* ── Typography (Phase 5 §8.2, UX-ADR-14: one step up) ────────────────── */
+  --font-sans:
+    Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+
+  --text-body-resident: 1.0625rem; /* 17px */
+  --text-body-resident--line-height: 1.6;
+  --text-body-staff: 1rem; /* 16px */
+  --text-body-staff--line-height: 1.5;
+  --text-dense: 0.9375rem; /* 15px — staff tables */
+  --text-dense--line-height: 1.45;
+
+  /* ── Radius (Phase 5 §8.6) ────────────────────────────────────────────── */
+  --radius-control: 6px;
+  --radius-surface: 8px;
+
+  /* ── Minimum touch target (Phase 5 §8.3, exceeds WCAG 2.2 AA) ─────────── */
+  --spacing-touch: 44px;
+}
+
+/* ── Base layer ──────────────────────────────────────────────────────────── */
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-neutral-50);
+    color: var(--color-neutral-700);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-resident);
+    line-height: 1.6;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--color-neutral-900);
+    text-wrap: balance;
+  }
+
+  /* Focus is never removed. 3px ring + 2px offset, visible on every surface. */
+  :focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* References and monetary values are read aloud over the phone and compared
+     against printed slips — legibility of 0/O and 1/I is functional. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ── Utilities ───────────────────────────────────────────────────────────── */
+@layer utilities {
+  /* Visible only when focused — the skip link pattern. */
+  .sr-only-focusable {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .sr-only-focusable:focus-visible {
+    position: fixed;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 100;
+    width: auto;
+    height: auto;
+    padding: 0.75rem 1rem;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    background-color: #ffffff;
+    border-radius: var(--radius-control);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.16);
+  }
+}

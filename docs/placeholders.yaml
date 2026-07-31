@@ -1,0 +1,56 @@
+# ============================================================================
+# Placeholder register
+#
+# Machine-readable list of every value that requires barangay, legal or owner
+# confirmation before production. Drives:
+#   • the undismissable Settings banner (Slice 9 / SET-04)
+#   • the resident-facing "not yet confirmed" chip (Slice 3 / RES-06)
+#   • the go-live gate (Slice 9 / PLT-05)
+#
+# A placeholder is never removed to make the interface look finished
+# (Phase 6 §2.7 / correction C-E).
+# ============================================================================
+
+version: 1
+slice: 0a
+
+placeholders:
+  - id: DEC-ENV-01
+    subject: Supabase environment topology
+    current: 'Option 3 — hosted project is a non-production integration environment'
+    source: assumption
+    blocking_level: pilot
+    owner: product-owner
+    resolves_in: docs/adr/0002-supabase-environment-topology.md
+
+  - id: DEC-ENV-03
+    subject: Data residency / acceptable Supabase region
+    current: unverified
+    source: assumption
+    blocking_level: pilot
+    owner: captain-and-dpo
+
+  - id: DEC-REPO-01
+    subject: Application directory location
+    current: 'v2/ subdirectory of the legacy repository — Git hooks and CI are inactive'
+    source: assumption
+    blocking_level: slice-1
+    owner: tech-lead
+    resolves_in: docs/adr/0004-application-directory-location.md
+
+  - id: SUPABASE-PG-VERSION
+    subject: Local Postgres major version
+    current: '15'
+    source: assumption
+    blocking_level: integration
+    owner: tech-lead
+    note: 'Must be reconciled with the hosted project during the Slice 0b assessment.'
+
+# ── Registered now, populated when their slice lands ────────────────────────
+# Fee schedule, SLAs and validity periods    → Slice 3 (DOC-001), blocker B-08
+# Certificate and summons template wording   → Slice 4, blockers B-05 / B-06
+# Signatory titles and wet-signature process → Slice 4, blocker B-07
+# Non-mediable categories and referrals      → Slice 6, blocker B-09
+# OR series format and voided-number policy  → Slice 5, blocker B-11
+# Retention periods                          → Slice 9, blocker B-21
+# Office hours, contact, logo, seal, accent  → Slice 9, blockers B-13 / B-14 / B-15

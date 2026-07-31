@@ -1,0 +1,175 @@
+# =============================================================================
+# Pull-request pipeline (Phase 6 §21)
+#
+# PLACEMENT: this file assumes the repository root is the directory containing
+# package.json. While DEC-REPO-01 is unresolved and the application lives in a
+# `v2/` subdirectory of the legacy repository, GitHub will NOT run it — Actions
+# only reads `.github/workflows/` at the repository root. Resolving DEC-REPO-01
+# by promoting `v2/` to its own repository activates this file unchanged.
+#
+# No secret of any kind is required. Every value below is a public setting or a
+# deliberately fake fixture, because Slice 0a touches no hosted environment.
+# =============================================================================
+
+name: pull-request
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22.11.0'
+  # Fake but structurally valid configuration. The application validates its
+  # environment at build time, so these must parse — they must never be real.
+  APP_ENV: test
+  NEXT_PUBLIC_APP_ENV: test
+  NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+  NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key-000000000000000
+  LOG_LEVEL: warn
+
+jobs:
+  # ── Static quality gates and unit tests ────────────────────────────────────
+  quality:
+    name: typecheck · lint · unit tests · build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate the environment template
+        run: pnpm run check:env-example
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Check formatting
+        run: pnpm run format:check
+
+      - name: Unit and component tests
+        run: pnpm run test:coverage
+
+      - name: Build
+        run: pnpm run build
+
+      # Runs after the build so it inspects what actually shipped, not the source.
+      - name: Scan the client bundle for secret material
+        run: pnpm run check:bundle-secrets
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # ── Database: migrations replay from empty, then pgTAP ─────────────────────
+  database:
+    name: migrations · pgTAP · type drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Start the local Supabase stack
+        run: pnpm exec supabase start
+
+      # Replays every migration from an empty database. A migration that only
+      # works incrementally against a developer's existing state fails here.
+      - name: Reset and replay all migrations
+        run: pnpm exec supabase db reset
+
+      - name: Run pgTAP tests
+        run: pnpm exec supabase test db
+
+      # The committed types must match the migrations, or every consumer of a
+      # database type is compiling against a schema that no longer exists.
+      - name: Check generated types for drift
+        run: pnpm run types:check
+
+      - name: Stop the stack
+        if: always()
+        run: pnpm exec supabase stop --no-backup
+
+  # ── End-to-end smoke suite ─────────────────────────────────────────────────
+  e2e:
+    name: end-to-end smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run smoke suite
+        run: pnpm run e2e
+
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # ── Secret scanning ────────────────────────────────────────────────────────
+  secret-scan:
+    name: secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history: a secret removed in a later commit is still leaked.
+          fetch-depth: 0
+
+      - name: Scan the repository and its history
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_CONFIG: .gitleaks.toml

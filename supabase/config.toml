@@ -1,0 +1,75 @@
+# Barangay Hub v2 — local Supabase stack (Supabase CLI)
+#
+# This configures the LOCAL development environment only. The hosted project
+# (weadxbwtupvjqaqploij) is a NON-PRODUCTION integration environment whose final
+# role is an open decision — DEC-ENV-01.
+#
+# `db.major_version` MUST be reconciled with the hosted project during the
+# Slice 0b read-only assessment. A mismatch changes how migrations behave.
+
+project_id = "barangay-hub"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+# TODO(Slice 0b): confirm against the hosted project during the assessment.
+major_version = 15
+
+[db.pooler]
+enabled = false
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed/*.sql"]
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+
+# Local mail catcher. No email leaves the machine.
+# Renamed from [inbucket], which the CLI now reports as deprecated.
+[local_smtp]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "10MiB"
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+
+[auth.email]
+enable_signup = true
+# Local only. Staging and production MUST require confirmation (Phase 6 §20.2).
+enable_confirmations = false
+double_confirm_changes = true
+secure_password_change = true
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+
+[analytics]
+enabled = false
+
+[edge_runtime]
+enabled = true

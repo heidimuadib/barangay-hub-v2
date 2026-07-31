@@ -1,0 +1,42 @@
+# Dependency updates (Phase 6 §34.5).
+#
+# Weekly rather than daily: a solo maintainer who cannot review updates ignores
+# them, and ignored security alerts are worse than fewer alerts. Patch-level
+# updates for the framework are grouped so they arrive as one reviewable PR.
+#
+# Activates when DEC-REPO-01 resolves and this directory sits at the repository
+# root — see the note in .github/workflows/pr.yml.
+
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      next:
+        patterns: ['next', 'eslint-config-next', '@next/*']
+      react:
+        patterns: ['react', 'react-dom', '@types/react', '@types/react-dom']
+      supabase:
+        patterns: ['@supabase/*', 'supabase']
+      testing:
+        patterns: ['vitest', '@vitest/*', '@testing-library/*', '@playwright/test', 'jsdom']
+      linting:
+        patterns: ['eslint', 'eslint-*', 'typescript-eslint', 'prettier', 'prettier-*']
+    ignore:
+      # Major upgrades of these are architectural decisions, not dependency bumps.
+      - dependency-name: 'next'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'react'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'tailwindcss'
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: monthly

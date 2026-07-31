@@ -1,0 +1,16 @@
+# pnpm settings.
+#
+# pnpm 11 reads configuration from this file rather than the `pnpm` field in
+# package.json. This is NOT a monorepo declaration — no `packages:` key is
+# present, and ADR-0001 records the single-repository decision.
+
+# Packages permitted to run install scripts. pnpm blocks them by default; naming
+# them here keeps the decision reviewable and avoids an interactive prompt on
+# every machine and in CI.
+#   esbuild        Vite/Vitest transform pipeline
+#   unrs-resolver  native module resolver used by the ESLint import plugins
+#   sharp          Next.js production image optimisation
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true

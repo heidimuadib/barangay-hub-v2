@@ -1,0 +1,80 @@
+# ============================================================================
+# Secret scanning configuration (Phase 6 §34.4)
+#
+# Runs on every pull request and on the full history. A finding fails the build.
+#
+# The allow-list below covers values that LOOK like credentials but are not:
+# documentation placeholders, obviously-fake test fixtures, and the Supabase
+# project reference (a public identifier, not a secret).
+# ============================================================================
+
+title = "Barangay Hub v2"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Non-secret values that resemble credentials"
+
+paths = [
+  '''pnpm-lock\.yaml''',
+  '''docs/adr/.*\.md''',
+  '''docs/runbooks/.*\.md''',
+  # Contains a deliberately JWT-shaped fixture used to prove that the logger
+  # masks tokens. It is not a token — it decodes to nothing and grants nothing.
+  '''src/lib/logger/redact\.test\.ts''',
+]
+
+regexes = [
+  # Documentation placeholders in the committed environment template.
+  '''<set locally[^>]*>''',
+  '''<server-only[^>]*>''',
+  '''<secret-store-only[^>]*>''',
+  '''<[a-z-]+ — [^>]*>''',
+  # The Supabase project reference is a public identifier that appears in the
+  # project URL. It is not a credential.
+  '''weadxbwtupvjqaqploij''',
+  # Deliberately fake fixtures. Each contains a marker so a real key can never
+  # match these patterns by accident.
+  '''ci-placeholder-anon-key-[0-9]+''',
+  '''test-anon-key-not-a-real-credential-[0-9]+''',
+  '''not-a-real-key-[0-9]+''',
+  '''placeholder-value-[0-9]+''',
+]
+
+# ── Project-specific rules, beyond the gitleaks defaults ────────────────────
+
+[[rules]]
+id = "supabase-service-role-jwt"
+description = "Supabase service_role JWT"
+regex = '''eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]*c2VydmljZV9yb2xl[A-Za-z0-9_-]*\.[A-Za-z0-9_-]{10,}'''
+tags = ["supabase", "critical"]
+
+[[rules]]
+id = "supabase-personal-access-token"
+description = "Supabase personal access token"
+regex = '''\bsbp_[a-f0-9]{40}\b'''
+tags = ["supabase"]
+
+[[rules]]
+id = "supabase-secret-key"
+description = "Supabase secret API key"
+regex = '''\bsb_secret_[A-Za-z0-9_-]{20,}\b'''
+tags = ["supabase", "critical"]
+
+[[rules]]
+id = "public-prefixed-secret"
+description = "Secret-like variable exposed with the NEXT_PUBLIC_ prefix"
+regex = '''NEXT_PUBLIC_[A-Z0-9_]*(SERVICE_ROLE|SECRET|PASSWORD|PRIVATE_KEY|CREDENTIAL|ACCESS_TOKEN|REFRESH_TOKEN)[A-Z0-9_]*\s*='''
+tags = ["config", "critical"]
+
+[rules.allowlist]
+# env.schema.ts and the guard scripts define this deny-list; matching it there
+# is the point.
+paths = [
+  '''src/lib/config/env\.schema\.ts''',
+  '''src/lib/config/env\.schema\.test\.ts''',
+  '''tests/unit/architecture/.*\.ts''',
+  '''scripts/check-.*\.mjs''',
+  '''\.gitleaks\.toml''',
+]
