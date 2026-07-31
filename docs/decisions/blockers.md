@@ -45,26 +45,35 @@ proposals until the owner marks them decided.
 
 ## DEC-AUTH-01 — public resident self-registration
 
-- **Status:** OPEN — Slice 1 ships NO public sign-up (ADR-0005); accounts are provisioned (seeds, admin invite by email, later tenant provisioning)
+- **Status:** **RESOLVED** — 2026-08-01. The product owner selected
+  **Option C — hybrid resident account provisioning**. The full 18-point
+  ruling is recorded verbatim in
+  [ADR-0006](../adr/0006-resident-provisioning-and-registry-decisions.md)
+  (Accepted). In brief: public email/password sign-up with mandatory email
+  confirmation; accounts prove nothing until an authorized reviewer approves
+  the verification application; staff creation/invitation remains for
+  walk-ins and assisted residents; both paths share one set of domain
+  services; matching and duplicate handling are manual, capability-gated and
+  audited (supersede-and-link only); anti-enumeration and rate limiting are
+  hard gates before hosted public exposure; hosted-deployment items stay
+  separate blockers.
 - **Owner:** Product owner
-- **Deadline:** before Slice 2 feature implementation begins
-  ([roadmap](../IMPLEMENTATION_ROADMAP.md), Slice 2 entry criteria).
-- **Recorded alternatives (2026-08-01)** — the owner selects exactly one:
-  - **Option A — Public self-registration:** resident creates an Auth
-    account; email confirmation required; onboarding begins after
-    confirmation; the account remains unverified until staff approval.
-  - **Option B — Staff invitation only:** staff creates or invites the
-    account; resident completes onboarding after invitation; no open public
-    sign-up endpoint exists (today's implemented posture).
-  - **Option C — Hybrid:** public self-registration allowed; high-risk or
-    incomplete cases require staff-assisted matching; staff invitation
-    remains available for walk-ins and residents without reliable email.
-- **Permitted before the ruling** (preparation, not implementation): schema
-  planning, registry model, verification state machine, RLS design,
-  upload/security design, test matrix, UI route inventory, synthetic fixture
-  design.
-- **Note:** Options A and C open the project's first anonymous write surface,
-  making app-level rate limiting (R-1-04) immediate rather than deferred.
+- **Consequence:** Slice 2 is **DEFINED — READY TO START**
+  ([roadmap](../IMPLEMENTATION_ROADMAP.md)). Slice 1's no-sign-up surface
+  remains correct until Slice 2 ships the flows.
+
+## D2-01…D2-04 — Slice 2 within-slice decisions — **APPROVED** (2026-08-01)
+
+All four approved by the owner (D2-01/-02) and tech lead (D2-03/-04);
+authoritative wording in
+[ADR-0006](../adr/0006-resident-provisioning-and-registry-decisions.md):
+
+| Decision | Approved outcome |
+| --- | --- |
+| **D2-01** residency basis | Keys: `property_owner`, `renter`, `household_member`, `caretaker`, `informal_resident`, `other` (explanation required for `other`); UI labels free, database keys stable |
+| **D2-02** duplicate resolution | Supersede-and-link only; no destructive or automatic merge; administrator capability + reason + full audit; reversal only via a future audited correction workflow |
+| **D2-03** evidence uploads | Private bucket; server-brokered signed upload URLs; metadata row before upload; path `{barangay}/{application}/{evidence}`; short-lived authorized read URLs; synthetic files only |
+| **D2-04** capabilities | Ten `registry.*`/`verification.*` keys; staff get read/review/request-info; administrators get all; residents RLS-self-scope only; platform none |
 
 ## DEC-SCOPE-01 — Slice 2 scope is not defined in this repository
 
