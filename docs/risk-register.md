@@ -26,6 +26,9 @@ bottom; never reuse an ID.
 | R-1-04 | Sign-in rate limiting relies on Supabase Auth defaults only | Auth config (Slice 0b); no app-level limiter | M | M | M | Auth | Uniform failure copy + failed attempts audited with email digest; app-level limiter when hosted exposure begins | Slice 2+ implementer | open |
 | R-1-05 | The last barangay administrator can disable their own membership, locking the tenant's admin functions | RLS permits self-status change under `membership.manage` | L | M | L | Access | Recovery = platform tenant-provisioning operation (later slice); documented limitation | Platform slice implementer | accepted |
 
+| R-2-01 | Verification evidence creates PII-shaped files at rest in Storage (synthetic until DEC-ENV-04 lifts), with no antivirus scanning infrastructure | Slice 2 design ([roadmap](./IMPLEMENTATION_ROADMAP.md) §12/§16); no AV service exists in any environment | M | M | M | Storage/Privacy | Private bucket only; server-brokered signed URLs; MIME + size limits; content hashes recorded; unauthenticated-fetch e2e probe; AV scanning revisited before any real-file decision (DEC-ENV-03/-04) | Slice 2 implementer | open |
+| R-2-02 | Duplicate-person resolution could destroy identity history if implemented as a destructive merge | Slice 2 registry design; decision D2-02 | M | H | H | Data integrity | Roadmap mandates supersede-and-link (loser marked, pointer to survivor, both sides audited); destructive merge requires explicit owner approval | Slice 2 implementer + owner (D2-02) | open |
+
 ## R-1-06 — measurement record (2026-08-01)
 
 Kept here rather than in the table because the investigation cost real time

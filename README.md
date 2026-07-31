@@ -8,6 +8,11 @@ and the append-only audit trail are live; business features (requests,
 certificates, payments) are not. See `docs/local-setup.md` to get running and
 `docs/architecture/identity-and-access.md` for the access model.
 
+**Plan of record:** [docs/PROJECT_SPECIFICATION.md](./docs/PROJECT_SPECIFICATION.md)
+(what the system is) and
+[docs/IMPLEMENTATION_ROADMAP.md](./docs/IMPLEMENTATION_ROADMAP.md)
+(the order it gets built — next up: Slice 2, blocked on DEC-AUTH-01).
+
 **This is the STANDALONE v2 repository** (DEC-REPO-01, resolved). It was
 promoted out of the legacy `barangayhub` repository with v2 history preserved
 via `git subtree split` — see `docs/runbooks/repository-promotion.md`. The
