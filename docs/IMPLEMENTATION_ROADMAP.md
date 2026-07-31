@@ -28,7 +28,7 @@ comes) · `v1.5` (feature-flagged, post-MVP).
 | 0a | Engineering skeleton | **COMPLETE** | Verifiable foundation: tooling, gates, shells, local stack | — | — | L |
 | 0b | Hosted integration assessment | **COMPLETE** | Evidence base for DEC-ENV-01; PG 17 reconciliation | 0a | — | S |
 | 1 | Identity, tenant, RBAC, RLS, audit foundation | **COMPLETE** | Secure multi-tenant identity with forced RLS and append-only audit | 0a | — | XL |
-| 2 | Resident registration, registry, verification | **DEFINED — BLOCKED** | Verified resident profiles; staff verification workflow; registry with duplicate handling | 1 | **DEC-AUTH-01** | XL |
+| 2 | Resident registration, registry, verification | **DEFINED — READY TO START** | Verified resident profiles; staff verification workflow; registry with duplicate handling | 1 | — (DEC-AUTH-01 resolved: Option C, [ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)) | XL |
 | 3 | Document catalog and request intake | SEQUENCED | Residents and walk-ins submit document requests through one domain service | 2 | Fee/SLA confirmation (B-08) before pilot, not before build | L |
 | 4 | Certificate generation, serials, QR, public verification | SEQUENCED | Accountable certificate issuance with public verifiability | 3 | Template/signatory confirmation (B-05–B-07) before pilot | L |
 | 5 | Payments, exemptions, ORs, release, day closure, call list | SEQUENCED | Cash-accountable release workflow | 4 | OR series policy (B-11) before pilot | XL |
@@ -152,9 +152,15 @@ These restate the standing non-negotiables so no slice section needs to:
 1. **Slice number and title:** PHASE 7 SLICE 2 — RESIDENT REGISTRATION,
    REGISTRY, AND VERIFICATION
 
-2. **Status:** **DEFINED — BLOCKED on [DEC-AUTH-01](./decisions/blockers.md)**
-   (provisioning policy). Preparation listed under *Entry criteria* is
-   permitted before the ruling; feature implementation is not.
+2. **Status:** **DEFINED — READY TO START.** DEC-AUTH-01 is resolved —
+   **Option C, hybrid provisioning**
+   ([ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)):
+   public email/password sign-up with mandatory confirmation, unverified
+   until reviewer approval, staff creation/invitation retained, one shared
+   domain-service set for both paths, manual audited matching and
+   supersede-and-link duplicate handling, rate limiting + anti-enumeration
+   gating any hosted public exposure. All within-slice decisions D2-01…04
+   are APPROVED.
 
 3. **User-visible outcome:** A resident can create or complete an account
    according to the approved provisioning policy, submit the minimum required
@@ -221,20 +227,27 @@ These restate the standing non-negotiables so no slice section needs to:
 7. **Dependencies:** Slice 1 exit gates (met). Supabase Storage enabled in the
    local stack (it is). No hosted dependency.
 
-8. **Decisions required**
-   - **DEC-AUTH-01 (blocking, owner):** provisioning policy — see the recorded
-     options below.
-   - **D2-01 (within-slice, owner sign-off):** residency-basis vocabulary.
-   - **D2-02 (within-slice, owner sign-off):** duplicate-resolution semantics —
-     recommendation: supersede-and-link, never destructive.
-   - **D2-03 (within-slice, tech lead):** evidence upload path — storage RLS
-     with user-scoped signed uploads is the target; if a service-role
-     operation proves necessary it requires an ADR + allow-list + reason-set
-     change (a deliberate, visible act).
-   - **D2-04 (within-slice, tech lead):** new capability keys (e.g.
-     `registry.read`, `verification.review`, `verification.decide`,
-     `registry.resolve_duplicates`) and their role mapping — extending the
-     ADR-0005 catalog by migration.
+8. **Decisions — all resolved
+   ([ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)):**
+   - **DEC-AUTH-01 → RESOLVED:** Option C hybrid (18-point ruling in the ADR).
+   - **D2-01 → APPROVED:** residency keys `property_owner` / `renter` /
+     `household_member` / `caretaker` / `informal_resident` / `other`
+     (explanation required for `other`).
+   - **D2-02 → APPROVED:** supersede-and-link only; administrator capability
+     + reason + full audit; no destructive or automatic merge; reversal only
+     via a future audited correction workflow.
+   - **D2-03 → APPROVED:** private bucket, server-brokered signed uploads,
+     metadata row before upload, `{barangay}/{application}/{evidence}` paths,
+     authorized short-lived read URLs, synthetic files only.
+   - **D2-04 → APPROVED:** ten capability keys
+     (`registry.read`, `registry.create_walk_in`, `registry.match_account`,
+     `registry.resolve_duplicates`, `verification.read`,
+     `verification.review`, `verification.request_information`,
+     `verification.approve`, `verification.reject`,
+     `verification.evidence.read`) with the staff/administrator/resident/
+     platform mapping recorded in the ADR. Note the approved keys split
+     review from decide (`approve`/`reject`) more finely than this
+     document's earlier sketch — the ADR wording governs.
 
 9. **Database scope (planning-level; final DDL is implementation):**
    `persons` (tenant-scoped, composite-FK anchored, name/birthdate/contact/
@@ -336,12 +349,11 @@ These restate the standing non-negotiables so no slice section needs to:
     to design yet. Supersede-and-link (D2-02) keeps duplicate resolution
     reversible at the data level.
 
-21. **Entry criteria:** this roadmap merged (DEC-SCOPE-01 resolved) ✓ upon
-    merge; Slice 1 exit gates green ✓; **DEC-AUTH-01 ruled by the product
-    owner** — the only outstanding item. *Permitted before the ruling
-    (preparation, not implementation):* schema planning, registry model,
-    verification state machine, RLS design, upload/security design, test
-    matrix, UI route inventory, synthetic fixture design.
+21. **Entry criteria — ALL MET (2026-08-01):** roadmap adopted
+    (DEC-SCOPE-01 resolved) ✓; Slice 1 exit gates green ✓; DEC-AUTH-01 ruled
+    — Option C ✓; D2-01…04 approved ✓
+    ([ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)).
+    Implementation may begin on the next approved feature branch.
 
 22. **Exit criteria:** every gate in specification §19; the §17 test matrix
     green locally and in CI; pgTAP/unit/e2e counts increased; demo (below)
@@ -360,35 +372,26 @@ These restate the standing non-negotiables so no slice section needs to:
     intents; `verify:full`, db suite and e2e all green.
 
 24. **Risks:** R-2-01 (evidence handling — PII-shaped synthetic files at
-    rest; no AV scanning), R-2-02 (duplicate resolution semantics), R-1-04
-    trigger approaches (public sign-up would create the first unauthenticated
-    write surface → rate-limiting design rides the Option-A/C path), plus the
-    standing register.
+    rest; no AV scanning), R-2-02 (duplicate resolution semantics — bounded
+    by the approved supersede-and-link ruling), R-1-04 **now activated**:
+    Option C makes public sign-up part of Slice 2, so rate limiting and
+    anti-enumeration are build requirements locally and hard gates before
+    hosted exposure (ADR-0006 point 13), plus the standing register.
 
 25. **Effort:** **XL** — the largest remaining schema+workflow slice besides
     5 and 7.
 
-### DEC-AUTH-01 — recorded implementation alternatives (owner ruling required)
+### DEC-AUTH-01 — RESOLVED: Option C (2026-08-01)
 
-The roadmap does **not** resolve this decision; it records the approved
-alternatives for the product owner to choose from:
-
-- **Option A — Public resident self-registration.** Resident creates an Auth
-  account; email confirmation required; onboarding begins after confirmation;
-  the account remains unverified until staff approval.
-- **Option B — Staff invitation only.** Staff creates or invites the account;
-  resident completes onboarding after invitation; **no open public sign-up
-  endpoint exists** (today's implemented posture).
-- **Option C — Hybrid.** Public self-registration allowed; high-risk or
-  incomplete cases require staff-assisted matching; staff invitation remains
-  available for walk-ins and residents without reliable email access.
-
-Slice 2 **feature implementation is blocked until A, B or C is selected.**
-The preparation list in entry criterion 21 is explicitly permitted meanwhile.
-Consequences worth weighing: A and C open the first anonymous write surface
-(rate limiting, R-1-04, becomes immediate) and depend on email delivery UX
-locally (Mailpit) and — hosted, later — on R-0B-06; B keeps the attack surface
-closed but pushes all onboarding load onto staff.
+The product owner selected **Option C — hybrid provisioning** from the three
+recorded alternatives (A public-only, B staff-invitation-only, C hybrid). The
+authoritative 18-point ruling lives in
+[ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md);
+the decision log carries the summary. Consequences absorbed into this slice:
+the first anonymous write surface arrives with the sign-up flow, so rate
+limiting and anti-enumeration are Slice 2 build requirements (R-1-04
+activated); local email-confirmation UX runs through Mailpit; hosted sending
+remains gated by R-0B-06 and the deployment blockers (ADR-0006 point 14).
 
 ---
 
@@ -665,7 +668,7 @@ after Slice 9's exit gate, with its own roadmap revision.
 
 | Decision | Blocks | Status | Owner |
 | --- | --- | --- | --- |
-| DEC-AUTH-01 (provisioning A/B/C) | Slice 2 implementation | **OPEN** | Product owner |
+| DEC-AUTH-01 (provisioning) | — | **RESOLVED — Option C** ([ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)) | Product owner |
 | DEC-ROLE-01 (role names) | pilot (revisit at Slice 7 for case roles) | OPEN | Owner + Captain |
 | DEC-ENV-01/-02 (topology, production project) | Slice 9 hosted items, pilot | OPEN | Owner (+Captain) |
 | DEC-ENV-03 (residency) | any real ID files, pilot | OPEN | Owner + DPO + legal |
@@ -674,7 +677,7 @@ after Slice 9's exit gate, with its own roadmap revision.
 | B-11 OR series | Slice 5 pilot | OPEN | Owner |
 | B-09 non-mediable categories | Slice 6 pilot | OPEN | Owner + legal |
 | B-13–B-15, B-21 | Slice 9 / release | OPEN | Owner |
-| D2-01…D2-04 | within Slice 2 | pending slice start | Owner / tech lead |
+| D2-01…D2-04 | — | **APPROVED** ([ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)) | Owner / tech lead |
 | MFA on Supabase owner account (R-0B-03) | should not wait — operational | OPEN | Repository owner |
 
 DEC-SCOPE-01 is **resolved by this document** (decision log updated in the

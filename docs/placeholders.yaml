@@ -56,11 +56,11 @@ placeholders:
 
   - id: DEC-AUTH-01
     subject: Public resident self-registration policy
-    current: 'No public sign-up — accounts are provisioned (seed, admin invite, later tenant provisioning)'
-    source: assumption
-    blocking_level: slice-2
+    current: 'RESOLVED 2026-08-01 — Option C hybrid: public sign-up with mandatory email confirmation, unverified until reviewer approval; staff creation/invitation retained. Implementation arrives with Slice 2.'
+    source: confirmed
+    blocking_level: none
     owner: product-owner
-    resolves_in: docs/adr/0005-slice1-role-catalog-and-provisioning.md
+    resolves_in: docs/adr/0006-resident-provisioning-and-registry-decisions.md
 
 # ── Registered now, populated when their slice lands ────────────────────────
 # Fee schedule, SLAs and validity periods    → Slice 3 (DOC-001), blocker B-08

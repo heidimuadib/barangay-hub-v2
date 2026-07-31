@@ -42,6 +42,12 @@ role names in code. Application code never branches on a role key.
 
 ### Account provisioning (Slice 1)
 
+> **Superseded for Slice 2 onward** by
+> [ADR-0006](./0006-resident-provisioning-and-registry-decisions.md)
+> (DEC-AUTH-01 resolved: Option C hybrid). The description below remains
+> accurate for the Slice 1 build, whose surface does not change until
+> Slice 2 ships the approved flows.
+
 **No public sign-up.** Resident self-registration belongs to the resident
 registration slice (out of Slice 1 scope), so the sign-up surface is absent
 entirely rather than disabled. Accounts exist via:

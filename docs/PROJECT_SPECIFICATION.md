@@ -5,7 +5,7 @@ disagree, the code is the fact and this document has a defect — file it.
 
 | | |
 | --- | --- |
-| Specification version | 1.1 |
+| Specification version | 1.2 |
 | Describes repository state at | commit `9fbd783` (+ roadmap adoption, 2026-08-01) |
 | Repository | `github.com/heidimuadib/barangay-hub-v2` |
 | Execution order | [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md) — this file says *what the system is*; the roadmap says *the order it gets built* |
@@ -119,10 +119,15 @@ through the tenant path or vice versa; capabilities are dotted keys constrained
 by CHECK; roles on an `invited` or `disabled` membership resolve **zero**
 permissions.
 
-Account provisioning (**Implemented**): local/CI seed fixtures, or a barangay
-administrator invites an existing account by exact email
+Account provisioning — **Implemented today:** local/CI seed fixtures, or a
+barangay administrator invites an existing account by exact email
 (`create_membership_by_email`, uniform ineligibility errors — not an
-enumeration oracle). Public self-registration is **Blocked** on DEC-AUTH-01.
+enumeration oracle). **Planned (approved policy, arrives with Slice 2):**
+DEC-AUTH-01 is resolved as **Option C hybrid**
+([ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)) —
+public email/password sign-up with mandatory confirmation, unverified until
+reviewer approval, staff creation/invitation retained, both paths through one
+domain-service set.
 
 ## 6. Functional Modules
 
@@ -258,8 +263,12 @@ Integration Environment whose final role is open (DEC-ENV-01); production is
 - Post-sign-in destination is computed from the authorization context
   (`landingRouteFor`) — **no `?next=` redirect parameter exists anywhere**,
   removing the open-redirect class outright.
-- No public sign-up (**Blocked**, DEC-AUTH-01). MFA enforcement is explicitly
-  out of scope so far; TOTP remains available account-side.
+- No public sign-up **in the current build**; the approved policy
+  (DEC-AUTH-01 → Option C hybrid,
+  [ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)) is
+  **Planned** for Slice 2, with anti-enumeration and rate limiting as build
+  requirements. MFA enforcement remains out of scope; TOTP available
+  account-side.
 - **Planned:** app-level sign-in rate limiting when hosted exposure begins
   (R-1-04; Supabase defaults only today).
 
@@ -445,13 +454,12 @@ failures are investigated, not dismissed — flake claims require evidence.
 | Repository promotion | Standalone repo, CI ACTIVE, branch protection, Husky |
 | Post-Slice-1 hardening | R-1-06 investigation and partial fix; DEC-SCOPE-01 recorded |
 
-**Next: Slice 2 — defined, blocked on one decision.** DEC-SCOPE-01 is
-**resolved**: the approved Phase 6 vertical-slice sequence is recorded in the
-[implementation roadmap](./IMPLEMENTATION_ROADMAP.md), which fully defines
-Slice 2 (resident registration, registry, and verification). Slice 2 feature
-implementation remains **blocked on DEC-AUTH-01** (provisioning policy —
-Options A/B/C recorded in the [decision log](./decisions/blockers.md));
-schema/RLS/test-matrix preparation is explicitly permitted meanwhile.
+**Next: Slice 2 — DEFINED, READY TO START.** DEC-SCOPE-01 is **resolved**
+(the [implementation roadmap](./IMPLEMENTATION_ROADMAP.md) is the plan of
+record) and DEC-AUTH-01 is **resolved — Option C hybrid provisioning**
+([ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)),
+with all within-slice decisions D2-01…04 approved. Every Slice 2 entry
+criterion is met; implementation begins on its own feature branch.
 
 **Remaining sequence** (authoritative detail, per-slice gates and effort in
 the roadmap): 3 — document catalog & request intake · 4 — certificates,
@@ -476,9 +484,11 @@ For each slice: scope as recorded in-repo, and status.
 - **Slice 1 — Implemented.** §5 and §8–§13 in full, plus minimal verification
   UI (§3), seeds for nine personas across two synthetic tenants, and the four
   test suites. Recorded deferrals: outbox, PLT-08, full shell chrome.
-- **Slice 2 — Defined ([roadmap](./IMPLEMENTATION_ROADMAP.md)); blocked on
-  DEC-AUTH-01.** Hardening already delivered (R-1-06 fix and measurement
-  record); feature implementation awaits the provisioning ruling.
+- **Slice 2 — Defined, READY TO START
+  ([roadmap](./IMPLEMENTATION_ROADMAP.md); provisioning ruled Option C and
+  D2-01…04 approved,
+  [ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)).**
+  Hardening already delivered (R-1-06 fix and measurement record).
 - **Slices 3–9 and v1.5 — Sequenced.** Scope, dependencies, gates and effort
   per slice in the roadmap.
 
@@ -537,7 +547,7 @@ Consolidated queue, deduplicated from §6, §17 and the registers — with owner
 
 | Item | Blocked on / trigger | Owner |
 | --- | --- | --- |
-| Rule on resident provisioning (A/B/C) → unblock Slice 2 | DEC-AUTH-01 | Product owner |
+| Begin Slice 2 implementation (all entry criteria met) | next feature branch | Implementer |
 | Confirm role catalog names | DEC-ROLE-01 | Product owner + Captain |
 | Hosted topology; production project & PITR; residency | DEC-ENV-01/-02/-03 | Product owner, Captain, DPO, legal |
 | Enable MFA on the Supabase Owner account | outstanding operational action | Repository owner |

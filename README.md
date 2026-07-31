@@ -11,7 +11,8 @@ certificates, payments) are not. See `docs/local-setup.md` to get running and
 **Plan of record:** [docs/PROJECT_SPECIFICATION.md](./docs/PROJECT_SPECIFICATION.md)
 (what the system is) and
 [docs/IMPLEMENTATION_ROADMAP.md](./docs/IMPLEMENTATION_ROADMAP.md)
-(the order it gets built — next up: Slice 2, blocked on DEC-AUTH-01).
+(the order it gets built — next up: Slice 2, **ready to start**; provisioning
+ruled as Option C hybrid, [ADR-0006](./docs/adr/0006-resident-provisioning-and-registry-decisions.md)).
 
 **This is the STANDALONE v2 repository** (DEC-REPO-01, resolved). It was
 promoted out of the legacy `barangayhub` repository with v2 history preserved
