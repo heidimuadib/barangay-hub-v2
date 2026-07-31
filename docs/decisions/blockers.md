@@ -47,13 +47,37 @@ proposals until the owner marks them decided.
 
 - **Status:** OPEN — Slice 1 ships NO public sign-up (ADR-0005); accounts are provisioned (seeds, admin invite by email, later tenant provisioning)
 - **Owner:** Product owner
-- **Deadline:** with the resident-registration slice (Slice 2+), which cannot start without this ruling.
+- **Deadline:** before Slice 2 feature implementation begins
+  ([roadmap](../IMPLEMENTATION_ROADMAP.md), Slice 2 entry criteria).
+- **Recorded alternatives (2026-08-01)** — the owner selects exactly one:
+  - **Option A — Public self-registration:** resident creates an Auth
+    account; email confirmation required; onboarding begins after
+    confirmation; the account remains unverified until staff approval.
+  - **Option B — Staff invitation only:** staff creates or invites the
+    account; resident completes onboarding after invitation; no open public
+    sign-up endpoint exists (today's implemented posture).
+  - **Option C — Hybrid:** public self-registration allowed; high-risk or
+    incomplete cases require staff-assisted matching; staff invitation
+    remains available for walk-ins and residents without reliable email.
+- **Permitted before the ruling** (preparation, not implementation): schema
+  planning, registry model, verification state machine, RLS design,
+  upload/security design, test matrix, UI route inventory, synthetic fixture
+  design.
+- **Note:** Options A and C open the project's first anonymous write surface,
+  making app-level rate limiting (R-1-04) immediate rather than deferred.
 
 ## DEC-SCOPE-01 — Slice 2 scope is not defined in this repository
 
-- **Status:** OPEN — blocks any Slice 2 feature work
+- **Status:** **RESOLVED** — 2026-08-01. The product owner supplied the
+  approved Phase 6 vertical-slice sequence, now recorded as the in-repository
+  plan of record: [docs/IMPLEMENTATION_ROADMAP.md](../IMPLEMENTATION_ROADMAP.md)
+  (slices 2–9 plus v1.5, with per-slice scope, gates and blockers; Slice 2
+  fully defined). Feature work remains gated per-slice — Slice 2 on
+  DEC-AUTH-01 below.
 - **Owner:** Product owner + tech lead
 - **Raised:** 2026-08-01, when Slice 2 was requested.
+
+*The original finding is preserved below for the record:*
 
 **Finding.** The repository contains no roadmap, slice plan or backlog. `docs/`
 holds ADRs, architecture notes, the Slice 0b assessment, this log, the risk

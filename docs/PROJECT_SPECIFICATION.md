@@ -5,9 +5,10 @@ disagree, the code is the fact and this document has a defect — file it.
 
 | | |
 | --- | --- |
-| Specification version | 1.0 |
-| Describes repository state at | commit `9fbd783`, branch `phase-7-slice-2`, 2026-08-01 |
+| Specification version | 1.1 |
+| Describes repository state at | commit `9fbd783` (+ roadmap adoption, 2026-08-01) |
 | Repository | `github.com/heidimuadib/barangay-hub-v2` |
+| Execution order | [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md) — this file says *what the system is*; the roadmap says *the order it gets built* |
 | Maintenance rule | Update this file in the same pull request as any change it describes; CI reviewers treat a stale specification as a review defect |
 
 **Status vocabulary used throughout:**
@@ -17,8 +18,9 @@ disagree, the code is the fact and this document has a defect — file it.
 - **Planned** — recorded in this repository's decision log, risk register or
   placeholder register as upcoming work with a named owner.
 - **Future** — referenced by code comments, feature flags or the placeholder
-  register, but with no in-repo plan; the authoritative backlog is external
-  (see §17 and [DEC-SCOPE-01](./decisions/blockers.md)).
+  register; sequenced in the
+  [implementation roadmap](./IMPLEMENTATION_ROADMAP.md) but not yet detailed
+  to build-level.
 - **Blocked** — cannot proceed until a named open decision resolves.
 
 ---
@@ -443,21 +445,21 @@ failures are investigated, not dismissed — flake claims require evidence.
 | Repository promotion | Standalone repo, CI ACTIVE, branch protection, Husky |
 | Post-Slice-1 hardening | R-1-06 investigation and partial fix; DEC-SCOPE-01 recorded |
 
-**Next: Blocked.** The repository does not define Slice 2
-([DEC-SCOPE-01](./decisions/blockers.md)): the authoritative Phase 1–6
-planning documents are cited throughout the code but were never committed, and
-the in-repo Slice 2 references contradict each other. Feature work resumes
-when the owners either add those documents (or their slice plan) to `docs/`,
-or rule on DEC-AUTH-01 plus an explicit feature list recorded as an ADR.
+**Next: Slice 2 — defined, blocked on one decision.** DEC-SCOPE-01 is
+**resolved**: the approved Phase 6 vertical-slice sequence is recorded in the
+[implementation roadmap](./IMPLEMENTATION_ROADMAP.md), which fully defines
+Slice 2 (resident registration, registry, and verification). Slice 2 feature
+implementation remains **blocked on DEC-AUTH-01** (provisioning policy —
+Options A/B/C recorded in the [decision log](./decisions/blockers.md));
+schema/RLS/test-matrix preparation is explicitly permitted meanwhile.
 
-**Future slice themes** — in-repo evidence only (placeholder register, story
-IDs in code); numbering is indicative and known-inconsistent, see §18:
-staff queues (US-STF-003) · resident dashboard content (US-RES-004) · document
-requests, fees, SLAs (DOC-001, B-08) · certificates and summons templates
-(B-05–B-07) · payments and OR series (B-11) · complaints and mediation (B-09)
-· notifications (EPIC-11/14) · platform provisioning, support grants,
-readiness (US-PLT-002, PLT-08) · settings, retention, go-live gate (Slice 9,
-B-13–B-15, B-21).
+**Remaining sequence** (authoritative detail, per-slice gates and effort in
+the roadmap): 3 — document catalog & request intake · 4 — certificates,
+serials, QR, public verification · 5 — payments, ORs, release, day closure,
+call list · 6 — complaint intake & docketing · 7 — hearings, summons,
+outcomes, closure · 8 — announcements & notification delivery · 9 —
+reports, settings, administration, platform ops, pilot readiness · then
+v1.5 flagged work (households, assistance, feedback, SMS, e-signature, …).
 
 ## 18. Slice Breakdown
 
@@ -474,9 +476,11 @@ For each slice: scope as recorded in-repo, and status.
 - **Slice 1 — Implemented.** §5 and §8–§13 in full, plus minimal verification
   UI (§3), seeds for nine personas across two synthetic tenants, and the four
   test suites. Recorded deferrals: outbox, PLT-08, full shell chrome.
-- **Slice 2 — Blocked (DEC-SCOPE-01).** Delivered hardening-only: the R-1-06
-  fix and its measurement record.
-- **Slices 3+ — Future.** Themes in §17; authoritative definitions external.
+- **Slice 2 — Defined ([roadmap](./IMPLEMENTATION_ROADMAP.md)); blocked on
+  DEC-AUTH-01.** Hardening already delivered (R-1-06 fix and measurement
+  record); feature implementation awaits the provisioning ruling.
+- **Slices 3–9 and v1.5 — Sequenced.** Scope, dependencies, gates and effort
+  per slice in the roadmap.
 
 ### Known conflicts between planning artefacts and implementation
 
@@ -533,8 +537,7 @@ Consolidated queue, deduplicated from §6, §17 and the registers — with owner
 
 | Item | Blocked on / trigger | Owner |
 | --- | --- | --- |
-| Define Slice 2 (add Phase 1–6 docs or rule + ADR) | DEC-SCOPE-01 | Product owner + tech lead |
-| Public resident self-registration policy | DEC-AUTH-01 | Product owner |
+| Rule on resident provisioning (A/B/C) → unblock Slice 2 | DEC-AUTH-01 | Product owner |
 | Confirm role catalog names | DEC-ROLE-01 | Product owner + Captain |
 | Hosted topology; production project & PITR; residency | DEC-ENV-01/-02/-03 | Product owner, Captain, DPO, legal |
 | Enable MFA on the Supabase Owner account | outstanding operational action | Repository owner |
@@ -550,7 +553,9 @@ Consolidated queue, deduplicated from §6, §17 and the registers — with owner
 
 ---
 
-*Cross-reference index:* [ADR-0001](./adr/0001-single-application-repository.md) ·
+*Cross-reference index:*
+[implementation roadmap](./IMPLEMENTATION_ROADMAP.md) ·
+[ADR-0001](./adr/0001-single-application-repository.md) ·
 [ADR-0002](./adr/0002-supabase-environment-topology.md) ·
 [ADR-0003](./adr/0003-strict-typescript-flags.md) ·
 [ADR-0004](./adr/0004-application-directory-location.md) ·
