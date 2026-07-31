@@ -66,9 +66,9 @@ proposals until the owner marks them decided.
   `6016f78`, `1412fc4` ← `500ca57`, `4a0e411`, `52cd9c9`). Legacy repository
   untouched. Evidence and recovery: `docs/runbooks/repository-promotion.md`.
 - **Outcome:** Husky hooks active; `pr.yml` valid at the repository root.
-- **Remaining action:** create the standalone GitHub remote (recommended name
-  `barangay-hub-v2`) and push — until then CI is READY TO ACTIVATE ON FIRST
-  PUSH, not active (see R-1-03).
+- **Remote:** COMPLETED 2026-07-31 — pushed to
+  `github.com/heidimuadib/barangay-hub-v2`; first green workflow run
+  30632397681. CI is ACTIVE; R-1-03 closed.
 
 ## Operational actions arising from Slice 0b (no ADR required)
 

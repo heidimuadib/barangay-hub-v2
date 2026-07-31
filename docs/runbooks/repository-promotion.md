@@ -66,14 +66,20 @@ standalone repository after promotion is not in the legacy repository — from
 promotion day forward, the standalone repository is the single source of
 truth for v2 and the legacy `v2/` directory is frozen history.
 
-## Remote setup (pending — requires owner action)
+## Remote setup — COMPLETED 2026-07-31
 
-1. Create an empty GitHub repository named **`barangay-hub-v2`** (no README,
-   no license — the initial push supplies everything). Private until the
-   owners decide otherwise.
-2. `git remote add origin git@github.com:<owner>/barangay-hub-v2.git`
-3. `git push -u origin main`
-4. Confirm the `pull-request` workflow's first run passes, then close R-1-03.
+- Remote: `https://github.com/heidimuadib/barangay-hub-v2` (owner-created;
+  arrived with GitHub's auto-init commit, connected via a normal
+  `--allow-unrelated-histories -s ours` merge — **no force-push at any point**).
+- First fully green `pull-request` run: **30632397681** on `035f6fe`
+  (quality 1.4 min · database 3.1 min · e2e 4 min · secret scan 0.2 min).
+- Three bootstrap fixes were needed once CI ran for real, all
+  tooling/environment-level, no test weakened:
+  1. `packageManager: pnpm@11.4.0` (pnpm/action-setup requires a version source);
+  2. `GITHUB_TOKEN` env for gitleaks-action v2 (hard requirement);
+  3. Node floor raised to 22.13+ (pnpm 11 requirement; workflow pin was 22.11).
+- R-1-03 is closed. Dependabot activated itself on first push and immediately
+  opened update PRs — triage them like any other PR; the workflow gates them.
 
 Never point this repository at the legacy `barangayhub` remote.
 
