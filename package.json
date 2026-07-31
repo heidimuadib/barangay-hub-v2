@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Barangay Hub v2 — multi-tenant civic services platform for Philippine barangays",
+  "packageManager": "pnpm@11.4.0",
   "engines": {
     "node": ">=22.11.0",
     "pnpm": ">=10.0.0"
