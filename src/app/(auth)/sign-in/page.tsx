@@ -1,4 +1,7 @@
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
+
+import { SignInForm, getAuthorizationContext, landingRouteFor } from '@/features/identity'
 
 export const metadata: Metadata = {
   title: 'Sign in',
@@ -7,20 +10,26 @@ export const metadata: Metadata = {
 }
 
 /**
- * AUT-01 placeholder.
- *
- * The real sign-in screen — email/password, rate limiting, uniform failure
- * messaging, and the deliberate absence of any "account not found" distinction
- * (Phase 5 §11.2) — is built in Slice 1 / US-AUT-002.
+ * US-AUT-002. The screen shows the barangay-hub identity and a credential
+ * form, nothing else — nothing here may enumerate tenants or residents
+ * (Phase 5 §11.1).
  */
-export default function SignInPage() {
+export default async function SignInPage() {
+  const context = await getAuthorizationContext()
+  if (context) {
+    redirect(landingRouteFor(context))
+  }
+
   return (
     <div className="rounded-lg border border-neutral-200 bg-white p-6">
-      <p className="text-brand-700 text-sm font-medium tracking-wide uppercase">Slice 0a</p>
-      <h1 className="mt-2 text-xl font-bold">Sign in</h1>
-      <p className="mt-3 text-neutral-700">
-        The authentication screens are implemented in Slice 1. This placeholder confirms the auth
-        shell renders in isolation from the public and staff shells.
+      <h1 className="text-xl font-bold">Sign in</h1>
+      <p className="mt-1 mb-6 text-sm text-neutral-500">
+        Barangay Hub — resident services and barangay administration.
+      </p>
+      <SignInForm />
+      <p className="mt-6 text-sm text-neutral-500">
+        Accounts are provisioned by your barangay. If you do not have one yet, contact the barangay
+        office.
       </p>
     </div>
   )

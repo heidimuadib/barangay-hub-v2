@@ -89,7 +89,7 @@ Docker, so it works before step 2 as well.
 
 ```bash
 pnpm test         # unit + component (Vitest + Testing Library)
-pnpm e2e          # end-to-end smoke (Playwright)
+pnpm e2e          # end-to-end (Playwright) — REQUIRES the local stack since Slice 1
 pnpm db:test      # database (pgTAP) — requires Docker
 ```
 
@@ -101,6 +101,23 @@ pnpm exec playwright install chromium
 
 Playwright starts its own dev server on **port 3100** so it never collides with a
 dev server you already have on 3000. Override with `PLAYWRIGHT_PORT`.
+
+**Since Slice 1 the e2e suite signs in with seeded accounts**, so it needs
+`pnpm db:start` (with seeds applied — a fresh start or `pnpm db:reset` both do)
+and a `.env.local` carrying the local stack keys.
+
+## Local test accounts (Slice 1 seeds)
+
+Synthetic fixtures only. Password for every account: `password123-local`.
+The full matrix, including the negative-case accounts, is documented in
+`docs/architecture/identity-and-access.md`.
+
+| Email | What it demonstrates |
+| --- | --- |
+| `admin.sanisidro@barangay-hub.test` | Barangay administrator — full member/role/audit admin |
+| `staff.sanisidro@barangay-hub.test` | Read-only staff |
+| `resident.sanisidro@barangay-hub.test` | Resident self-service |
+| `platform.admin@barangay-hub.test` | Platform console WITHOUT tenant access |
 
 pgTAP files in `supabase/tests/` each manage their own transaction and roll back,
 so database tests never leave state behind.

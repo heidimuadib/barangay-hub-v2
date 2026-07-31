@@ -28,9 +28,10 @@ export default defineConfig({
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
   // Serial in CI so a shared local Supabase stack is never contended.
-  // Omitted entirely outside CI so Playwright picks its own default —
-  // `exactOptionalPropertyTypes` forbids passing an explicit `undefined`.
-  ...(isCI ? { workers: 1 } : {}),
+  // Capped locally too: every worker shares ONE dev server doing on-demand
+  // compilation and ONE database — unbounded parallelism turns cold-compile
+  // latency into spurious navigation timeouts.
+  workers: isCI ? 1 : 4,
   reporter: isCI ? [['github'], ['html', { open: 'never' }]] : [['list']],
   timeout: 30_000,
   expect: { timeout: 5_000 },

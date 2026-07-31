@@ -125,11 +125,14 @@ jobs:
         if: always()
         run: pnpm exec supabase stop --no-backup
 
-  # ── End-to-end smoke suite ─────────────────────────────────────────────────
+  # ── End-to-end suite (smoke + identity) ────────────────────────────────────
+  # Slice 1: the identity suite signs in with seeded synthetic accounts, so the
+  # job runs the local Supabase stack and exports its throwaway keys at
+  # runtime. No committed file ever carries a key-shaped value.
   e2e:
-    name: end-to-end smoke
+    name: end-to-end
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -143,11 +146,24 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Start the local Supabase stack (applies migrations and seeds)
+        run: pnpm exec supabase start
+
+      - name: Export the stack's throwaway keys for the dev server
+        run: |
+          eval "$(pnpm exec supabase status -o env | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Run smoke suite
+      - name: Run e2e suites
         run: pnpm run e2e
+
+      - name: Stop the stack
+        if: always()
+        run: pnpm exec supabase stop --no-backup
 
       - name: Upload the Playwright report
         if: failure()

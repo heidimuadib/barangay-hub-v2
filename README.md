@@ -2,8 +2,11 @@
 
 Multi-tenant civic services platform for Philippine barangays.
 
-**Current state: Phase 7, Slice 0a — local repository and engineering foundation.**
-No domain functionality exists yet. See `docs/local-setup.md` to get running.
+**Current state: Phase 7, Slice 1 — identity, access control, RLS and audit
+foundation.** Authentication, memberships, roles/permissions, forced RLS and
+the append-only audit trail are live; business features (requests,
+certificates, payments) are not. See `docs/local-setup.md` to get running and
+`docs/architecture/identity-and-access.md` for the access model.
 
 ## Non-negotiables
 

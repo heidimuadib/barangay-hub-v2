@@ -16,18 +16,29 @@ create extension if not exists pgtap with schema extensions;
 
 select plan(5);
 
--- Slice 0a applies extensions only. Slice 1 replaces this assertion with the
--- real expected table set.
-select is(
-  (
-    select count(*)::int
+-- Slice 1: the public schema contains exactly the identity foundation tables.
+-- A table present here but absent from this list was created outside a
+-- migration and must not survive review.
+select bag_eq(
+  $$
+    select c.relname::text
     from pg_catalog.pg_class c
     join pg_catalog.pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'public'
       and c.relkind = 'r'
-  ),
-  0,
-  'public schema contains no tables yet — Slice 0a is extensions only'
+  $$,
+  array[
+    'barangays',
+    'user_profiles',
+    'roles',
+    'permissions',
+    'role_permissions',
+    'memberships',
+    'membership_roles',
+    'platform_role_assignments',
+    'audit_events'
+  ],
+  'public schema contains exactly the Slice 1 identity tables'
 );
 
 select has_schema('extensions', 'the extensions schema exists');

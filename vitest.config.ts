@@ -57,7 +57,15 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text-summary', 'lcov'],
-      include: ['src/lib/**/*.ts', 'src/utils/**/*.ts'],
+      // Raised per slice as domain code lands (Slice 1 adds the pure
+      // authorization rules and schemas — the layers that must be exhaustively
+      // testable without a database).
+      include: [
+        'src/lib/**/*.ts',
+        'src/utils/**/*.ts',
+        'src/features/*/rules/**/*.ts',
+        'src/features/*/schemas/**/*.ts',
+      ],
       exclude: ['src/lib/**/index.ts', 'src/lib/config/env.server.ts', 'src/**/*.test.ts'],
       thresholds: {
         statements: 80,

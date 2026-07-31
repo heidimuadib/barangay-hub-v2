@@ -36,6 +36,27 @@ proposals until the owner marks them decided.
 - **Status:** IN FORCE (standing constraint, not awaiting decision)
 - **Verified 2026-07-31:** hosted project contains 0 users, 0 rows, 0 storage objects.
 
+## DEC-ROLE-01 — role catalog names and scopes
+
+- **Status:** OPEN — proposed working set implemented in Slice 1 (ADR-0005)
+- **Owner:** Product owner + Barangay Captain
+- **Proposal:** `platform_administrator` / `barangay_administrator` / `barangay_staff` / `resident`, capability-mapped per ADR-0005. Renames are data updates; no code branches on role keys.
+- **Deadline:** before pilot.
+
+## DEC-AUTH-01 — public resident self-registration
+
+- **Status:** OPEN — Slice 1 ships NO public sign-up (ADR-0005); accounts are provisioned (seeds, admin invite by email, later tenant provisioning)
+- **Owner:** Product owner
+- **Deadline:** with the resident-registration slice (Slice 2+), which cannot start without this ruling.
+
+## Slice 1 scope deferrals (recorded, not silent)
+
+| Item | Reason | Arrives |
+| --- | --- | --- |
+| Transactional outbox table | No notification producer exists in Slice 1; building the table without a consumer is speculative infrastructure | Notification slice (EPIC-11/14) |
+| PLT-08 authenticated readiness endpoint | No job queues exist to probe; a DB-touching public endpoint is an amplification vector (health route comment) | Platform slice |
+| US-UI-002 full shell chrome (bottom nav, notification centre, density controls) | Slice 1 builds the minimal verification UI only; broad UI work is out of its security-foundation scope | UI slice |
+
 ## DEC-REPO-01 — application location vs Git root (Husky hooks inactive)
 
 - **Status:** OPEN (pre-existing; see ADR-0004 and `docs/local-setup.md`)

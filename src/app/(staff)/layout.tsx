@@ -1,26 +1,85 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
+
+import {
+  ACTIVE_BARANGAY_COOKIE,
+  BarangaySwitcher,
+  PERMISSIONS,
+  SignOutButton,
+  can,
+  getAuthorizationContext,
+  hasStaffCapability,
+  resolveActiveBarangay,
+} from '@/features/identity'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
 /**
- * Staff shell placeholder.
- *
- * The real StaffShell — persistent sidebar, tenant indicator, queue counts,
- * global search, and the density controls that make an 8-hour counter shift
- * workable (Phase 5 §12) — is built in Slice 1 / US-UI-002.
- *
- * As with the resident shell, this layout performs no authorization. Staff
- * permissions resolve live from the database on every mutation (Phase 4
- * DB-ADR-03); a layout check would be both redundant and unsafe to rely on.
+ * Staff shell. Requires a session AND at least one active membership holding
+ * a staff capability. As everywhere: this gate is convenience — every
+ * mutation re-authorizes in the action chain and in RLS (Phase 4 DB-ADR-03).
  */
-export default function StaffLayout({ children }: { children: React.ReactNode }) {
+export default async function StaffLayout({ children }: { children: React.ReactNode }) {
+  const context = await getAuthorizationContext()
+  if (!context) {
+    redirect('/sign-in')
+  }
+  if (!hasStaffCapability(context)) {
+    redirect('/access-denied')
+  }
+
+  const cookieStore = await cookies()
+  const active = resolveActiveBarangay(context, cookieStore.get(ACTIVE_BARANGAY_COOKIE)?.value)
+
   return (
     <>
       <a href="#main" className="sr-only-focusable">
         Skip to main content
       </a>
+      <header className="border-b border-neutral-200 bg-white">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <nav aria-label="Primary" className="flex flex-wrap items-center gap-4">
+            <Link href="/staff" className="text-brand-700 font-semibold">
+              Barangay Hub · Staff
+            </Link>
+            <Link href="/staff" className="text-sm text-neutral-700 hover:underline">
+              Workspace
+            </Link>
+            {active && can(context, active.barangayId, PERMISSIONS.membershipRead) ? (
+              <Link href="/staff/members" className="text-sm text-neutral-700 hover:underline">
+                Members
+              </Link>
+            ) : null}
+            {active && can(context, active.barangayId, PERMISSIONS.auditRead) ? (
+              <Link href="/staff/audit" className="text-sm text-neutral-700 hover:underline">
+                Audit log
+              </Link>
+            ) : null}
+            <Link href="/dashboard" className="text-sm text-neutral-700 hover:underline">
+              My dashboard
+            </Link>
+          </nav>
+          <div className="flex flex-wrap items-center gap-3">
+            {active ? (
+              <>
+                <p className="text-sm text-neutral-500">
+                  Working in{' '}
+                  <span className="font-medium text-neutral-900">{active.barangayName}</span>
+                </p>
+                <BarangaySwitcher
+                  memberships={context.memberships}
+                  activeBarangayId={active.barangayId}
+                />
+              </>
+            ) : null}
+            <SignOutButton />
+          </div>
+        </div>
+      </header>
       <main id="main" className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6">
         {children}
       </main>

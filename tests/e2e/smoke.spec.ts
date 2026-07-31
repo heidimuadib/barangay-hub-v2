@@ -61,31 +61,44 @@ test.describe('security headers', () => {
     expect(headers['x-powered-by']).toBeUndefined()
   })
 
-  test('no Content-Security-Policy is advertised yet', async ({ page }) => {
-    // Slice 0a deliberately ships no CSP rather than a permissive one that would
-    // read as protection while providing none (Phase 6 §34.2). The nonce-based
-    // policy lands in Slice 1; this test is inverted at that point.
+  test('the nonce-based Content-Security-Policy is enforced (Slice 1)', async ({ page }) => {
     const response = await page.goto('/')
+    const csp = response?.headers()['content-security-policy'] ?? ''
 
-    expect(response?.headers()['content-security-policy']).toBeUndefined()
+    expect(csp).toContain(`default-src 'self'`)
+    expect(csp).toMatch(/script-src [^;]*'nonce-[A-Za-z0-9+/=]+'/)
+    expect(csp).toContain(`'strict-dynamic'`)
+    expect(csp).toContain(`frame-ancestors 'none'`)
+    expect(csp).toContain(`object-src 'none'`)
+    // The page must actually render under the policy — a CSP that blocks the
+    // framework's own scripts would strand the UI.
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   })
 })
 
-test.describe('shells render in isolation', () => {
-  const shells = [
+test.describe('public shells render; protected shells refuse', () => {
+  const publicShells = [
     { path: '/', heading: /engineering foundation/i },
     { path: '/sign-in', heading: /sign in/i },
-    { path: '/dashboard', heading: /resident dashboard/i },
-    { path: '/staff', heading: /staff workspace/i },
-    { path: '/platform', heading: /platform console/i },
   ]
 
-  for (const shell of shells) {
+  for (const shell of publicShells) {
     test(`${shell.path} renders one h1 and one main landmark`, async ({ page }) => {
       await page.goto(shell.path)
 
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(shell.heading)
       await expect(page.getByRole('main')).toHaveCount(1)
+    })
+  }
+
+  // Slice 1: the protected shells no longer render for an anonymous visitor —
+  // the middleware bounces to sign-in before a single byte of shell HTML.
+  for (const path of ['/dashboard', '/staff', '/platform', '/account']) {
+    test(`${path} redirects an anonymous visitor to sign-in`, async ({ page }) => {
+      await page.goto(path)
+
+      await expect(page).toHaveURL(/\/sign-in$/)
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(/sign in/i)
     })
   }
 })
@@ -99,8 +112,14 @@ test.describe('accessibility baseline', () => {
     await expect(skipLink).toBeFocused()
     await expect(skipLink).toBeVisible()
 
-    await page.keyboard.press('Enter')
-    await expect(page).toHaveURL(/#main$/)
+    // Retry the PRESS, not just the assertion: under parallel-load mobile
+    // emulation a synthetic keypress is occasionally dropped before the page
+    // is interactive. The requirement — keyboard activation navigates to
+    // #main — is asserted unchanged on every attempt.
+    await expect(async () => {
+      await page.keyboard.press('Enter')
+      await expect(page).toHaveURL(/#main$/, { timeout: 2_000 })
+    }).toPass({ timeout: 15_000 })
   })
 
   test('the focus indicator is visible and not suppressed', async ({ page }) => {

@@ -53,13 +53,16 @@ describe('service-role client', () => {
     ])
   })
 
-  it('is imported by no application module in Slice 0a', () => {
+  it('is imported ONLY by the allow-listed audit service (Slice 1)', () => {
     const importers = ALL_SOURCE.filter((file) => {
       if (repoPath(file) === 'src/lib/supabase/service-role.ts') return false
       return /from ['"]@\/lib\/supabase\/service-role['"]/.test(readFileSync(file, 'utf8'))
     }).map(repoPath)
 
-    expect(importers).toEqual([])
+    // Slice 1 adds exactly one legitimate importer: the 'audit-append'
+    // operation for sessionless security events. Any addition to this list is
+    // a deliberate architectural act requiring an ADR (Phase 4 §25.6).
+    expect(importers.sort()).toEqual(['src/services/audit/security-events.ts'])
   })
 
   it('keeps the ESLint allow-list aligned with the documented modules', () => {

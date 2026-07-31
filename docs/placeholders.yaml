@@ -12,7 +12,7 @@
 # ============================================================================
 
 version: 1
-slice: 0a
+slice: 1
 
 placeholders:
   - id: DEC-ENV-01
@@ -40,11 +40,27 @@ placeholders:
 
   - id: SUPABASE-PG-VERSION
     subject: Local Postgres major version
-    current: '15'
-    source: assumption
-    blocking_level: integration
+    current: '17'
+    source: confirmed
+    blocking_level: none
     owner: tech-lead
-    note: 'Must be reconciled with the hosted project during the Slice 0b assessment.'
+    note: 'RESOLVED in Slice 0b — reconciled with the hosted project (PostgreSQL 17.6).'
+
+  - id: DEC-ROLE-01
+    subject: Role catalog names and scopes
+    current: 'platform_administrator / barangay_administrator / barangay_staff / resident (proposed ADR-0005)'
+    source: assumption
+    blocking_level: pilot
+    owner: product-owner-and-captain
+    resolves_in: docs/adr/0005-slice1-role-catalog-and-provisioning.md
+
+  - id: DEC-AUTH-01
+    subject: Public resident self-registration policy
+    current: 'No public sign-up — accounts are provisioned (seed, admin invite, later tenant provisioning)'
+    source: assumption
+    blocking_level: slice-2
+    owner: product-owner
+    resolves_in: docs/adr/0005-slice1-role-catalog-and-provisioning.md
 
 # ── Registered now, populated when their slice lands ────────────────────────
 # Fee schedule, SLAs and validity periods    → Slice 3 (DOC-001), blocker B-08
