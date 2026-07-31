@@ -26,7 +26,8 @@ permissions:
   contents: read
 
 env:
-  NODE_VERSION: '22.11.0'
+  # pnpm 11 requires Node >= 22.13 (see engines in package.json).
+  NODE_VERSION: '22.14.0'
   # Fake but structurally valid configuration. The application validates its
   # environment at build time, so these must parse — they must never be real.
   APP_ENV: test

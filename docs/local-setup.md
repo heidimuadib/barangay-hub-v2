@@ -7,7 +7,7 @@ under 15 minutes.
 
 | Tool | Minimum | Check |
 | --- | --- | --- |
-| Node.js | 22.11 LTS | `node -v` |
+| Node.js | 22.13+ (pnpm 11 requires it) | `node -v` |
 | pnpm | 10 | `pnpm -v` |
 | Docker Desktop | 24 | `docker info` — the **daemon must be running** |
 | Git | 2.40 | `git --version` |
