@@ -19,8 +19,9 @@ max_rows = 1000
 [db]
 port = 54322
 shadow_port = 54320
-# TODO(Slice 0b): confirm against the hosted project during the assessment.
-major_version = 15
+# Reconciled with the hosted project (Slice 0b assessment, 2026-07-31):
+# hosted runs PostgreSQL 17.6 (GA channel), so local must match.
+major_version = 17
 
 [db.pooler]
 enabled = false

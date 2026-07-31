@@ -1,0 +1,101 @@
+{
+  "$comment": "Machine-readable inventory from the Slice 0b read-only assessment. Metadata only: no credentials, no tokens, no key values, no personal data. Regenerate per docs/runbooks/supabase-project-assessment.md.",
+  "generated_at": "2026-07-31T16:26:37+08:00",
+  "source": {
+    "project_ref": "weadxbwtupvjqaqploij",
+    "project_name": "Barangay Hub",
+    "classification": "hosted-integration-environment",
+    "production": false,
+    "methods": ["supabase-cli-2.110.0", "management-api-get", "management-api-query-select-only"]
+  },
+  "project": {
+    "created_at": "2026-07-31T02:12:33Z",
+    "region": "ap-southeast-1",
+    "status": "ACTIVE_HEALTHY",
+    "postgres_version": "17.6.1.155",
+    "postgres_engine": "17",
+    "release_channel": "ga",
+    "cli_linked": false
+  },
+  "organization": {
+    "slug": "kfukvsffkqmdlamxesei",
+    "plan": "free",
+    "member_count": 1,
+    "members": [{ "role": "Owner", "mfa_enabled": false, "email": "REDACTED" }],
+    "other_projects": [
+      { "name": "medisync", "region": "ap-northeast-1", "status": "INACTIVE", "related": false }
+    ]
+  },
+  "database": {
+    "schemas": [
+      "auth",
+      "extensions",
+      "graphql",
+      "graphql_public",
+      "pgbouncer",
+      "public",
+      "realtime",
+      "storage",
+      "vault"
+    ],
+    "public_schema": {
+      "tables": [],
+      "views": [],
+      "materialized_views": [],
+      "functions": [],
+      "enums": [],
+      "sequences": [],
+      "triggers": [],
+      "rls_policies": [],
+      "grants_to_anon_or_authenticated": []
+    },
+    "extensions_installed": [
+      { "name": "pg_stat_statements", "version": "1.11" },
+      { "name": "pgcrypto", "version": "1.3" },
+      { "name": "plpgsql", "version": "1.0" },
+      { "name": "supabase_vault", "version": "0.3.1" },
+      { "name": "uuid-ossp", "version": "1.1" }
+    ],
+    "required_extensions_availability": [
+      { "name": "btree_gin", "installed": false, "available_version": "1.3" },
+      { "name": "pg_trgm", "installed": false, "available_version": "1.6" },
+      { "name": "pgcrypto", "installed": true, "available_version": "1.3" },
+      { "name": "unaccent", "installed": false, "available_version": "1.1" }
+    ],
+    "migration_history_table_exists": false,
+    "auth_user_count": 0
+  },
+  "auth_config": {
+    "email_password_enabled": true,
+    "email_confirmation_required": true,
+    "signups_disabled": false,
+    "anonymous_sign_ins": false,
+    "external_providers_enabled": [],
+    "site_url": "http://localhost:3000",
+    "redirect_allow_list": [],
+    "custom_smtp_configured": false,
+    "builtin_email_rate_limit_per_hour": 2,
+    "jwt_exp_seconds": 3600,
+    "refresh_token_rotation": true,
+    "refresh_token_reuse_interval_seconds": 10,
+    "mfa_totp_enabled": true,
+    "auth_hooks_enabled": [],
+    "captcha_enabled": false
+  },
+  "api_keys": {
+    "$comment": "Existence only. Values were never retrieved or recorded.",
+    "legacy": ["anon", "service_role"],
+    "current": ["publishable", "secret"]
+  },
+  "storage": { "buckets": [] },
+  "edge_functions": [],
+  "operations": {
+    "pitr_enabled": false,
+    "walg_enabled": true,
+    "backups_recorded": 0,
+    "branching_available": false,
+    "custom_hostname": null,
+    "network_db_allowed_cidrs": ["0.0.0.0/0", "::/0"],
+    "postgres_config_overrides": {}
+  }
+}
