@@ -5,15 +5,58 @@ The registry, verification lifecycle and outbox foundation delivered by
 (DEC-AUTH-01 Option C; D2-01…D2-04). Scope source:
 [implementation roadmap](../IMPLEMENTATION_ROADMAP.md), Slice 2.
 
-**State after 2A + 2B + 2C + 2D:** database, domain functions, RLS, audit,
-seeds, rules and the typed service layer are **implemented** (2A); public
-sign-up with mandatory email confirmation, rate limiting, resident onboarding
-into the shared registry and the verification status surface are
+**State after 2A + 2B + 2C + 2D + 2E:** database, domain functions, RLS,
+audit, seeds, rules and the typed service layer are **implemented** (2A);
+public sign-up with mandatory email confirmation, rate limiting, resident
+onboarding into the shared registry and the verification status surface are
 **implemented** (2B); the staff registry list, tenant-scoped search, safe
 person detail and walk-in creation are **implemented** (2C); the verification
-queue, review detail and the full decision workflow are **implemented** (2D).
-The duplicate resolution UI (2E) and the Storage broker (2F) are **planned**
-and marked below.
+queue, review detail and the full decision workflow are **implemented** (2D);
+the duplicate review and supersede-link resolution surface is **implemented**
+(2E). The Storage broker (2F) is **planned** and marked below.
+
+### Duplicate review and resolution (2E)
+
+The surface lives on `/staff/registry/[personId]` (the verification review
+detail links to it): a side-by-side comparison of the record against every
+tenant-scoped candidate, visible to `registry.read` holders; resolution
+controls render only for `registry.resolve_duplicates` — and the action guard
+plus the definer function re-check that regardless.
+
+**Why a candidate was flagged is explained in BANDS, never decimals**
+(`similarityBand`: ≥0.9 nearly identical · ≥0.6 strongly similar · else
+similar) with the same-birthdate signal shown separately — a raw score invites
+treating the signal as proof, and ADR-0006 points 9–10 forbid exactly that.
+Review order ranks a same-birthdate candidate above a stronger name-only
+match (`candidatePriority`). The committed SQL threshold (0.30) decides which
+candidates exist at all; candidates never cross tenants, and a superseded
+record is neither offered candidates nor offered AS one.
+
+**Resolution is the 2A `supersede_person` function, driven — not reimplemented.**
+The explicit survivor is a deliberate unpreselected choice, the reason is
+required, and the confirmation spells out the consequences. The refusal
+matrix, all database-enforced and pgTAP-pinned in `10_duplicate_resolution`:
+self-pairs; cross-tenant pairs (also FK-unrepresentable); either side already
+superseded — which makes **cycles structurally impossible**, since every edge
+requires both ends unsuperseded; a missing reason; an **open application on
+the loser** (a live review must never point at a frozen person); and **two
+linked accounts**, which demands a deliberate unlink first. The committed rule
+deliberately **permits an open application on the survivor** — their own
+review simply continues — and the pgTAP suite pins that so a change is a
+conversation, not an accident. The check order on a pair that violates several
+rules: eligibility → reason → loser-open-application → two-accounts.
+
+**After a resolve:** the loser is frozen (`PERSON_FROZEN` on any later write),
+preserved, and points at the survivor; its page links the survivor and the
+survivor's page lists absorbed records; search returns both, the superseded
+one flagged; a superseded person no longer appears as a duplicate candidate.
+The loser's account moves to an account-less survivor under the one explicit
+rule, audited as `person_account.unlinked` (+ reason) and `.linked`.
+`person.superseded` audit metadata carries `survivor_id` and (2E migration)
+`reason_present` — never the reason text, never a name. Residents see none of
+this surface; platform administrators still see no tenant person data. No
+outbox intent is enqueued — no roadmap requirement names a resident
+notification for an internal registry correction.
 
 ### Staff registry surface (2C)
 

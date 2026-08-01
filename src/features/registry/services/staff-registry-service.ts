@@ -7,11 +7,17 @@ import * as registryRepo from '../repositories/registry-repository'
 import { unwrap } from '../repositories/registry-repository'
 import {
   fetchPersonDetail,
+  fetchPersonsByIds,
   fetchRegistryPage,
+  fetchSupersededInto,
   type RegistryListRow,
 } from '../repositories/staff-registry-repository'
+import { candidatePriority, similarityBand } from '../rules/duplicate-scoring'
 import type {
   DuplicateCandidate,
+  DuplicateComparisonRow,
+  DuplicateReview,
+  PersonLink,
   PersonSearchHit,
   PersonSource,
   RegistryEntry,
@@ -182,5 +188,123 @@ export async function createWalkIn(params: {
         : { p_residency_explanation: params.residencyExplanation }),
     }),
     'create_walk_in_person',
+  )
+}
+
+// ── Duplicate review and resolution (Slice 2E) ──────────────────────────────
+
+function toLink(row: {
+  id: string
+  first_name: string
+  middle_name: string | null
+  last_name: string
+  suffix: string | null
+}): PersonLink {
+  return {
+    personId: row.id,
+    fullName: [row.first_name, row.middle_name, row.last_name, row.suffix]
+      .filter((part): part is string => Boolean(part && part.length > 0))
+      .join(' '),
+  }
+}
+
+/**
+ * Everything the duplicate review panel shows for one person: the record
+ * itself, its supersede links in both directions, and the side-by-side
+ * candidates with the reasons they were flagged.
+ *
+ * Requires `registry.read` only — SEEING the comparison is ordinary staff
+ * work; RESOLVING it is `registry.resolve_duplicates`, checked separately by
+ * the action and again inside the database. Candidates for an
+ * already-superseded record are deliberately empty: a frozen record is
+ * history, not a merge target.
+ */
+export async function getDuplicateReview(
+  barangayId: string,
+  personId: string,
+): Promise<DuplicateReview | null> {
+  await requirePermission(barangayId, REGISTRY_PERMISSIONS.registryRead)
+
+  const row = await fetchPersonDetail(barangayId, personId)
+  if (row === null) return null
+  const entry = toEntry(row)
+
+  const supersededBy = row.superseded_by
+    ? ((await fetchPersonsByIds(barangayId, [row.superseded_by])).map(toLink)[0] ?? null)
+    : null
+
+  const absorbed = (await fetchSupersededInto(barangayId, personId)).map(toLink)
+
+  let candidates: readonly DuplicateComparisonRow[] = []
+  if (!entry.superseded) {
+    const signals = unwrap(
+      await registryRepo.fetchDuplicateCandidates({
+        p_barangay_id: barangayId,
+        p_first_name: row.first_name,
+        p_last_name: row.last_name,
+        p_exclude_person: personId,
+        ...(row.birthdate === null ? {} : { p_birthdate: row.birthdate }),
+      }),
+      'duplicate_candidates',
+    )
+
+    const details = await fetchPersonsByIds(
+      barangayId,
+      signals.map((signal) => signal.person_id),
+    )
+    const byId = new Map(details.map((detail) => [detail.id, toEntry(detail)]))
+
+    // Rank on the RAW signals (the rule: birthdate outranks name strength),
+    // then map to the safe presentation bands.
+    candidates = [...signals]
+      .sort(
+        (a, b) =>
+          candidatePriority(b.name_similarity, b.same_birthdate) -
+          candidatePriority(a.name_similarity, a.same_birthdate),
+      )
+      .map((signal): DuplicateComparisonRow | null => {
+        const detail = byId.get(signal.person_id)
+        if (!detail) return null
+        return {
+          personId: detail.personId,
+          fullName: detail.fullName,
+          birthdate: detail.birthdate,
+          residencyBasisKey: detail.residencyBasisKey,
+          sourceChannel: detail.sourceChannel,
+          hasAccount: detail.hasAccount,
+          verificationState: detail.verificationState,
+          similarityBand: similarityBand(signal.name_similarity),
+          sameBirthdate: signal.same_birthdate,
+        }
+      })
+      .filter((candidate): candidate is DuplicateComparisonRow => candidate !== null)
+  }
+
+  return { entry, supersededBy, absorbed, candidates }
+}
+
+/**
+ * Supersede-and-link, exactly as ruled (ADR-0006 §D2-02): explicit survivor,
+ * required reason, administrator capability. The definer function re-checks
+ * the capability and every eligibility rule — self-pair, cross-tenant,
+ * already-superseded sides, an open application on the loser, two linked
+ * accounts — and performs the audited account move where the one explicit
+ * rule allows it. Nothing is deleted, ever.
+ */
+export async function resolveDuplicateBySupersede(params: {
+  barangayId: string
+  loserPersonId: string
+  survivorPersonId: string
+  reason: string
+}): Promise<void> {
+  await requirePermission(params.barangayId, REGISTRY_PERMISSIONS.resolveDuplicates)
+
+  unwrap(
+    await registryRepo.supersedePerson({
+      p_loser_id: params.loserPersonId,
+      p_survivor_id: params.survivorPersonId,
+      p_reason: params.reason,
+    }),
+    'supersede_person',
   )
 }

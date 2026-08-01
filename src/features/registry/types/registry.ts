@@ -35,6 +35,26 @@ export interface RegistryEntry {
 /** The reviewer controls the detail page may offer (Slice 2D). */
 export type ReviewActionKey = 'start_review' | 'request_information' | 'approve' | 'reject'
 
+/** Safe name-similarity explanation bands (Slice 2E) — never raw decimals. */
+export type SimilarityBand = 'near_identical' | 'strong' | 'possible'
+
+/**
+ * One side-by-side duplicate candidate on the review surface (Slice 2E):
+ * the minimum a resolver needs to decide, plus WHY it was flagged. Names and
+ * birthdates are signals only, never identity proof (ADR-0006 points 9–10).
+ */
+export interface DuplicateComparisonRow {
+  readonly personId: string
+  readonly fullName: string
+  readonly birthdate: string | null
+  readonly residencyBasisKey: ResidencyBasisKey
+  readonly sourceChannel: PersonSource
+  readonly hasAccount: boolean
+  readonly verificationState: string | null
+  readonly similarityBand: SimilarityBand
+  readonly sameBirthdate: boolean
+}
+
 /** The D2-04 capability split as booleans the caller actually holds. */
 export interface ReviewerCapabilities {
   readonly canReview: boolean
@@ -91,6 +111,23 @@ export interface ApplicationDetail {
   readonly evidence: readonly EvidenceSummary[] | null
   /** Context only — resolution is Slice 2E behind `registry.resolve_duplicates`. */
   readonly duplicates: readonly DuplicateCandidate[]
+}
+
+/** A minimal cross-link between a survivor and a superseded record. */
+export interface PersonLink {
+  readonly personId: string
+  readonly fullName: string
+}
+
+/** Everything the duplicate review panel needs for one person (Slice 2E). */
+export interface DuplicateReview {
+  readonly entry: RegistryEntry
+  /** Set when THIS record was superseded — who absorbed it. */
+  readonly supersededBy: PersonLink | null
+  /** Records superseded INTO this one, oldest first. */
+  readonly absorbed: readonly PersonLink[]
+  /** Side-by-side candidates, strongest signal first. */
+  readonly candidates: readonly DuplicateComparisonRow[]
 }
 
 export interface PersonSearchHit {

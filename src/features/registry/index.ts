@@ -17,12 +17,16 @@ export {
 export type {
   ApplicationDetail,
   DuplicateCandidate,
+  DuplicateComparisonRow,
+  DuplicateReview,
   EvidenceKind,
   EvidenceSummary,
+  PersonLink,
   PersonSearchHit,
   PersonSource,
   RegistryEntry,
   ResidencyBasisKey,
+  SimilarityBand,
   VerificationQueueEntry,
   VerificationState,
 } from './types/registry'
@@ -80,8 +84,10 @@ export {
   REGISTRY_PAGE_SIZE,
   createWalkIn,
   findDuplicateCandidates,
+  getDuplicateReview,
   getPersonDetail,
   listRegistry,
+  resolveDuplicateBySupersede,
   searchRegistry,
   type RegistryPageResult,
 } from './services/staff-registry-service'
@@ -94,6 +100,7 @@ export {
 } from './services/verification-service'
 
 export { completeOnboardingAction } from './actions/onboarding'
+export { resolveDuplicateAction, type ResolveDuplicateResult } from './actions/resolve-duplicate'
 export { createWalkInAction, searchRegistryAction, type WalkInOutcome } from './actions/walk-in'
 export {
   approveApplicationAction,
@@ -104,6 +111,7 @@ export {
   type VerificationActionResult,
 } from './actions/verification'
 
+export { DuplicateResolutionPanel } from './components/duplicate-resolution'
 export { OnboardingForm } from './components/onboarding-form'
 export { RegistrySearch } from './components/registry-search'
 export { RegistryRows, RegistryTable } from './components/registry-table'

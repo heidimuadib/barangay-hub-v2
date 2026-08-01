@@ -5,6 +5,7 @@ import {
   candidatePriority,
   isCandidateScore,
   normalizeName,
+  similarityBand,
 } from '@/features/registry/rules/duplicate-scoring'
 
 describe('duplicate scoring rule', () => {
@@ -29,5 +30,17 @@ describe('duplicate scoring rule', () => {
     // name-only match — order of review, never an automatic decision.
     expect(candidatePriority(0.4, true)).toBeGreaterThan(candidatePriority(0.9, false))
     expect(candidatePriority(0.5, false)).toBeGreaterThan(candidatePriority(0.4, false))
+  })
+
+  it('explains scores as bands, never decimals (Slice 2E)', () => {
+    // Presentation buckets over the committed 0.30 floor: the accented seed
+    // pair (María Sántos vs Maria Santos) normalises to identical text and
+    // lands in the top band; the floor itself is only ever "possible".
+    expect(similarityBand(1)).toBe('near_identical')
+    expect(similarityBand(0.9)).toBe('near_identical')
+    expect(similarityBand(0.89)).toBe('strong')
+    expect(similarityBand(0.6)).toBe('strong')
+    expect(similarityBand(0.59)).toBe('possible')
+    expect(similarityBand(DUPLICATE_SIMILARITY_THRESHOLD)).toBe('possible')
   })
 })

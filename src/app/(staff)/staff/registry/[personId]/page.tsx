@@ -9,7 +9,12 @@ import {
   getAuthorizationContext,
   resolveActiveBarangay,
 } from '@/features/identity'
-import { REGISTRY_PERMISSIONS, RESIDENCY_BASES, getPersonDetail } from '@/features/registry'
+import {
+  DuplicateResolutionPanel,
+  REGISTRY_PERMISSIONS,
+  RESIDENCY_BASES,
+  getDuplicateReview,
+} from '@/features/registry'
 
 export const metadata: Metadata = {
   title: 'Resident record',
@@ -17,12 +22,14 @@ export const metadata: Metadata = {
 }
 
 /**
- * Safe staff view of one resident record (Slice 2C).
+ * Safe staff view of one resident record (Slice 2C), now hosting the
+ * duplicate review and resolution surface (Slice 2E).
  *
  * Shows only what counter work needs: identity fields, account linkage,
- * verification status, residency basis and superseded state. Evidence
- * DOCUMENTS are not reachable here — that surface arrives with the Storage
- * broker in subpart 2F and behind `verification.evidence.read`.
+ * verification status, residency basis, superseded state and the duplicate
+ * comparison. Evidence DOCUMENTS are not reachable here — that surface
+ * arrives with the Storage broker in subpart 2F and behind
+ * `verification.evidence.read`.
  *
  * The URL carries an opaque person UUID and nothing else (P6-C-E).
  */
@@ -43,12 +50,16 @@ export default async function PersonDetailPage({
   }
 
   const { personId } = await params
-  const person = await getPersonDetail(active.barangayId, personId)
+  const review = await getDuplicateReview(active.barangayId, personId)
   // A record in another barangay is indistinguishable from one that does not
   // exist (Phase 4 §13.6) — RLS returns nothing either way.
-  if (!person) {
+  if (!review) {
     notFound()
   }
+  const person = review.entry
+  // Resolution is administrator-only under the D2-04 mapping; the database
+  // re-checks regardless of what this page renders.
+  const canResolve = can(context, active.barangayId, REGISTRY_PERMISSIONS.resolveDuplicates)
 
   return (
     <div className="flex flex-col gap-6">
@@ -67,7 +78,46 @@ export default async function PersonDetailPage({
         >
           This record was superseded during duplicate resolution. It is kept for history and cannot
           be edited.
+          {review.supersededBy ? (
+            <>
+              {' '}
+              The surviving record is{' '}
+              <Link
+                href={`/staff/registry/${review.supersededBy.personId}`}
+                className="text-brand-700 underline"
+              >
+                {review.supersededBy.fullName}
+              </Link>
+              .
+            </>
+          ) : null}
         </p>
+      ) : null}
+
+      {review.absorbed.length > 0 ? (
+        <section
+          aria-labelledby="absorbed-heading"
+          className="rounded-lg border border-neutral-200 bg-white p-6"
+        >
+          <h2 id="absorbed-heading" className="text-lg font-bold">
+            Superseded records pointing here
+          </h2>
+          <p className="mt-1 text-sm text-neutral-500">
+            Earlier duplicate records resolved into this one. Each remains preserved and readable.
+          </p>
+          <ul className="mt-3 flex flex-col gap-2">
+            {review.absorbed.map((link) => (
+              <li key={link.personId}>
+                <Link
+                  href={`/staff/registry/${link.personId}`}
+                  className="text-brand-700 underline"
+                >
+                  {link.fullName}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       <dl className="grid gap-4 rounded-lg border border-neutral-200 bg-white p-6 sm:grid-cols-2">
@@ -95,8 +145,21 @@ export default async function PersonDetailPage({
         </div>
       </dl>
 
+      {/* Slice 2E: side-by-side comparison for every registry.read holder;
+          resolution controls only for registry.resolve_duplicates. A frozen
+          (superseded) record gets no candidates — history is not a merge
+          target. */}
+      {!person.superseded ? (
+        <DuplicateResolutionPanel
+          barangayId={active.barangayId}
+          person={person}
+          candidates={review.candidates}
+          canResolve={canResolve}
+        />
+      ) : null}
+
       <p className="text-sm text-neutral-500">
-        Reviewing evidence documents and deciding applications arrive in the next updates.
+        Reviewing evidence documents arrives in the next update.
       </p>
 
       <p className="text-sm text-neutral-500">

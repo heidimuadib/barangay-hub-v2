@@ -140,6 +140,15 @@ then sign in as `applicant.sanisidro@` to see the note and resubmit. Come back
 as `admin.sanisidro@` to re-open the review and approve or reject it; only the
 administrator is offered those two.
 
+**Reviewing a duplicate pair (Slice 2E).** Open the registry as
+`admin.sanisidro@` and search "maria santos" — the seeded pair (plain and
+accented spellings, same birthdate) each show the side-by-side comparison on
+their record pages, with a "Resolve as the same person…" control. Staff see
+the same comparison without the control. Resolving is **permanent** (the
+loser is frozen forever), so keep the seeded pair for demos and practice on a
+fresh pair: create two walk-ins with the same name and birthdate, then
+resolve those. `pnpm db:reset` restores everything.
+
 Note that a decision is **terminal**, so the seeded applications are a
 one-shot demo: `pnpm db:reset` restores them. Note also that a resident who
 onboards from scratch lands in `draft` and cannot reach the queue through the

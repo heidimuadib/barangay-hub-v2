@@ -242,21 +242,36 @@ describe('evidenceMetadataSchema (D2-03)', () => {
 })
 
 describe('reason-carrying commands', () => {
-  it('supersede requires loser, survivor and a reason (D2-02)', () => {
+  it('supersede requires tenant, loser, survivor and a reason (D2-02)', () => {
     expect(
       supersedeSchema.safeParse({
+        barangayId: BARANGAY,
         loserPersonId: APPLICATION,
-        survivorPersonId: BARANGAY,
+        survivorPersonId: 'c0000000-0000-4000-8000-000000000005',
         reason: 'Same person registered twice (synthetic)',
       }).success,
     ).toBe(true)
     expect(
       supersedeSchema.safeParse({
+        barangayId: BARANGAY,
         loserPersonId: APPLICATION,
-        survivorPersonId: BARANGAY,
+        survivorPersonId: 'c0000000-0000-4000-8000-000000000005',
         reason: '   ',
       }).success,
     ).toBe(false)
+  })
+
+  it('supersede refuses a self-pair at the shape layer (Slice 2E)', () => {
+    const parsed = supersedeSchema.safeParse({
+      barangayId: BARANGAY,
+      loserPersonId: APPLICATION,
+      survivorPersonId: APPLICATION,
+      reason: 'Cannot survive yourself (synthetic)',
+    })
+    expect(parsed.success).toBe(false)
+    if (!parsed.success) {
+      expect(parsed.error.issues[0]?.message).toMatch(/cannot supersede itself/i)
+    }
   })
 
   it('rejection requires a reason at the shape layer too', () => {

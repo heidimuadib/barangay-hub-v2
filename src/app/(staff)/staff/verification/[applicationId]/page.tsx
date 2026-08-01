@@ -262,8 +262,23 @@ export default async function VerificationDetailPage({
           </>
         )}
         <p className="mt-3 text-sm text-neutral-500">
-          Resolving duplicates (supersede-and-link) arrives in a later update and needs its own
-          capability. Nothing on this page merges records.
+          {can(context, active.barangayId, REGISTRY_PERMISSIONS.resolveDuplicates) ? (
+            <>
+              To resolve a duplicate (supersede-and-link),{' '}
+              <Link
+                href={`/staff/registry/${person.personId}`}
+                className="text-brand-700 underline"
+              >
+                open the applicant&rsquo;s registry record
+              </Link>
+              . Nothing on this page merges records.
+            </>
+          ) : (
+            <>
+              Resolving duplicates needs its own capability and happens on the registry record.
+              Nothing on this page merges records.
+            </>
+          )}
         </p>
       </section>
 

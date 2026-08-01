@@ -74,11 +74,19 @@ export const evidenceMetadataSchema = z.object({
     .max(EVIDENCE_MAX_BYTES, 'Files are limited to 10 MiB.'),
 })
 
-export const supersedeSchema = z.object({
-  loserPersonId: z.string().uuid(),
-  survivorPersonId: z.string().uuid(),
-  reason: z.string().trim().min(1, 'A reason is required.').max(500),
-})
+export const supersedeSchema = z
+  .object({
+    barangayId: z.string().uuid(),
+    loserPersonId: z.string().uuid(),
+    survivorPersonId: z.string().uuid(),
+    reason: z.string().trim().min(1, 'A reason is required.').max(500),
+  })
+  // The database refuses a self-pair too (SUPERSEDE_NOT_ELIGIBLE); failing at
+  // the shape layer just gives the form a field-level message.
+  .refine((value) => value.loserPersonId !== value.survivorPersonId, {
+    message: 'A record cannot supersede itself.',
+    path: ['survivorPersonId'],
+  })
 
 export const rejectSchema = z.object({
   barangayId: z.string().uuid(),

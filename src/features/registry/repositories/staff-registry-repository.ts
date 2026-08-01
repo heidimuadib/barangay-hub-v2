@@ -68,3 +68,52 @@ export async function fetchPersonDetail(
   }
   return data
 }
+
+/**
+ * Bulk person rows for the duplicate comparison (Slice 2E). The
+ * `duplicate_candidates` RPC returns the score signals; this fills in the
+ * columns a resolver needs to actually compare (residency, source channel,
+ * verification state). RLS re-scopes every row to `registry.read` holders.
+ */
+export async function fetchPersonsByIds(
+  barangayId: string,
+  personIds: readonly string[],
+): Promise<readonly RegistryListRow[]> {
+  if (personIds.length === 0) return []
+  const supabase = await createServerSupabaseClient()
+  const { data, error } = await supabase
+    .from('persons')
+    .select(LIST_COLUMNS)
+    .eq('barangay_id', barangayId)
+    .in('id', [...personIds])
+
+  if (error) {
+    throw new Error(`person comparison query failed: ${error.code}`)
+  }
+  return data
+}
+
+/**
+ * Records that were superseded INTO this survivor (Slice 2E): the history a
+ * survivor's page shows. Names only — the frozen records remain fully
+ * readable at their own detail pages.
+ */
+export async function fetchSupersededInto(
+  barangayId: string,
+  survivorId: string,
+): Promise<
+  readonly Pick<RegistryListRow, 'id' | 'first_name' | 'middle_name' | 'last_name' | 'suffix'>[]
+> {
+  const supabase = await createServerSupabaseClient()
+  const { data, error } = await supabase
+    .from('persons')
+    .select('id, first_name, middle_name, last_name, suffix')
+    .eq('barangay_id', barangayId)
+    .eq('superseded_by', survivorId)
+    .order('superseded_at', { ascending: true })
+
+  if (error) {
+    throw new Error(`superseded-into query failed: ${error.code}`)
+  }
+  return data
+}
