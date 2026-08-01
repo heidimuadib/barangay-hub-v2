@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { isPlausibleBirthdate, normalizeContactPhone, normalizePersonName } from '@/utils/normalize'
+
 import { EVIDENCE_MAX_BYTES, EVIDENCE_MIME_TYPES, RESIDENCY_BASES } from '../constants'
 
 const RESIDENCY_KEYS = [
@@ -11,8 +13,10 @@ const RESIDENCY_KEYS = [
   'other',
 ] as const
 
-const name = z.string().trim().min(1).max(100)
-const optionalName = z.string().trim().max(100).optional()
+// Names are normalised (trim + collapse internal whitespace) and nothing more
+// — see the reasoning in @/utils/normalize.
+const name = z.string().transform(normalizePersonName).pipe(z.string().min(1).max(100))
+const optionalName = z.string().transform(normalizePersonName).pipe(z.string().max(100)).optional()
 
 /**
  * Shared person payload for BOTH channels (ADR-0006 point 6): self-onboarding
@@ -30,8 +34,9 @@ export const personDetailsSchema = z
     birthdate: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use the date picker.')
+      .refine((value) => isPlausibleBirthdate(value), 'Enter a real date in the past.')
       .optional(),
-    contactPhone: z.string().trim().max(30).optional(),
+    contactPhone: z.string().transform(normalizeContactPhone).pipe(z.string().max(30)).optional(),
     addressLine: z.string().trim().max(200).optional(),
     residencyBasis: z.enum(RESIDENCY_KEYS),
     residencyExplanation: z.string().trim().max(500).optional(),
@@ -83,4 +88,13 @@ export const rejectSchema = z.object({
 export const requestInformationSchema = z.object({
   applicationId: z.string().uuid(),
   note: z.string().trim().min(1, 'Tell the resident what is missing.').max(1000),
+})
+
+/**
+ * Registry search input. The term travels in a POST body and is never placed
+ * in a URL, so this schema is the only place it is shaped (P6-C-E).
+ */
+export const registrySearchSchema = z.object({
+  barangayId: z.string().uuid(),
+  term: z.string().trim().min(2, 'Type at least two characters.').max(100),
 })

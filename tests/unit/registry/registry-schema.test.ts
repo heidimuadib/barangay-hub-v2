@@ -4,6 +4,7 @@ import { isResidencyValid, requiresExplanation } from '@/features/registry/rules
 import {
   evidenceMetadataSchema,
   personDetailsSchema,
+  registrySearchSchema,
   rejectSchema,
   supersedeSchema,
   walkInCreateSchema,
@@ -70,6 +71,68 @@ describe('personDetailsSchema', () => {
     ).toBe(false)
     expect(
       personDetailsSchema.safeParse({ ...validDetails, residencyBasis: 'squatter' }).success,
+    ).toBe(false)
+  })
+})
+
+describe('personDetailsSchema normalisation (Slice 2C)', () => {
+  it('normalises names without altering their substance', () => {
+    const parsed = personDetailsSchema.safeParse({
+      ...validDetails,
+      firstName: '  Juan   Miguel ',
+      lastName: 'dela Cruz',
+    })
+    expect(parsed.success).toBe(true)
+    if (parsed.success) {
+      expect(parsed.data.firstName).toBe('Juan Miguel')
+      // The particle keeps its lower case — no title-casing.
+      expect(parsed.data.lastName).toBe('dela Cruz')
+    }
+  })
+
+  it('rejects a name that is only whitespace once normalised', () => {
+    expect(personDetailsSchema.safeParse({ ...validDetails, firstName: '   ' }).success).toBe(false)
+  })
+
+  it('strips punctuation from a phone without guessing a country code', () => {
+    const parsed = personDetailsSchema.safeParse({
+      ...validDetails,
+      contactPhone: '0917 555-1234',
+    })
+    expect(parsed.success).toBe(true)
+    if (parsed.success) {
+      expect(parsed.data.contactPhone).toBe('09175551234')
+    }
+  })
+
+  it('refuses impossible and future birthdates', () => {
+    expect(
+      personDetailsSchema.safeParse({ ...validDetails, birthdate: '2026-02-31' }).success,
+    ).toBe(false)
+    expect(
+      personDetailsSchema.safeParse({ ...validDetails, birthdate: '2999-01-01' }).success,
+    ).toBe(false)
+    expect(
+      personDetailsSchema.safeParse({ ...validDetails, birthdate: '1990-05-04' }).success,
+    ).toBe(true)
+  })
+})
+
+describe('registrySearchSchema (P6-C-E)', () => {
+  it('requires a tenant id and a term of at least two characters', () => {
+    expect(registrySearchSchema.safeParse({ barangayId: BARANGAY, term: 'a' }).success).toBe(false)
+    expect(registrySearchSchema.safeParse({ barangayId: BARANGAY, term: '  ' }).success).toBe(false)
+    expect(registrySearchSchema.safeParse({ barangayId: 'not-a-uuid', term: 'cruz' }).success).toBe(
+      false,
+    )
+    expect(registrySearchSchema.safeParse({ barangayId: BARANGAY, term: 'cruz' }).success).toBe(
+      true,
+    )
+  })
+
+  it('caps the term length', () => {
+    expect(
+      registrySearchSchema.safeParse({ barangayId: BARANGAY, term: 'x'.repeat(101) }).success,
     ).toBe(false)
   })
 })

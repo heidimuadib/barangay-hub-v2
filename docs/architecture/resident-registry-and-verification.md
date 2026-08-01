@@ -5,12 +5,35 @@ The registry, verification lifecycle and outbox foundation delivered by
 (DEC-AUTH-01 Option C; D2-01…D2-04). Scope source:
 [implementation roadmap](../IMPLEMENTATION_ROADMAP.md), Slice 2.
 
-**State after 2A + 2B:** database, domain functions, RLS, audit, seeds, rules
-and the typed service layer are **implemented** (2A); public sign-up with
+**State after 2A + 2B + 2C:** database, domain functions, RLS, audit, seeds,
+rules and the typed service layer are **implemented** (2A); public sign-up with
 mandatory email confirmation, rate limiting, resident onboarding into the
-shared registry and the verification status surface are **implemented** (2B).
-The staff registry/queue UI (2C–2E) and the Storage broker (2F) are
-**planned** and marked below.
+shared registry and the verification status surface are **implemented** (2B);
+the staff registry list, tenant-scoped search, safe person detail and walk-in
+creation are **implemented** (2C). The verification queue and decision UI (2D),
+duplicate resolution UI (2E) and the Storage broker (2F) are **planned** and
+marked below.
+
+### Staff registry surface (2C)
+
+| Route | Gate | Notes |
+| --- | --- | --- |
+| `/staff/registry` | `registry.read` | Paginated tenant roster. The page NUMBER is the only query parameter this route accepts. |
+| `/staff/registry/[personId]` | `registry.read` | Opaque UUID only. A record in another barangay is indistinguishable from one that does not exist — RLS returns nothing either way, and both render the same neutral not-found page. |
+| `/staff/registry/new` | `registry.create_walk_in` | Administrators only under the ADR-0006 §D2-04 mapping; `barangay_staff` reaches the list but not this route, and `create_walk_in_person` refuses the write regardless of what the UI offers. |
+
+**Search carries no personal value in any URL (P6-C-E).** The term is submitted
+as a POST body to a Server Action and the results are rendered from React
+state. There is no `?q=` parameter, no router push and no history entry, so a
+resident's name cannot reach a shared link, a browser history export, a
+referrer header or a server access log. The term is never logged either — the
+search action records a result COUNT and nothing more (Phase 6 §37.2).
+
+**Duplicate candidates warn; they never merge.** `duplicate_candidates` is a
+trigram signal at the 0.30 threshold, surfaced for manual judgement and
+acknowledged deliberately before a new record is written. Nothing on this
+screen resolves a duplicate — that is 2E, behind `registry.resolve_duplicates`
+(ADR-0006 points 9–11).
 
 ## The four distinct concepts
 

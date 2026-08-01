@@ -20,6 +20,18 @@ export interface DuplicateCandidate {
   readonly hasAccount: boolean
 }
 
+/** One row of the staff registry list or detail view (Slice 2C). */
+export interface RegistryEntry {
+  readonly personId: string
+  readonly fullName: string
+  readonly birthdate: string | null
+  readonly residencyBasisKey: ResidencyBasisKey
+  readonly sourceChannel: PersonSource
+  readonly superseded: boolean
+  readonly hasAccount: boolean
+  readonly verificationState: string | null
+}
+
 export interface PersonSearchHit {
   readonly personId: string
   readonly firstName: string

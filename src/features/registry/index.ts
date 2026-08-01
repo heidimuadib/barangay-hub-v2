@@ -1,9 +1,11 @@
 /**
- * Registry feature — Slice 2A public surface.
+ * Registry feature — public surface through subpart 2C.
  *
- * Domain foundation only: rules, schemas, capability constants and the typed
- * service over the database RPCs. Actions and components arrive with
- * subparts 2B–2E.
+ * 2A domain foundation (rules, schemas, capability constants and the typed
+ * service over the database RPCs), 2B resident onboarding and verification
+ * status, and 2C the staff registry, search and walk-in creation.
+ * Verification decisions (2D), duplicate resolution (2E) and the evidence
+ * Storage broker (2F) arrive with their subparts.
  */
 export {
   EVIDENCE_MAX_BYTES,
@@ -17,6 +19,7 @@ export type {
   EvidenceKind,
   PersonSearchHit,
   PersonSource,
+  RegistryEntry,
   ResidencyBasisKey,
   VerificationState,
 } from './types/registry'
@@ -60,7 +63,21 @@ export {
   type OwnRegistryRow,
 } from './services/onboarding-service'
 
+export {
+  REGISTRY_PAGE_SIZE,
+  createWalkIn,
+  findDuplicateCandidates,
+  getPersonDetail,
+  listRegistry,
+  searchRegistry,
+  type RegistryPageResult,
+} from './services/staff-registry-service'
+
 export { completeOnboardingAction } from './actions/onboarding'
+export { createWalkInAction, searchRegistryAction, type WalkInOutcome } from './actions/walk-in'
 
 export { OnboardingForm } from './components/onboarding-form'
+export { RegistrySearch } from './components/registry-search'
+export { RegistryRows, RegistryTable } from './components/registry-table'
+export { WalkInForm } from './components/walk-in-form'
 export { VerificationStatusBadge, VerificationStatusPanel } from './components/verification-status'
