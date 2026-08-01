@@ -5,10 +5,12 @@ The registry, verification lifecycle and outbox foundation delivered by
 (DEC-AUTH-01 Option C; D2-01…D2-04). Scope source:
 [implementation roadmap](../IMPLEMENTATION_ROADMAP.md), Slice 2.
 
-**State at the Slice 2A commit:** database, domain functions, RLS, audit,
-seeds, rules and the typed service layer are **implemented**. Server Actions,
-UI routes, the Storage broker and the public sign-up surface arrive in
-subparts 2B–2G and are marked **planned** below.
+**State after 2A + 2B:** database, domain functions, RLS, audit, seeds, rules
+and the typed service layer are **implemented** (2A); public sign-up with
+mandatory email confirmation, rate limiting, resident onboarding into the
+shared registry and the verification status surface are **implemented** (2B).
+The staff registry/queue UI (2C–2E) and the Storage broker (2F) are
+**planned** and marked below.
 
 ## The four distinct concepts
 
@@ -164,15 +166,41 @@ policies, object cleanup on removal, and the unauthenticated/cross-tenant
 fetch probes. Until then no bytes are stored anywhere. Synthetic files only,
 always (DEC-ENV-04).
 
-## Public sign-up security — planned (2B), not yet present
+## Public sign-up security (2B — implemented)
 
-Option C introduces the project's first anonymous write surface. It does not
-exist yet: today the only public entry is Supabase Auth itself. Slice 2B must
-ship, and CI must prove, uniform anti-enumeration responses, application-level
-rate limiting, mandatory email confirmation before onboarding submission, and
-no privileged claim anywhere in user metadata. Hosted exposure additionally
-depends on R-1-04, R-0B-05 and R-0B-06 — those remain **hosted blockers**, and
-nothing in this slice marks hosted public exposure as safe.
+Option C introduces the project's first anonymous write surface, so the
+controls ship with it:
+
+- **Anti-enumeration.** `signUpAction` returns one neutral acceptance for
+  *every* outcome — new address, address that already has an account,
+  provider error, rate-limited caller. Supabase's own responses differ
+  between those cases (it returns HTTP 422 for an existing address), and the
+  action deliberately absorbs that difference. The distinction is recorded in
+  the **audit** trail (`outcome_detail: existing_address`), where staff
+  investigating abuse can use it, and never in the response. An e2e test
+  submits a fresh address and a known-registered address and asserts the two
+  rendered outcomes are byte-identical.
+- **Rate limiting.** Two sliding windows: per client address (10 / 15 min) and
+  per email digest (3 / hour). A throttled caller receives the same neutral
+  acceptance — a distinguishable 429 is itself an oracle. Keys are digests or
+  network addresses, never an email.
+- **Email confirmation is required** before onboarding submission
+  (ADR-0006 point 2). `enable_confirmations` is now **true locally too**: a
+  policy configured only in production is a policy nobody has tested. Mail is
+  captured by Mailpit, and the e2e suite reads the confirmation link from its
+  API and completes the round trip.
+- **No privileged claims.** `signUp` sends no `data` payload: user metadata is
+  writable by the account holder, so nothing authorization reads may live
+  there. The account confers no membership and no person record.
+
+### Hosted exposure is NOT yet safe — and nothing here says otherwise
+
+The limiter is **in-process**: N instances multiply every quota by N and a
+cold start forgets the window. It is a seam (`src/lib/rate-limit`), correct
+for one process and unit-tested with an injected clock, that a shared store
+swaps out behind the same interface. Hosted public sign-up additionally
+requires R-1-04 (shared-store limiting), R-0B-05 (site URL and redirect
+allow-list) and R-0B-06 (a real email provider). Those remain open.
 
 ## Local personas (synthetic)
 

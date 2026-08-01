@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { SignInForm, getAuthorizationContext, landingRouteFor } from '@/features/identity'
@@ -28,8 +29,11 @@ export default async function SignInPage() {
       </p>
       <SignInForm />
       <p className="mt-6 text-sm text-neutral-500">
-        Accounts are provisioned by your barangay. If you do not have one yet, contact the barangay
-        office.
+        New here?{' '}
+        <Link href="/sign-up" className="text-brand-700 underline">
+          Create an account
+        </Link>
+        . Your barangay can also register you at the office.
       </p>
     </div>
   )

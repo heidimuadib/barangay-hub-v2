@@ -52,3 +52,15 @@ export {
   supersedeSchema,
   walkInCreateSchema,
 } from './schemas/registry.schema'
+
+export {
+  getBarangayDirectory,
+  getOwnRegistryState,
+  type BarangayDirectoryEntry,
+  type OwnRegistryRow,
+} from './services/onboarding-service'
+
+export { completeOnboardingAction } from './actions/onboarding'
+
+export { OnboardingForm } from './components/onboarding-form'
+export { VerificationStatusBadge, VerificationStatusPanel } from './components/verification-status'

@@ -759,6 +759,14 @@ export type Database = {
         Args: { p_person_id: string; p_user_id: string }
         Returns: undefined
       }
+      list_active_barangays: {
+        Args: never
+        Returns: {
+          code: string
+          id: string
+          name: string
+        }[]
+      }
       person_search: {
         Args: { p_barangay_id: string; p_limit?: number; p_query: string }
         Returns: {

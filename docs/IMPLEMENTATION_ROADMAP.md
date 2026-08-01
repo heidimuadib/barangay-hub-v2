@@ -158,7 +158,7 @@ These restate the standing non-negotiables so no slice section needs to:
    | Subpart | Scope | State |
    | --- | --- | --- |
    | **2A** | Database and domain foundation: six tables, capabilities, RLS, audit triggers, verification state machine, duplicate detection, supersede-and-link, outbox enqueue, rules/schemas/service layer, synthetic seeds, 107 new pgTAP + 24 new unit assertions | **COMPLETE** |
-   | 2B | Public registration and onboarding (anti-enumeration, rate limiting, email confirmation) | pending |
+   | **2B** | Public sign-up (uniform anti-enumeration, two-window rate-limit seam), mandatory email confirmation — now enabled locally and exercised through Mailpit — barangay directory, resident onboarding into the shared registry, verification status page and dashboard card | **COMPLETE** |
    | 2C | Staff registry and walk-in creation UI | pending |
    | 2D | Verification queue and decision UI | pending |
    | 2E | Duplicate review and resolution UI | pending |

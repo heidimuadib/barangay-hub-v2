@@ -84,6 +84,10 @@ pnpm dev
 the architectural-boundary enforcement check and the unit tests. None of it needs
 Docker, so it works before step 2 as well.
 
+Email confirmation is **enabled locally** (ADR-0006 point 2), so a new sign-up
+must open the link Mailpit captured before signing in — nothing leaves the
+machine, and the e2e suite reads the link from Mailpit's API.
+
 - App: <http://localhost:3000>
 - Health: <http://localhost:3000/api/health>
 - Supabase Studio: <http://127.0.0.1:54323>

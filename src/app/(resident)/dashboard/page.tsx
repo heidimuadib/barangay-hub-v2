@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { getAuthorizationContext } from '@/features/identity'
+import { VerificationStatusBadge, getOwnRegistryState } from '@/features/registry'
+import type { VerificationState } from '@/features/registry'
 
 export const metadata: Metadata = {
   title: 'My dashboard',
@@ -25,6 +28,8 @@ export default async function ResidentDashboardPage() {
     redirect('/sign-in')
   }
 
+  const registry = await getOwnRegistryState()
+
   return (
     <div className="flex flex-col gap-6">
       <div className="rounded-lg border border-neutral-200 bg-white p-6">
@@ -34,6 +39,46 @@ export default async function ResidentDashboardPage() {
           barangay membership below are live.
         </p>
       </div>
+
+      {/* Verification card: the single next action for a resident who has not
+          finished registering, and a status readout once they have. */}
+      <section
+        aria-labelledby="verification-heading"
+        className="rounded-lg border border-neutral-200 bg-white p-6"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="verification-heading" className="text-lg font-bold">
+            Resident registration
+          </h2>
+          {registry?.state ? (
+            <VerificationStatusBadge state={registry.state as VerificationState} />
+          ) : null}
+        </div>
+
+        {registry === null ? (
+          <>
+            <p className="mt-3 text-neutral-700">
+              You have not registered as a resident yet. Registering lets your barangay confirm who
+              you are before you request documents.
+            </p>
+            <Link
+              href="/onboarding"
+              className="bg-brand-700 hover:bg-brand-800 mt-4 inline-block min-h-11 rounded-md px-4 py-2 font-medium text-white"
+            >
+              Start my registration
+            </Link>
+          </>
+        ) : (
+          <>
+            <p className="mt-3 text-neutral-700">
+              Registered with <span className="font-medium">{registry.barangay_name}</span>.
+            </p>
+            <Link href="/verification" className="text-brand-700 mt-3 inline-block underline">
+              View my registration
+            </Link>
+          </>
+        )}
+      </section>
 
       <section
         aria-labelledby="memberships-heading"

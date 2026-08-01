@@ -55,6 +55,10 @@ export default defineConfig({
 
   webServer: {
     command: `pnpm exec next dev --port ${PORT}`,
+    // The app builds its email-confirmation redirect from this value, so it
+    // must name the port the suite actually serves on — otherwise the
+    // confirmation link points at a dev server that is not running.
+    env: { NEXT_PUBLIC_APP_URL: BASE_URL },
     url: `${BASE_URL}/api/health`,
     reuseExistingServer: !isCI,
     timeout: 120_000,

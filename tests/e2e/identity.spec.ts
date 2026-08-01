@@ -51,7 +51,13 @@ test.describe('resident', () => {
 
     await expect(page).toHaveURL(/\/dashboard$/)
     await expect(page.getByRole('heading', { level: 1 })).toContainText(/welcome/i)
-    await expect(page.getByText('San Isidro (Test)')).toBeVisible()
+    // Scoped to the memberships region: Slice 2B's registration card names the
+    // same barangay, so an unscoped text match is ambiguous.
+    await expect(
+      page
+        .getByRole('region', { name: /your barangay memberships/i })
+        .getByText('San Isidro (Test)'),
+    ).toBeVisible()
     // No staff or platform affordance is offered to a resident.
     await expect(page.getByRole('link', { name: /staff workspace/i })).toHaveCount(0)
     await expect(page.getByRole('link', { name: /platform console/i })).toHaveCount(0)

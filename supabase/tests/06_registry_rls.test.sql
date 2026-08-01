@@ -11,7 +11,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(30);
+select plan(32);
 
 create function pg_temp.impersonate(p_user uuid) returns void language plpgsql as $$
 begin
@@ -88,10 +88,26 @@ select is(
 
 select pg_temp.impersonate('00000000-0000-4000-8000-000000000003');
 
-select is((select count(*)::int from public.persons), 7,
-  'staff see the full San Isidro registry (7 persons) and nothing of tenant B');
-select is((select count(*)::int from public.verification_applications), 4,
-  'staff see the tenant''s applications via verification.read');
+-- Asserted as a PROPERTY, not a fixture count: the e2e registration journey
+-- adds persons and applications to this tenant, and a hard-coded total would
+-- fail for a reason that has nothing to do with access control.
+select is(
+  (select count(*)::int from public.persons
+   where barangay_id <> 'a0000000-0000-4000-8000-000000000001'),
+  0, 'staff see NOTHING outside their own barangay');
+select is(
+  (select count(*)::int from public.persons
+   where id in ('c0000000-0000-4000-8000-000000000004',
+                'c0000000-0000-4000-8000-000000000005')),
+  2, 'staff see the tenant''s walk-in and duplicate-pair records');
+select is(
+  (select count(*)::int from public.verification_applications
+   where barangay_id <> 'a0000000-0000-4000-8000-000000000001'),
+  0, 'staff see no application outside their own barangay');
+select is(
+  (select count(*)::int from public.verification_applications
+   where id = 'd0000000-0000-4000-8000-000000000001'),
+  1, 'staff see the tenant''s applications via verification.read');
 select is((select count(*)::int from public.verification_evidence), 0,
   'staff WITHOUT verification.evidence.read see no evidence metadata (D2-04)');
 select is(
@@ -126,8 +142,12 @@ select throws_ok(
 
 select pg_temp.impersonate('00000000-0000-4000-8000-000000000002');
 
-select is((select count(*)::int from public.verification_evidence), 3,
-  'administrators hold verification.evidence.read and see the tenant''s evidence');
+select is(
+  (select count(*)::int from public.verification_evidence
+   where id in ('e0000000-0000-4000-8000-000000000001',
+                'e0000000-0000-4000-8000-000000000002',
+                'e0000000-0000-4000-8000-000000000003')),
+  3, 'administrators hold verification.evidence.read and see the tenant''s evidence');
 select is(
   (select count(*)::int from public.persons
    where barangay_id = 'a0000000-0000-4000-8000-000000000002'),
