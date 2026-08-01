@@ -28,7 +28,7 @@ comes) · `v1.5` (feature-flagged, post-MVP).
 | 0a | Engineering skeleton | **COMPLETE** | Verifiable foundation: tooling, gates, shells, local stack | — | — | L |
 | 0b | Hosted integration assessment | **COMPLETE** | Evidence base for DEC-ENV-01; PG 17 reconciliation | 0a | — | S |
 | 1 | Identity, tenant, RBAC, RLS, audit foundation | **COMPLETE** | Secure multi-tenant identity with forced RLS and append-only audit | 0a | — | XL |
-| 2 | Resident registration, registry, verification | **IN PROGRESS — 2A complete** | Verified resident profiles; staff verification workflow; registry with duplicate handling | 1 | — (DEC-AUTH-01 resolved: Option C, [ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)) | XL |
+| 2 | Resident registration, registry, verification | **IN PROGRESS — 2A–2D complete** | Verified resident profiles; staff verification workflow; registry with duplicate handling | 1 | — (DEC-AUTH-01 resolved: Option C, [ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)) | XL |
 | 3 | Document catalog and request intake | SEQUENCED | Residents and walk-ins submit document requests through one domain service | 2 | Fee/SLA confirmation (B-08) before pilot, not before build | L |
 | 4 | Certificate generation, serials, QR, public verification | SEQUENCED | Accountable certificate issuance with public verifiability | 3 | Template/signatory confirmation (B-05–B-07) before pilot | L |
 | 5 | Payments, exemptions, ORs, release, day closure, call list | SEQUENCED | Cash-accountable release workflow | 4 | OR series policy (B-11) before pilot | XL |
@@ -160,7 +160,7 @@ These restate the standing non-negotiables so no slice section needs to:
    | **2A** | Database and domain foundation: six tables, capabilities, RLS, audit triggers, verification state machine, duplicate detection, supersede-and-link, outbox enqueue, rules/schemas/service layer, synthetic seeds, 107 new pgTAP + 24 new unit assertions | **COMPLETE** |
    | **2B** | Public sign-up (uniform anti-enumeration, two-window rate-limit seam), mandatory email confirmation — now enabled locally and exercised through Mailpit — barangay directory, resident onboarding into the shared registry, verification status page and dashboard card | **COMPLETE** |
    | **2C** | Staff registry list, tenant-scoped search with no term in any URL, safe person detail, walk-in creation with advisory duplicate warnings, capability-split navigation; 9 new pgTAP + 23 new unit + 17 new Playwright assertions | **COMPLETE** |
-   | 2D | Verification queue and decision UI | pending |
+   | **2D** | Verification queue (state filters, oldest-first, pagination), review detail with evidence metadata behind its own capability and duplicate context, the four reviewer transitions split by capability, resident resubmission, `info_requested`/`resubmitted` outbox intents; 41 new pgTAP + 34 new unit + 22 new Playwright assertions | **COMPLETE** |
    | 2E | Duplicate review and resolution UI | pending |
    | 2F | Evidence Storage bucket, signed upload/read brokering | pending |
    | 2G | Outbox intents review, hardening, e2e, docs, PR | pending |

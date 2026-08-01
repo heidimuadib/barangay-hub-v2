@@ -792,11 +792,15 @@ export type Database = {
       }
       remove_evidence: { Args: { p_evidence_id: string }; Returns: undefined }
       request_information: {
-        Args: { p_application_id: string; p_note: string }
+        Args: {
+          p_application_id: string
+          p_correlation_id?: string
+          p_note: string
+        }
         Returns: undefined
       }
       resubmit_verification: {
-        Args: { p_application_id: string }
+        Args: { p_application_id: string; p_correlation_id?: string }
         Returns: undefined
       }
       review_verification: {

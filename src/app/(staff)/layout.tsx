@@ -55,6 +55,11 @@ export default async function StaffLayout({ children }: { children: React.ReactN
                 Registry
               </Link>
             ) : null}
+            {active && can(context, active.barangayId, REGISTRY_PERMISSIONS.verificationRead) ? (
+              <Link href="/staff/verification" className="text-sm text-neutral-700 hover:underline">
+                Verification
+              </Link>
+            ) : null}
             {active && can(context, active.barangayId, PERMISSIONS.membershipRead) ? (
               <Link href="/staff/members" className="text-sm text-neutral-700 hover:underline">
                 Members

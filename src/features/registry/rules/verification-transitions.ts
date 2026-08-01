@@ -1,4 +1,4 @@
-import type { VerificationState } from '../types/registry'
+import type { ReviewActionKey, ReviewerCapabilities, VerificationState } from '../types/registry'
 
 /**
  * The verification state machine (roadmap Slice 2 §4; ADR-0006).
@@ -47,4 +47,63 @@ export function isActionableByStaff(state: VerificationState): boolean {
 /** Rejection is the only transition that REQUIRES a reason (ADR-0006). */
 export function requiresReason(to: VerificationState): boolean {
   return to === 'rejected'
+}
+
+// ── Reviewer action availability (Slice 2D) ─────────────────────────────────
+// The ReviewActionKey / ReviewerCapabilities types live in ../types/registry
+// so components may reference them (feature-component may import feature-type
+// but not feature-rule — Phase 6 §16.1).
+
+export type { ReviewActionKey, ReviewerCapabilities }
+
+/**
+ * Which controls the review detail may offer, derived FROM the transition
+ * map — not a second hand-written list — so the UI can never advertise a
+ * transition the database refuses. Note there is no decision from
+ * `resubmitted`: the committed machine routes it through `in_review` first.
+ */
+export function availableReviewActions(
+  state: VerificationState,
+  capabilities: ReviewerCapabilities,
+): readonly ReviewActionKey[] {
+  const actions: ReviewActionKey[] = []
+  if (canTransition(state, 'in_review') && capabilities.canReview) {
+    actions.push('start_review')
+  }
+  if (canTransition(state, 'info_requested') && capabilities.canRequestInformation) {
+    actions.push('request_information')
+  }
+  if (canTransition(state, 'approved') && capabilities.canApprove) {
+    actions.push('approve')
+  }
+  if (canTransition(state, 'rejected') && capabilities.canReject) {
+    actions.push('reject')
+  }
+  return actions
+}
+
+/** Terminal decisions get an explicit confirmation step in the UI. */
+export function isDecisionAction(action: ReviewActionKey): boolean {
+  return action === 'approve' || action === 'reject'
+}
+
+export type ResidentNextStep =
+  'complete_documents' | 'wait' | 'resubmit' | 'new_application' | 'none'
+
+/** The single next thing the RESIDENT can do, per state. */
+export function residentNextStep(state: VerificationState): ResidentNextStep {
+  switch (state) {
+    case 'draft':
+      return 'complete_documents'
+    case 'submitted':
+    case 'in_review':
+    case 'resubmitted':
+      return 'wait'
+    case 'info_requested':
+      return 'resubmit'
+    case 'rejected':
+      return 'new_application'
+    case 'approved':
+      return 'none'
+  }
 }

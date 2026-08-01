@@ -129,9 +129,22 @@ name twin) are in
 | `applicant.sanisidro@barangay-hub.test` | Submitted verification application with evidence (Slice 2) |
 | `inforeq.sanisidro@barangay-hub.test` | Application returned for more information (Slice 2) |
 | `rejected.sanisidro@barangay-hub.test` | Rejected application — terminal state (Slice 2) |
-| `staff.sanisidro@barangay-hub.test` | Read-only staff |
+| `staff.sanisidro@barangay-hub.test` | Staff: reads the roster and registry, starts reviews and requests information — but is refused approve/reject (Slice 2D capability split) |
 | `resident.sanisidro@barangay-hub.test` | Resident self-service |
 | `platform.admin@barangay-hub.test` | Platform console WITHOUT tenant access |
+
+**Walking the verification workflow (Slice 2D).** Sign in as
+`staff.sanisidro@` and open **Verification** — `applicant.sanisidro@`'s
+submitted application is waiting. Start the review, request more information,
+then sign in as `applicant.sanisidro@` to see the note and resubmit. Come back
+as `admin.sanisidro@` to re-open the review and approve or reject it; only the
+administrator is offered those two.
+
+Note that a decision is **terminal**, so the seeded applications are a
+one-shot demo: `pnpm db:reset` restores them. Note also that a resident who
+onboards from scratch lands in `draft` and cannot reach the queue through the
+browser yet — evidence upload is subpart 2F (recorded as R-2-04 in the
+[risk register](./risk-register.md)).
 
 pgTAP files in `supabase/tests/` each manage their own transaction and roll back,
 so database tests never leave state behind.

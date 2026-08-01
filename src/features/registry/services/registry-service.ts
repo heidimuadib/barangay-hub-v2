@@ -10,11 +10,17 @@ export { throwRegistryFailure, unwrap } from '../repositories/registry-repositor
 export {
   TERMINAL_STATES,
   VERIFICATION_TRANSITIONS,
+  availableReviewActions,
   canTransition,
   isActionableByStaff,
+  isDecisionAction,
   isEditable,
   isTerminal,
   requiresReason,
+  residentNextStep,
+  type ResidentNextStep,
+  type ReviewActionKey,
+  type ReviewerCapabilities,
 } from '../rules/verification-transitions'
 export {
   DUPLICATE_SIMILARITY_THRESHOLD,

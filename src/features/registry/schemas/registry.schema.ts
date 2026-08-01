@@ -81,13 +81,49 @@ export const supersedeSchema = z.object({
 })
 
 export const rejectSchema = z.object({
+  barangayId: z.string().uuid(),
   applicationId: z.string().uuid(),
   reason: z.string().trim().min(1, 'A rejection reason is required.').max(1000),
 })
 
 export const requestInformationSchema = z.object({
+  barangayId: z.string().uuid(),
   applicationId: z.string().uuid(),
   note: z.string().trim().min(1, 'Tell the resident what is missing.').max(1000),
+})
+
+// ── Slice 2D: verification queue and decisions ──────────────────────────────
+
+export const VERIFICATION_STATE_KEYS = [
+  'draft',
+  'submitted',
+  'in_review',
+  'info_requested',
+  'resubmitted',
+  'approved',
+  'rejected',
+] as const
+
+/**
+ * Queue URL parameters. The ONLY values this route accepts are a state key
+ * from the fixed vocabulary and a page number — never a name or any other
+ * personal value (P6-C-E). Anything else fails the parse and the page falls
+ * back to its defaults rather than echoing the input.
+ */
+export const queueFilterSchema = z.object({
+  state: z.enum(VERIFICATION_STATE_KEYS).optional(),
+  page: z.coerce.number().int().min(1).max(10_000).optional(),
+})
+
+/** Start-review and approve carry no free text — ids only. */
+export const reviewActionSchema = z.object({
+  barangayId: z.string().uuid(),
+  applicationId: z.string().uuid(),
+})
+
+/** Resident resubmission: the application id alone; ownership is DB-enforced. */
+export const resubmitSchema = z.object({
+  applicationId: z.string().uuid(),
 })
 
 /**

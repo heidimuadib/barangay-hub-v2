@@ -5,14 +5,15 @@ The registry, verification lifecycle and outbox foundation delivered by
 (DEC-AUTH-01 Option C; D2-01…D2-04). Scope source:
 [implementation roadmap](../IMPLEMENTATION_ROADMAP.md), Slice 2.
 
-**State after 2A + 2B + 2C:** database, domain functions, RLS, audit, seeds,
-rules and the typed service layer are **implemented** (2A); public sign-up with
-mandatory email confirmation, rate limiting, resident onboarding into the
-shared registry and the verification status surface are **implemented** (2B);
-the staff registry list, tenant-scoped search, safe person detail and walk-in
-creation are **implemented** (2C). The verification queue and decision UI (2D),
-duplicate resolution UI (2E) and the Storage broker (2F) are **planned** and
-marked below.
+**State after 2A + 2B + 2C + 2D:** database, domain functions, RLS, audit,
+seeds, rules and the typed service layer are **implemented** (2A); public
+sign-up with mandatory email confirmation, rate limiting, resident onboarding
+into the shared registry and the verification status surface are
+**implemented** (2B); the staff registry list, tenant-scoped search, safe
+person detail and walk-in creation are **implemented** (2C); the verification
+queue, review detail and the full decision workflow are **implemented** (2D).
+The duplicate resolution UI (2E) and the Storage broker (2F) are **planned**
+and marked below.
 
 ### Staff registry surface (2C)
 
@@ -34,6 +35,65 @@ trigram signal at the 0.30 threshold, surfaced for manual judgement and
 acknowledged deliberately before a new record is written. Nothing on this
 screen resolves a duplicate — that is 2E, behind `registry.resolve_duplicates`
 (ADR-0006 points 9–11).
+
+### Verification queue and decision workflow (2D)
+
+| Route | Gate | Notes |
+| --- | --- | --- |
+| `/staff/verification` | `verification.read` | Oldest-first queue over the actionable states. Two URL parameters exist and no others: `state` from the fixed vocabulary, and `page`. An unparseable value falls back to the default view rather than being echoed. |
+| `/staff/verification/[applicationId]` | `verification.read` | Opaque UUID. A wrong-tenant id and a nonexistent id are indistinguishable — both render the neutral not-found page. |
+
+**The reviewer controls are computed on the server** from the same transition
+map the database enforces, intersected with the capabilities the caller holds,
+so the UI cannot advertise a transition the database would refuse. The split is
+ADR-0006 §D2-04 exactly: `barangay_staff` may start a review and request
+information; only `barangay_administrator` may approve or reject. pgTAP proves
+the database refuses a staff decision regardless of what the screen offers.
+
+| Transition | Capability | Notes |
+| --- | --- | --- |
+| `submitted`/`resubmitted` → `in_review` | `verification.review` | Not idempotent by design: a second start raises `ILLEGAL_TRANSITION`, which is what stops two reviewers racing the same application. |
+| `in_review` → `info_requested` | `verification.request_information` | Note required; shown to the resident verbatim. |
+| `info_requested` → `resubmitted` | resident owns it (or `verification.review` for counter-assisted resubmission) | The resident's turn is structural — staff cannot pull an application back into review directly. |
+| `in_review` → `approved` | `verification.approve` | Membership activation + intent in the same transaction. |
+| `in_review` → `rejected` | `verification.reject` | Reason required; terminal. |
+
+There is deliberately **no `resubmitted` → decision edge**: a resubmission
+re-enters review first, so a decision is always taken on a state a reviewer
+has explicitly opened.
+
+**Evidence metadata on the review detail is gated on
+`verification.evidence.read`, not `verification.read`.** RLS would silently
+return an empty list to a reviewer without it, and "no documents attached" must
+never be conflated with "not yours to see" — so the capability is checked
+explicitly and the page says which of the two it is. File *contents* remain 2F.
+
+**Duplicate candidates appear as context only.** The review detail summarises
+them for comparison and links to the registry record; nothing on the page
+merges or resolves anything (2E, `registry.resolve_duplicates`).
+
+**Outbox (2D addition).** 2A enqueued intents for the terminal decisions only.
+`request_information` and `resubmit_verification` now enqueue
+`verification.info_requested` and `verification.resubmitted` in the same
+transaction as the state change. No bookkeeping is needed to prevent duplicate
+intents: both functions gate on the current state, so a repeated call raises
+`ILLEGAL_TRANSITION` before any enqueue is reached — pgTAP asserts that a
+second call adds no second row. Payloads carry `application_id` and
+`person_id`; the note and reason texts stay on the application row.
+
+**Audit (2D addition).** `verification.state_changed` now also records
+`note_present` / `reason_present` booleans alongside `from_state`/`to_state`.
+The texts themselves are never in the metadata — pgTAP asserts the rejection
+reason does not appear there.
+
+> **Known gap until 2F:** onboarding opens a `draft` application, and
+> `submit_verification` requires one identity and one residency evidence item,
+> so **nothing in 2A–2D can move an application from `draft` to `submitted`
+> through the browser alone.** The queue is reachable today only for
+> applications submitted by seed or by API. The 2D e2e suite therefore submits
+> through the resident's own granted RPCs (`add_evidence_metadata`,
+> `submit_verification`) on their own access token — metadata only, no
+> service-role shortcut — standing in for the upload surface 2F delivers.
 
 ## The four distinct concepts
 

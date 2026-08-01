@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { getAuthorizationContext } from '@/features/identity'
-import { VerificationStatusPanel, getOwnRegistryState } from '@/features/registry'
+import { ResubmissionForm, VerificationStatusPanel, getOwnRegistryState } from '@/features/registry'
 import type { VerificationState } from '@/features/registry'
 
 export const metadata: Metadata = {
@@ -34,6 +34,28 @@ export default async function VerificationPage() {
         infoRequestNote={registry.info_request_note}
         decisionReason={registry.decision_reason}
       />
+
+      {/* The one resident action in this state (Slice 2D): resubmit after
+          providing what was asked. Ownership is enforced in the database. */}
+      {state === 'info_requested' && registry.application_id ? (
+        <ResubmissionForm applicationId={registry.application_id} />
+      ) : null}
+
+      {state === 'rejected' ? (
+        <section
+          aria-labelledby="next-steps-heading"
+          className="rounded-lg border border-neutral-200 bg-white p-6"
+        >
+          <h2 id="next-steps-heading" className="text-lg font-bold">
+            What you can do next
+          </h2>
+          <p className="mt-2 text-neutral-700">
+            This decision is final for this application. If your situation has changed or you
+            believe something was missed, visit the barangay office — staff can start a new
+            registration with you.
+          </p>
+        </section>
+      ) : null}
 
       <section
         aria-labelledby="documents-heading"
