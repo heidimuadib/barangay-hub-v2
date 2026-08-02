@@ -194,7 +194,7 @@ jobs:
           fetch-depth: 0
 
       - name: Scan the repository and its history
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           # Required by gitleaks-action v2 even for plain scanning — it exits
           # immediately without it. The default workflow token; no extra scope.
