@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto'
 
 import { logger } from '@/lib/logger'
 import { createServiceRoleClient } from '@/lib/supabase/service-role'
-import type { Json } from '@/types/database.types'
+import type { Json } from '@barangay-hub/supabase/types'
 
 /**
  * Audit writer for security events that occur WITHOUT a usable session —

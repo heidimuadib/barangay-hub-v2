@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 /**
- * Generates `src/types/database.types.ts` from the LOCAL Supabase stack.
+ * Generates `supabase/generated/database.types.ts` from the LOCAL Supabase
+ * stack. The file lives with the backend because it is a Supabase artifact
+ * (ADR-0007); the web application consumes it type-only as
+ * `@barangay-hub/supabase/types`.
  *
  * Written as a Node script rather than a shell redirect because PowerShell's `>`
  * operator writes UTF-16, which corrupts the generated file on Windows.
  *
- * Usage:
+ * Usage (from backend/, which is what `pnpm types:gen` at the root does):
  *   node scripts/gen-types.mjs           regenerate and write
  *   node scripts/gen-types.mjs --check   fail if the committed file is stale (CI)
  */
@@ -13,7 +16,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
-const OUTPUT_PATH = resolve(process.cwd(), 'src/types/database.types.ts')
+const OUTPUT_PATH = resolve(process.cwd(), 'supabase/generated/database.types.ts')
 const CHECK_MODE = process.argv.includes('--check')
 
 const HEADER = [

@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import type { Json } from '@/types/database.types'
+import type { Json } from '@barangay-hub/supabase/types'
 
 /**
  * Raw database access for the identity feature. Parsing and policy live in

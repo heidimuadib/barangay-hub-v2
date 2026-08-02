@@ -429,6 +429,18 @@ limiting and anti-enumeration are Slice 2 build requirements (R-1-04
 activated); local email-confirmation UX runs through Mailpit; hosted sending
 remains gated by R-0B-06 and the deployment blockers (ADR-0006 point 14).
 
+### Between Slice 2 and Slice 3 — monorepo refactor — EXECUTED (2026-08-02)
+
+Structural only, on `refactor/monorepo` stacked on the Slice 2 branch:
+the repository became a pnpm workspace — `apps/web` (the whole Next.js
+application and its tests), `backend/supabase` (migrations, seeds, pgTAP,
+generated types), `packages/config` (shared strict tsconfig), `packages/shared`
+(reserved, empty until Slice 8 gives code a second consumer). Ruled in
+[ADR-0007](./adr/0007-monorepo-workspace-structure.md), superseding ADR-0001.
+No feature, route, schema or permission changed; every root command keeps its
+name; test totals unchanged (231 unit / 358 pgTAP / 79 Playwright per viewport
+project). Slice 3 builds on this layout.
+
 ---
 
 ## Slice 3 — Document catalog and request intake — SEQUENCED

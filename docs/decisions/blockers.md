@@ -117,7 +117,7 @@ cannot be inferred from them:
 
 | Reference | Says Slice 2 delivers | Problem |
 | --- | --- | --- |
-| `src/app/(staff)/staff/page.tsx` | staff queues, SLA breach counts, pending approvals (US-STF-003) | the things queued — document requests, fees, SLAs — are assigned to **Slice 3** (DOC-001, B-08) |
+| `apps/web/src/app/(staff)/staff/page.tsx` | staff queues, SLA breach counts, pending approvals (US-STF-003) | the things queued — document requests, fees, SLAs — are assigned to **Slice 3** (DOC-001, B-08) |
 | `next.config.ts` | registry and case routes tightened to `no-referrer` | "cases" (complaints/mediation) are assigned to **Slice 6** (B-09) |
 | `README.md` | resident and walk-in transactions share a domain service | the transactions are document requests — **Slice 3** again |
 

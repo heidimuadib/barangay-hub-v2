@@ -1,8 +1,19 @@
-# pnpm settings.
+# pnpm workspace (ADR-0007).
 #
-# pnpm 11 reads configuration from this file rather than the `pnpm` field in
-# package.json. This is NOT a monorepo declaration — no `packages:` key is
-# present, and ADR-0001 records the single-repository decision.
+# Three kinds of member:
+#   apps/*      deployable applications — today only apps/web (Next.js)
+#   backend     the Supabase package: migrations, seeds, pgTAP, generated types
+#   packages/*  shared workspace packages — config today; shared reserved
+#
+# ADR-0001's single-repository ruling is superseded by ADR-0007; the
+# architectural import direction INSIDE apps/web is still enforced by
+# eslint-plugin-boundaries exactly as before — the workspace adds package
+# seams around the app, it does not replace the lint guarantee.
+
+packages:
+  - apps/*
+  - packages/*
+  - backend
 
 # Packages permitted to run install scripts. pnpm blocks them by default; naming
 # them here keeps the decision reviewable and avoids an interactive prompt on

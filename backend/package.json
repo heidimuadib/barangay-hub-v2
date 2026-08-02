@@ -1,0 +1,21 @@
+{
+  "name": "@barangay-hub/supabase",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Barangay Hub v2 — Supabase backend: migrations, seeds, pgTAP tests, generated types",
+  "scripts": {
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:status": "supabase status",
+    "db:reset": "supabase db reset",
+    "db:reset:verified": "node scripts/db-reset-verified.mjs",
+    "db:test": "supabase test db",
+    "db:diff": "supabase db diff",
+    "types:gen": "node scripts/gen-types.mjs",
+    "types:check": "node scripts/gen-types.mjs --check"
+  },
+  "devDependencies": {
+    "supabase": "^2.23.4"
+  }
+}

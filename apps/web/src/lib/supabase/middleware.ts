@@ -2,7 +2,7 @@ import { createServerClient, type CookieMethodsServer } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { clientEnv } from '@/lib/config/env.client'
-import type { Database } from '@/types/database.types'
+import type { Database } from '@barangay-hub/supabase/types'
 
 /**
  * Refreshes the Supabase auth session on every request.

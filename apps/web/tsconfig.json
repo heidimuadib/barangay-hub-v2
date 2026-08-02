@@ -1,0 +1,21 @@
+{
+  "extends": "../../packages/config/tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "ES2022"],
+    "jsx": "preserve",
+    "incremental": true,
+
+    "plugins": [{ "name": "next" }],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      // The generated database types are a Supabase artifact and live with the
+      // backend (ADR-0007). Every import of them is `import type`, so this
+      // alias only ever has to satisfy the type system — no bundler resolves
+      // it at runtime, which is why a workspace dependency is not required.
+      "@barangay-hub/supabase/types": ["../../backend/supabase/generated/database.types.ts"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", ".next"]
+}

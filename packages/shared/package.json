@@ -1,0 +1,9 @@
+{
+  "name": "@barangay-hub/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Reserved for code shared between apps/web and future workers — empty by design until a second consumer exists",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts"
+}
