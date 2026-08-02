@@ -26,9 +26,9 @@ client_secret*.json
 service-account*.json
 
 # supabase local state
-supabase/.temp/
-supabase/.branches/
-supabase/logs/
+backend/supabase/.temp/
+backend/supabase/.branches/
+backend/supabase/logs/
 
 # test output
 coverage/

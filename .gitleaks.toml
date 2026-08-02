@@ -16,13 +16,16 @@ useDefault = true
 [allowlist]
 description = "Non-secret values that resemble credentials"
 
+# Path patterns cover BOTH the pre-ADR-0007 layout (src/…) and the workspace
+# layout (apps/web/src/…): the scan runs over full history, where the same
+# file exists at its old path in old commits and its new path in new ones.
 paths = [
   '''pnpm-lock\.yaml''',
   '''docs/adr/.*\.md''',
   '''docs/runbooks/.*\.md''',
   # Contains a deliberately JWT-shaped fixture used to prove that the logger
   # masks tokens. It is not a token — it decodes to nothing and grants nothing.
-  '''src/lib/logger/redact\.test\.ts''',
+  '''(apps/web/)?src/lib/logger/redact\.test\.ts''',
 ]
 
 regexes = [
@@ -70,11 +73,11 @@ tags = ["config", "critical"]
 
 [rules.allowlist]
 # env.schema.ts and the guard scripts define this deny-list; matching it there
-# is the point.
+# is the point. Old and new layouts both allowed — see the note above.
 paths = [
-  '''src/lib/config/env\.schema\.ts''',
-  '''src/lib/config/env\.schema\.test\.ts''',
-  '''tests/unit/architecture/.*\.ts''',
-  '''scripts/check-.*\.mjs''',
+  '''(apps/web/)?src/lib/config/env\.schema\.ts''',
+  '''(apps/web/)?src/lib/config/env\.schema\.test\.ts''',
+  '''(apps/web/)?tests/unit/architecture/.*\.ts''',
+  '''(apps/web/)?scripts/check-.*\.mjs''',
   '''\.gitleaks\.toml''',
 ]

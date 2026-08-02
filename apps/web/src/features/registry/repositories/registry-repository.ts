@@ -3,7 +3,7 @@ import 'server-only'
 import { AuthorizationError, BusinessRuleError, ConflictError, NotFoundError } from '@/lib/errors'
 import { logger } from '@/lib/logger'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import type { Database } from '@/types/database.types'
+import type { Database } from '@barangay-hub/supabase/types'
 
 /**
  * RPC wrappers over the Slice 2 domain functions. Every call runs on the

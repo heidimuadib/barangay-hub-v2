@@ -4,7 +4,7 @@ import { createServerClient, type CookieMethodsServer } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 import { env } from '@/lib/config/env.server'
-import type { Database } from '@/types/database.types'
+import type { Database } from '@barangay-hub/supabase/types'
 
 /**
  * Request-scoped Supabase client carrying the caller's JWT.

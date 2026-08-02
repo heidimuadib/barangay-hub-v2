@@ -206,7 +206,7 @@ Enforcement is layered: the domain function checks the current state and the
 caller's capability; the `verification_applications_guard` trigger re-checks
 the transition, the mandatory rejection reason and the decision timestamp on
 **every** update including owner paths; `pgTAP` proves both. The TypeScript
-mirror (`src/features/registry/rules/verification-transitions.ts`) exists for
+mirror (`apps/web/src/features/registry/rules/verification-transitions.ts`) exists for
 UI affordances and unit tests — the SQL governs.
 
 Additional rules: submission requires **at least one identity and one
@@ -434,7 +434,7 @@ controls ship with it:
 ### Hosted exposure is NOT yet safe — and nothing here says otherwise
 
 The limiter is **in-process**: N instances multiply every quota by N and a
-cold start forgets the window. It is a seam (`src/lib/rate-limit`), correct
+cold start forgets the window. It is a seam (`apps/web/src/lib/rate-limit`), correct
 for one process and unit-tested with an injected clock, that a shared store
 swaps out behind the same interface. Hosted public sign-up additionally
 requires R-1-04 (shared-store limiting), R-0B-05 (site URL and redirect

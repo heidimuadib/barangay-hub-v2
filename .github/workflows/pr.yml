@@ -2,19 +2,27 @@
 # Pull-request pipeline (Phase 6 §21)
 #
 # PLACEMENT: resolved. DEC-REPO-01 promoted the application to its own
-# standalone repository (see docs/runbooks/repository-promotion.md), so this
-# file sits at the repository root and runs on every push and pull request to
-# main — exactly as written in Slice 0a, with no path changes required.
+# standalone repository (see docs/runbooks/repository-promotion.md). Since
+# ADR-0007 the repository is a pnpm workspace: the four jobs below invoke the
+# same ROOT scripts as before (`pnpm run …`), which now delegate into
+# `apps/web` and `backend` — so a job's behaviour is identical whether run
+# here or on a developer machine.
+#
+# The four job NAMES are load-bearing: the main-branch ruleset requires them
+# as status checks by exact string. Rename one and merges stop.
+#
+# `pull_request` is unfiltered so that stacked PRs (a branch based on another
+# feature branch, e.g. refactor/monorepo on the Slice 2 branch) get the same
+# four checks as PRs to main. `push` stays main-only.
 #
 # No secret of any kind is required. Every value below is a public setting or a
-# deliberately fake fixture, because Slice 0a touches no hosted environment.
+# deliberately fake fixture, because CI touches no hosted environment.
 # =============================================================================
 
 name: pull-request
 
 on:
   pull_request:
-    branches: [main]
   push:
     branches: [main]
 
@@ -83,7 +91,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage
-          path: coverage/
+          path: apps/web/coverage/
           retention-days: 7
           if-no-files-found: ignore
 
@@ -106,15 +114,15 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Start the local Supabase stack
-        run: pnpm exec supabase start
+        run: pnpm run db:start
 
       # Replays every migration from an empty database. A migration that only
       # works incrementally against a developer's existing state fails here.
       - name: Reset and replay all migrations
-        run: pnpm exec supabase db reset
+        run: pnpm run db:reset
 
       - name: Run pgTAP tests
-        run: pnpm exec supabase test db
+        run: pnpm run db:test
 
       # The committed types must match the migrations, or every consumer of a
       # database type is compiling against a schema that no longer exists.
@@ -123,7 +131,7 @@ jobs:
 
       - name: Stop the stack
         if: always()
-        run: pnpm exec supabase stop --no-backup
+        run: pnpm --filter @barangay-hub/supabase exec supabase stop --no-backup
 
   # ── End-to-end suite (smoke + identity) ────────────────────────────────────
   # Slice 1: the identity suite signs in with seeded synthetic accounts, so the
@@ -147,30 +155,30 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Start the local Supabase stack (applies migrations and seeds)
-        run: pnpm exec supabase start
+        run: pnpm run db:start
 
       - name: Export the stack's throwaway keys for the dev server
         run: |
-          eval "$(pnpm exec supabase status -o env | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"
+          eval "$(pnpm --filter @barangay-hub/supabase exec supabase status -o env | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
           echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm run e2e:install
 
       - name: Run e2e suites
         run: pnpm run e2e
 
       - name: Stop the stack
         if: always()
-        run: pnpm exec supabase stop --no-backup
+        run: pnpm --filter @barangay-hub/supabase exec supabase stop --no-backup
 
       - name: Upload the Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: playwright-report/
+          path: apps/web/playwright-report/
           retention-days: 7
           if-no-files-found: ignore
 

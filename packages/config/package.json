@@ -1,0 +1,6 @@
+{
+  "name": "@barangay-hub/config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared workspace configuration — the strict TypeScript base every package extends"
+}

@@ -65,7 +65,7 @@ pnpm db:start         # start the local Supabase stack (requires Docker)
 pnpm db:reset         # drop, re-apply all migrations, run seeds
 pnpm db:reset:verified  # the same, but verifies the OUTCOME (see below)
 pnpm db:test          # pgTAP database tests
-pnpm types:gen        # regenerate src/types/database.types.ts
+pnpm types:gen        # regenerate backend/supabase/generated/database.types.ts
 pnpm dev              # run the app at http://localhost:3000
 
 pnpm test             # unit + component tests (Vitest)
@@ -89,16 +89,28 @@ fails and a spurious one no longer trains you to ignore it.
 
 ## Layout
 
+pnpm workspace ([ADR-0007](./docs/adr/0007-monorepo-workspace-structure.md)):
+
 ```
-src/app/          routing only — thin route shells
-src/features/     all behaviour, one directory per module (Slice 1+)
-src/components/   ui primitives · patterns · domain components · dialogs
-src/lib/          framework and infrastructure adapters, no domain vocabulary
-src/services/     cross-cutting infrastructure (audit, outbox, storage, pdf…)
-src/utils/        pure functions only
-supabase/         migrations · seeds · pgTAP tests · local config
-docs/             ADRs · runbooks · guides · placeholder register
+apps/web/            the Next.js application (server actions · repositories · services)
+  src/app/           routing only — thin route shells
+  src/features/      all behaviour, one directory per module (Slice 1+)
+  src/components/    ui primitives · patterns · domain components · dialogs
+  src/lib/           framework and infrastructure adapters, no domain vocabulary
+  src/services/      cross-cutting infrastructure (audit, outbox, storage, pdf…)
+  src/utils/         pure functions only
+  tests/             unit · component · Playwright e2e
+backend/supabase/    migrations · seeds · pgTAP tests · generated types · local config
+packages/config/     shared workspace configuration (strict tsconfig base)
+packages/shared/     reserved for a second consumer (Slice 8 worker); empty by design
+docs/                ADRs · runbooks · guides · placeholder register
 ```
 
-Import direction is `app → features → services → lib → utils`, enforced by
-`eslint-plugin-boundaries`. Domain code must not import React.
+Every command above runs from the repository root — the root `package.json`
+delegates into the right workspace package, so `pnpm dev`, `pnpm db:reset`,
+`pnpm e2e` and the rest behave exactly as they did before the workspace split.
+
+Import direction inside the app is `app → features → services → lib → utils`,
+enforced by `eslint-plugin-boundaries`. Domain code must not import React.
+The backend is Supabase itself (PostgreSQL, Auth, Storage, RLS) — there is
+deliberately **no separate API server**.

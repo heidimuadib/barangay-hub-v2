@@ -1,7 +1,7 @@
 import { createBrowserClient } from '@supabase/ssr'
 
 import { clientEnv } from '@/lib/config/env.client'
-import type { Database } from '@/types/database.types'
+import type { Database } from '@barangay-hub/supabase/types'
 
 /**
  * Supabase client for Client Components.

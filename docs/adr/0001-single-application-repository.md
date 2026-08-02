@@ -1,8 +1,14 @@
 # ADR-0001 — Single application repository, not a monorepo
 
-- **Status:** Accepted
+- **Status:** **Superseded by [ADR-0007](./0007-monorepo-workspace-structure.md)** (2026-08-02)
 - **Date:** Phase 6 §15.1
 - **Decision owner:** Tech lead
+
+> **Supersession note (2026-08-02):** none of the migration triggers below
+> fired; the move to a pnpm workspace was an owner decision taken between
+> Slice 2 and Slice 3 — see ADR-0007 for what changed and, as importantly,
+> what did not (the boundaries-lint guarantee this ADR established remains in
+> force inside `apps/web`).
 
 ## Context
 

@@ -40,11 +40,14 @@ throwaway local values.
 
 ## 3. Configure the environment
 
+The environment belongs to the web application, so both files live in
+`apps/web/` (ADR-0007):
+
 ```bash
-cp .env.example .env.local      # PowerShell: Copy-Item .env.example .env.local
+cp apps/web/.env.example apps/web/.env.local   # PowerShell: Copy-Item apps/web/.env.example apps/web/.env.local
 ```
 
-Paste the values printed by `pnpm db:start` into `.env.local`:
+Paste the values printed by `pnpm db:start` into `apps/web/.env.local`:
 
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` ← the printed `anon key`
 - `SUPABASE_SERVICE_ROLE_KEY` ← the printed `service_role key`
@@ -85,7 +88,7 @@ trustworthy.
 pnpm types:gen
 ```
 
-Writes `src/types/database.types.ts`. CI fails if the committed file drifts from
+Writes `backend/supabase/generated/database.types.ts`. CI fails if the committed file drifts from
 the migrations, so regenerate and commit whenever you add a migration.
 
 ## 6. Run the checks and the app
@@ -191,6 +194,10 @@ keeps each dev server short-lived:
 pnpm e2e --project=chromium-mobile --workers=1 tests/e2e/smoke.spec.ts tests/e2e/verification.spec.ts
 ```
 
+(The spec paths are relative to `apps/web` — Playwright runs there — but the
+command works verbatim from the repository root, because the root `pnpm e2e`
+delegates into the app package and forwards its arguments.)
+
 Chunking is how the 2G mobile run was completed (19 + 32 + 28 = 79) after the
 single-process run exhausted memory partway through. It is a workaround for the
 machine, not for the suite: CI runs the whole thing in one go.
@@ -249,7 +256,7 @@ onboards from scratch lands in `draft` and cannot reach the queue through the
 browser yet — evidence upload is subpart 2F (recorded as R-2-04 in the
 [risk register](./risk-register.md)).
 
-pgTAP files in `supabase/tests/` each manage their own transaction and roll back,
+pgTAP files in `backend/supabase/tests/` each manage their own transaction and roll back,
 so database tests never leave state behind.
 
 ## Git hooks
@@ -280,8 +287,8 @@ pnpm db:start && pnpm db:reset
 | Symptom | Cause and fix |
 | --- | --- |
 | `failed to connect to docker daemon` | Docker Desktop is not running. Start it and retry. |
-| `port 54321 already in use` | Another Supabase stack is running. `pnpm db:stop`, or change the ports in `supabase/config.toml`. |
-| `supabase start` rejects a config key | The pinned CLI does not recognise it. The error names the key — remove that line from `supabase/config.toml` and open an issue so the omission is deliberate. |
+| `port 54321 already in use` | Another Supabase stack is running. `pnpm db:stop`, or change the ports in `backend/supabase/config.toml`. |
+| `supabase start` rejects a config key | The pinned CLI does not recognise it. The error names the key — remove that line from `backend/supabase/config.toml` and open an issue so the omission is deliberate. |
 | `pnpm types:gen` says the stack is not running | Run `pnpm db:start` first. |
 | `db:start` exits with `uv_spawn` / `EUNKNOWN` after "Seeding data…" | A crash in the npm CLI wrapper, not the stack — the containers usually came up anyway. Check `docker ps`; if `supabase_studio_*` or `supabase_pg_meta_*` show `Exited`, run `docker start supabase_pg_meta_barangay-hub supabase_studio_barangay-hub`. |
 | Typecheck errors mentioning `exactOptionalPropertyTypes` | Prefer conditional spreads (`...(x === undefined ? {} : { x })`) over passing `undefined`. See ADR-0003 before relaxing the flag. |
