@@ -1,0 +1,183 @@
+import { z } from 'zod'
+
+import { isPlausibleBirthdate, normalizeContactPhone, normalizePersonName } from '@/utils/normalize'
+
+import { EVIDENCE_MAX_BYTES, EVIDENCE_MIME_TYPES, RESIDENCY_BASES } from '../constants'
+
+const RESIDENCY_KEYS = [
+  'property_owner',
+  'renter',
+  'household_member',
+  'caretaker',
+  'informal_resident',
+  'other',
+] as const
+
+/** The approved evidence categories (roadmap Slice 2 §12 / D2-03). */
+export const EVIDENCE_KINDS = ['identity', 'residency', 'supporting'] as const
+
+// Names are normalised (trim + collapse internal whitespace) and nothing more
+// — see the reasoning in @/utils/normalize.
+const name = z.string().transform(normalizePersonName).pipe(z.string().min(1).max(100))
+const optionalName = z.string().transform(normalizePersonName).pipe(z.string().max(100)).optional()
+
+/**
+ * Shared person payload for BOTH channels (ADR-0006 point 6): self-onboarding
+ * and staff walk-in creation validate identically; only authorization and
+ * provenance differ.
+ */
+export const personDetailsSchema = z
+  .object({
+    barangayId: z.string().uuid(),
+    firstName: name,
+    middleName: optionalName,
+    lastName: name,
+    suffix: z.string().trim().max(20).optional(),
+    // Duplicate SIGNAL only, never identity proof (ADR-0006 point 9).
+    birthdate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use the date picker.')
+      .refine((value) => isPlausibleBirthdate(value), 'Enter a real date in the past.')
+      .optional(),
+    contactPhone: z.string().transform(normalizeContactPhone).pipe(z.string().max(30)).optional(),
+    addressLine: z.string().trim().max(200).optional(),
+    residencyBasis: z.enum(RESIDENCY_KEYS),
+    residencyExplanation: z.string().trim().max(500).optional(),
+  })
+  .superRefine((value, ctx) => {
+    // D2-01: explanation required iff the basis demands it, forbidden
+    // otherwise (mirrors the database trigger; the trigger is authoritative).
+    const needed = RESIDENCY_BASES[value.residencyBasis].requiresExplanation
+    const provided = (value.residencyExplanation ?? '').trim().length > 0
+    if (needed !== provided) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['residencyExplanation'],
+        message: needed
+          ? 'Explain the residency arrangement (required for “Other”).'
+          : 'An explanation applies only to the “Other” basis.',
+      })
+    }
+  })
+
+/** Staff walk-in creation additionally REQUIRES a reason (ADR-0006 point 7). */
+export const walkInCreateSchema = z.object({
+  details: personDetailsSchema,
+  reason: z.string().trim().min(1, 'A reason is required for staff-assisted creation.').max(500),
+})
+
+export const evidenceMetadataSchema = z.object({
+  applicationId: z.string().uuid(),
+  kind: z.enum(['identity', 'residency', 'supporting']),
+  mimeType: z.enum(EVIDENCE_MIME_TYPES),
+  declaredSizeBytes: z
+    .number()
+    .int()
+    .positive()
+    .max(EVIDENCE_MAX_BYTES, 'Files are limited to 10 MiB.'),
+})
+
+export const supersedeSchema = z
+  .object({
+    barangayId: z.string().uuid(),
+    loserPersonId: z.string().uuid(),
+    survivorPersonId: z.string().uuid(),
+    reason: z.string().trim().min(1, 'A reason is required.').max(500),
+  })
+  // The database refuses a self-pair too (SUPERSEDE_NOT_ELIGIBLE); failing at
+  // the shape layer just gives the form a field-level message.
+  .refine((value) => value.loserPersonId !== value.survivorPersonId, {
+    message: 'A record cannot supersede itself.',
+    path: ['survivorPersonId'],
+  })
+
+export const rejectSchema = z.object({
+  barangayId: z.string().uuid(),
+  applicationId: z.string().uuid(),
+  reason: z.string().trim().min(1, 'A rejection reason is required.').max(1000),
+})
+
+export const requestInformationSchema = z.object({
+  barangayId: z.string().uuid(),
+  applicationId: z.string().uuid(),
+  note: z.string().trim().min(1, 'Tell the resident what is missing.').max(1000),
+})
+
+// ── Slice 2D: verification queue and decisions ──────────────────────────────
+
+export const VERIFICATION_STATE_KEYS = [
+  'draft',
+  'submitted',
+  'in_review',
+  'info_requested',
+  'resubmitted',
+  'approved',
+  'rejected',
+] as const
+
+/**
+ * Queue URL parameters. The ONLY values this route accepts are a state key
+ * from the fixed vocabulary and a page number — never a name or any other
+ * personal value (P6-C-E). Anything else fails the parse and the page falls
+ * back to its defaults rather than echoing the input.
+ */
+export const queueFilterSchema = z.object({
+  state: z.enum(VERIFICATION_STATE_KEYS).optional(),
+  page: z.coerce.number().int().min(1).max(10_000).optional(),
+})
+
+/** Start-review and approve carry no free text — ids only. */
+export const reviewActionSchema = z.object({
+  barangayId: z.string().uuid(),
+  applicationId: z.string().uuid(),
+})
+
+/** Resident resubmission: the application id alone; ownership is DB-enforced. */
+export const resubmitSchema = z.object({
+  applicationId: z.string().uuid(),
+})
+
+// ── Slice 2F: evidence upload, finalization, removal, read ──────────────────
+// No schema accepts a storage PATH from the client: the path is generated by
+// `add_evidence_metadata` and looked up server-side from the evidence id.
+
+export const evidenceUploadRequestSchema = z.object({
+  applicationId: z.string().uuid(),
+  kind: z.enum(EVIDENCE_KINDS),
+  mimeType: z.enum(EVIDENCE_MIME_TYPES),
+  declaredSizeBytes: z.coerce
+    .number()
+    .int()
+    .min(1, 'That file is empty.')
+    .max(EVIDENCE_MAX_BYTES, 'That file is larger than 10 MB.'),
+})
+
+export const evidenceFinalizeSchema = z.object({
+  evidenceId: z.string().uuid(),
+  // sha-256 of the uploaded bytes, computed in the browser. Tamper evidence,
+  // not authorization — the trusted size comes from the object itself.
+  contentHash: z.string().regex(/^[a-f0-9]{64}$/, 'Invalid checksum.'),
+})
+
+export const evidenceRemoveSchema = z.object({
+  evidenceId: z.string().uuid(),
+})
+
+export const evidenceReadSchema = z.object({
+  barangayId: z.string().uuid(),
+  evidenceId: z.string().uuid(),
+})
+
+/** Browser-driven submission (Slice 2F closes R-2-04). */
+export const submitApplicationSchema = z.object({
+  applicationId: z.string().uuid(),
+})
+
+/**
+ * Registry search input. The term travels in a POST body and is never placed
+ * in a URL, so this schema is the only place it is shaped (P6-C-E).
+ */
+export const registrySearchSchema = z.object({
+  barangayId: z.string().uuid(),
+  term: z.string().trim().min(2, 'Type at least two characters.').max(100),
+})

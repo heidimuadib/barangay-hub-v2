@@ -23,11 +23,13 @@ export {
 } from './services/authorization'
 
 export { signInAction } from './actions/sign-in'
+export { signUpAction } from './actions/sign-up'
 export { signOutAction } from './actions/sign-out'
 export { setActiveBarangayAction } from './actions/set-active-barangay'
 export { updateProfileAction } from './actions/update-profile'
 
 export { SignInForm } from './components/sign-in-form'
+export { SignUpForm } from './components/sign-up-form'
 export { SignOutButton } from './components/sign-out-button'
 export { BarangaySwitcher } from './components/barangay-switcher'
 export { ProfileForm } from './components/profile-form'

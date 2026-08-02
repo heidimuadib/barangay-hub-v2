@@ -36,9 +36,15 @@ select bag_eq(
     'memberships',
     'membership_roles',
     'platform_role_assignments',
-    'audit_events'
+    'audit_events',
+    'residency_bases',
+    'persons',
+    'person_accounts',
+    'verification_applications',
+    'verification_evidence',
+    'outbox_events'
   ],
-  'public schema contains exactly the Slice 1 identity tables'
+  'public schema contains exactly the Slice 1 + Slice 2A tables'
 );
 
 select has_schema('extensions', 'the extensions schema exists');

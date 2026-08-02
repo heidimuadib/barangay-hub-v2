@@ -1,0 +1,295 @@
+import { describe, expect, it } from 'vitest'
+
+import { isResidencyValid, requiresExplanation } from '@/features/registry/rules/residency'
+import {
+  evidenceMetadataSchema,
+  personDetailsSchema,
+  queueFilterSchema,
+  registrySearchSchema,
+  rejectSchema,
+  requestInformationSchema,
+  resubmitSchema,
+  reviewActionSchema,
+  supersedeSchema,
+  walkInCreateSchema,
+} from '@/features/registry/schemas/registry.schema'
+
+const BARANGAY = 'a0000000-0000-4000-8000-000000000001'
+const APPLICATION = 'd0000000-0000-4000-8000-000000000001'
+
+const validDetails = {
+  barangayId: BARANGAY,
+  firstName: 'Juan',
+  lastName: 'Dela Cruz (Test)',
+  residencyBasis: 'renter' as const,
+}
+
+describe('residency rules (D2-01)', () => {
+  it('requires an explanation for other and only for other', () => {
+    expect(requiresExplanation('other')).toBe(true)
+    for (const key of [
+      'property_owner',
+      'renter',
+      'household_member',
+      'caretaker',
+      'informal_resident',
+    ] as const) {
+      expect(requiresExplanation(key)).toBe(false)
+      expect(isResidencyValid(key, null)).toBe(true)
+      // Stray narrative on a non-other basis is refused.
+      expect(isResidencyValid(key, 'unnecessary text')).toBe(false)
+    }
+    expect(isResidencyValid('other', null)).toBe(false)
+    expect(isResidencyValid('other', '  ')).toBe(false)
+    expect(isResidencyValid('other', 'Caretaker of a relative’s property')).toBe(true)
+  })
+})
+
+describe('personDetailsSchema', () => {
+  it('accepts a minimal valid person for either channel', () => {
+    expect(personDetailsSchema.safeParse(validDetails).success).toBe(true)
+  })
+
+  it('enforces the D2-01 explanation rule both ways', () => {
+    expect(
+      personDetailsSchema.safeParse({ ...validDetails, residencyBasis: 'other' }).success,
+    ).toBe(false)
+    expect(
+      personDetailsSchema.safeParse({
+        ...validDetails,
+        residencyBasis: 'other',
+        residencyExplanation: 'Synthetic arrangement',
+      }).success,
+    ).toBe(true)
+    expect(
+      personDetailsSchema.safeParse({
+        ...validDetails,
+        residencyExplanation: 'must not appear here',
+      }).success,
+    ).toBe(false)
+  })
+
+  it('rejects forged tenant ids and unknown bases at the shape layer', () => {
+    expect(
+      personDetailsSchema.safeParse({ ...validDetails, barangayId: 'not-a-uuid' }).success,
+    ).toBe(false)
+    expect(
+      personDetailsSchema.safeParse({ ...validDetails, residencyBasis: 'squatter' }).success,
+    ).toBe(false)
+  })
+})
+
+describe('personDetailsSchema normalisation (Slice 2C)', () => {
+  it('normalises names without altering their substance', () => {
+    const parsed = personDetailsSchema.safeParse({
+      ...validDetails,
+      firstName: '  Juan   Miguel ',
+      lastName: 'dela Cruz',
+    })
+    expect(parsed.success).toBe(true)
+    if (parsed.success) {
+      expect(parsed.data.firstName).toBe('Juan Miguel')
+      // The particle keeps its lower case — no title-casing.
+      expect(parsed.data.lastName).toBe('dela Cruz')
+    }
+  })
+
+  it('rejects a name that is only whitespace once normalised', () => {
+    expect(personDetailsSchema.safeParse({ ...validDetails, firstName: '   ' }).success).toBe(false)
+  })
+
+  it('strips punctuation from a phone without guessing a country code', () => {
+    const parsed = personDetailsSchema.safeParse({
+      ...validDetails,
+      contactPhone: '0917 555-1234',
+    })
+    expect(parsed.success).toBe(true)
+    if (parsed.success) {
+      expect(parsed.data.contactPhone).toBe('09175551234')
+    }
+  })
+
+  it('refuses impossible and future birthdates', () => {
+    expect(
+      personDetailsSchema.safeParse({ ...validDetails, birthdate: '2026-02-31' }).success,
+    ).toBe(false)
+    expect(
+      personDetailsSchema.safeParse({ ...validDetails, birthdate: '2999-01-01' }).success,
+    ).toBe(false)
+    expect(
+      personDetailsSchema.safeParse({ ...validDetails, birthdate: '1990-05-04' }).success,
+    ).toBe(true)
+  })
+})
+
+describe('registrySearchSchema (P6-C-E)', () => {
+  it('requires a tenant id and a term of at least two characters', () => {
+    expect(registrySearchSchema.safeParse({ barangayId: BARANGAY, term: 'a' }).success).toBe(false)
+    expect(registrySearchSchema.safeParse({ barangayId: BARANGAY, term: '  ' }).success).toBe(false)
+    expect(registrySearchSchema.safeParse({ barangayId: 'not-a-uuid', term: 'cruz' }).success).toBe(
+      false,
+    )
+    expect(registrySearchSchema.safeParse({ barangayId: BARANGAY, term: 'cruz' }).success).toBe(
+      true,
+    )
+  })
+
+  it('caps the term length', () => {
+    expect(
+      registrySearchSchema.safeParse({ barangayId: BARANGAY, term: 'x'.repeat(101) }).success,
+    ).toBe(false)
+  })
+})
+
+describe('queueFilterSchema (Slice 2D, P6-C-E)', () => {
+  it('accepts only a known state key and a page number', () => {
+    expect(queueFilterSchema.safeParse({}).success).toBe(true)
+    expect(queueFilterSchema.safeParse({ state: 'in_review' }).success).toBe(true)
+    expect(queueFilterSchema.safeParse({ state: 'in_review', page: '3' }).success).toBe(true)
+    expect(queueFilterSchema.safeParse({ state: 'nonsense' }).success).toBe(false)
+  })
+
+  it('refuses a page that is not a positive integer', () => {
+    expect(queueFilterSchema.safeParse({ page: '0' }).success).toBe(false)
+    expect(queueFilterSchema.safeParse({ page: '-2' }).success).toBe(false)
+    expect(queueFilterSchema.safeParse({ page: '1.5' }).success).toBe(false)
+    expect(queueFilterSchema.safeParse({ page: 'abc' }).success).toBe(false)
+  })
+
+  it('cannot be used to smuggle a personal value into the URL', () => {
+    // A name in `state` fails the enum; an extra key is stripped, not echoed.
+    expect(queueFilterSchema.safeParse({ state: 'Juan Dela Cruz' }).success).toBe(false)
+    const parsed = queueFilterSchema.safeParse({ q: 'Juan Dela Cruz', page: '1' })
+    expect(parsed.success).toBe(true)
+    if (parsed.success) {
+      expect(parsed.data).not.toHaveProperty('q')
+    }
+  })
+})
+
+describe('verification action schemas (Slice 2D)', () => {
+  it('reviewActionSchema requires both ids as UUIDs', () => {
+    expect(
+      reviewActionSchema.safeParse({ barangayId: BARANGAY, applicationId: APPLICATION }).success,
+    ).toBe(true)
+    expect(
+      reviewActionSchema.safeParse({ barangayId: BARANGAY, applicationId: 'not-a-uuid' }).success,
+    ).toBe(false)
+    expect(reviewActionSchema.safeParse({ applicationId: APPLICATION }).success).toBe(false)
+  })
+
+  it('requestInformationSchema demands a non-empty note within the column limit', () => {
+    const base = { barangayId: BARANGAY, applicationId: APPLICATION }
+    expect(requestInformationSchema.safeParse({ ...base, note: '   ' }).success).toBe(false)
+    expect(
+      requestInformationSchema.safeParse({ ...base, note: 'Send a clearer photo (synthetic).' })
+        .success,
+    ).toBe(true)
+    // The database CHECK caps info_request_note at 1000 characters.
+    expect(requestInformationSchema.safeParse({ ...base, note: 'x'.repeat(1001) }).success).toBe(
+      false,
+    )
+  })
+
+  it('resubmitSchema carries the application id alone — ownership is not client input', () => {
+    expect(resubmitSchema.safeParse({ applicationId: APPLICATION }).success).toBe(true)
+    expect(resubmitSchema.safeParse({ applicationId: 'not-a-uuid' }).success).toBe(false)
+    const parsed = resubmitSchema.safeParse({ applicationId: APPLICATION, userId: 'forged' })
+    expect(parsed.success).toBe(true)
+    if (parsed.success) {
+      expect(parsed.data).not.toHaveProperty('userId')
+    }
+  })
+})
+
+describe('walkInCreateSchema', () => {
+  it('requires the staff reason (ADR-0006 point 7)', () => {
+    expect(walkInCreateSchema.safeParse({ details: validDetails, reason: '' }).success).toBe(false)
+    expect(
+      walkInCreateSchema.safeParse({
+        details: validDetails,
+        reason: 'Walk-in at the counter (synthetic)',
+      }).success,
+    ).toBe(true)
+  })
+})
+
+describe('evidenceMetadataSchema (D2-03)', () => {
+  it('enforces the MIME allow-list and the 10 MiB ceiling', () => {
+    const base = { applicationId: APPLICATION, kind: 'identity' as const }
+    expect(
+      evidenceMetadataSchema.safeParse({
+        ...base,
+        mimeType: 'image/png',
+        declaredSizeBytes: 2048,
+      }).success,
+    ).toBe(true)
+    expect(
+      evidenceMetadataSchema.safeParse({
+        ...base,
+        mimeType: 'application/x-msdownload',
+        declaredSizeBytes: 2048,
+      }).success,
+    ).toBe(false)
+    expect(
+      evidenceMetadataSchema.safeParse({
+        ...base,
+        mimeType: 'image/png',
+        declaredSizeBytes: 10 * 1024 * 1024 + 1,
+      }).success,
+    ).toBe(false)
+  })
+})
+
+describe('reason-carrying commands', () => {
+  it('supersede requires tenant, loser, survivor and a reason (D2-02)', () => {
+    expect(
+      supersedeSchema.safeParse({
+        barangayId: BARANGAY,
+        loserPersonId: APPLICATION,
+        survivorPersonId: 'c0000000-0000-4000-8000-000000000005',
+        reason: 'Same person registered twice (synthetic)',
+      }).success,
+    ).toBe(true)
+    expect(
+      supersedeSchema.safeParse({
+        barangayId: BARANGAY,
+        loserPersonId: APPLICATION,
+        survivorPersonId: 'c0000000-0000-4000-8000-000000000005',
+        reason: '   ',
+      }).success,
+    ).toBe(false)
+  })
+
+  it('supersede refuses a self-pair at the shape layer (Slice 2E)', () => {
+    const parsed = supersedeSchema.safeParse({
+      barangayId: BARANGAY,
+      loserPersonId: APPLICATION,
+      survivorPersonId: APPLICATION,
+      reason: 'Cannot survive yourself (synthetic)',
+    })
+    expect(parsed.success).toBe(false)
+    if (!parsed.success) {
+      expect(parsed.error.issues[0]?.message).toMatch(/cannot supersede itself/i)
+    }
+  })
+
+  it('rejection requires a reason at the shape layer too', () => {
+    expect(
+      rejectSchema.safeParse({ barangayId: BARANGAY, applicationId: APPLICATION, reason: '' })
+        .success,
+    ).toBe(false)
+    // Slice 2D: the action schema also names the tenant the caller claims.
+    expect(
+      rejectSchema.safeParse({ applicationId: APPLICATION, reason: 'No tenant (synthetic)' })
+        .success,
+    ).toBe(false)
+    expect(
+      rejectSchema.safeParse({
+        barangayId: BARANGAY,
+        applicationId: APPLICATION,
+        reason: 'Evidence insufficient (synthetic)',
+      }).success,
+    ).toBe(true)
+  })
+})

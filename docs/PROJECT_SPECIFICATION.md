@@ -426,14 +426,22 @@ rejects, not this prose:
 
 ## 16. Testing Standards
 
-**Implemented.** Four suites, all gating merges; totals at `9fbd783`:
+**Implemented.** Four suites, all gating merges; totals at Slice 2 close
+(2A–2G, 2026-08-02) with the Slice 1 figures in parentheses:
 
 | Suite | Where | Totals | Character |
 | --- | --- | --- | --- |
-| pgTAP | `supabase/tests/` | **104** | The security proof: RLS matrix, isolation, audit immutability, schema structure. Self-contained transactions, exact plans |
-| Unit/component | `src/**`, `tests/unit/` | **95** | Pure rules, schemas, guards (mocked repositories), hooks, plus architecture tests that independently re-assert what lint enforces |
-| End-to-end | `tests/e2e/` | **54** | Playwright, desktop + mobile, seeded personas; positive *and* negative journeys (staff refused audit, platform refused tenant data, forged navigation) |
-| Coverage | Vitest v8 | **83.28%** ≥ 80% gate | Scoped to `lib`, `utils`, `hooks`, feature `rules` and `schemas` — the layers that must be exhaustively testable without a database; widened per slice |
+| pgTAP | `supabase/tests/` | **358** in 13 files (104) | The security proof: RLS matrix, isolation, audit immutability, schema structure, verification transitions, evidence Storage rules, duplicate resolution, outbox hygiene. Self-contained transactions, exact plans |
+| Unit/component | `src/**`, `tests/unit/` | **231** in 26 files (95) | Pure rules, schemas, guards (mocked repositories), hooks, plus architecture tests that independently re-assert what lint enforces |
+| End-to-end | `tests/e2e/` | **79 per viewport project** (54) | Playwright, desktop *and* Pixel 5, seeded personas; positive *and* negative journeys (staff refused audit, platform refused tenant data, forged navigation, anonymous evidence fetch) |
+| Coverage | Vitest v8 | **89.06%** statements / **90.8%** branches ≥ 80/75 gate (83.28%) | Scoped to `lib`, `utils`, `hooks`, feature `rules` and `schemas` — the layers that must be exhaustively testable without a database; widened per slice |
+
+The coverage figure is the one a clean checkout reproduces. A higher number
+(90.65%) was recorded when 2F closed and is **not** reproducible: the
+coverage-scoped tree is byte-identical between the two commits, yet the
+measurement is stable at 89.06% across repeated runs now. The difference is
+machine state during that run, not a test that was removed — the unit totals
+are unchanged at 231. Record the reproducible number.
 
 Standards: tests are never weakened to make implementation pass (enforced in
 review; the R-1-06 record shows the practice); e2e mutation tests normalise
@@ -484,11 +492,19 @@ For each slice: scope as recorded in-repo, and status.
 - **Slice 1 — Implemented.** §5 and §8–§13 in full, plus minimal verification
   UI (§3), seeds for nine personas across two synthetic tenants, and the four
   test suites. Recorded deferrals: outbox, PLT-08, full shell chrome.
-- **Slice 2 — Defined, READY TO START
+- **Slice 2 — Implemented (2A–2G, 2026-08-02):** registry, verification and
+  outbox foundation; public sign-up and resident onboarding; staff registry and
+  walk-in creation; verification queue and decision workflow; duplicate
+  review and supersede-link resolution; private evidence Storage with signed
+  upload/read and browser-driven submission; and the 2G hardening, outbox
+  review and accessibility baseline — see
+  [architecture](./architecture/resident-registry-and-verification.md)
   ([roadmap](./IMPLEMENTATION_ROADMAP.md); provisioning ruled Option C and
   D2-01…04 approved,
-  [ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)).**
-  Hardening already delivered (R-1-06 fix and measurement record).
+  [ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)).
+  Recorded deferrals: notification delivery (Slice 8), evidence malware
+  scanning (R-2-01), a shared-store rate limiter for hosted exposure (R-1-04),
+  and the shell-chrome touch targets (R-2-05, US-UI-002).
 - **Slices 3–9 and v1.5 — Sequenced.** Scope, dependencies, gates and effort
   per slice in the roadmap.
 
@@ -497,12 +513,14 @@ For each slice: scope as recorded in-repo, and status.
 Recorded here per the specification's honesty rule — identified, not silently
 resolved:
 
-1. **README non-negotiables table vs implementation.** The table labels the
-   transactional outbox "(Slice 1)"; the outbox was explicitly deferred (recorded
-   in the decision log). It also cites a "`QueueShell` param split (Slice 1)"
-   — no `QueueShell` exists; URL hygiene is enforced by the no-parameter policy
-   and e2e assertion instead. The README rows state intent correctly but their
-   slice attributions are stale.
+1. ~~**README non-negotiables table vs implementation.**~~ **RESOLVED in Slice
+   2G (2026-08-02).** The table had labelled the transactional outbox
+   "(Slice 1)" though it was explicitly deferred, and cited a "`QueueShell`
+   param split (Slice 1)" that never existed. Both rows now name what actually
+   enforces them: the outbox arrived in Slice 2A with delivery still deferred
+   to Slice 8, and URL hygiene is the no-parameter policy, e2e-asserted. The
+   deferral table in the decision log records the outbox's arrival rather than
+   still promising it.
 2. **"Eight named operations" vs nine typed reasons.** Phase-document language
    says eight system operations; `SERVICE_ROLE_REASONS` has nine members
    because scheduled jobs carry their own reason. The architecture test pins

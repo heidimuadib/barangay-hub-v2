@@ -75,6 +75,20 @@ authoritative wording in
 | **D2-03** evidence uploads | Private bucket; server-brokered signed upload URLs; metadata row before upload; path `{barangay}/{application}/{evidence}`; short-lived authorized read URLs; synthetic files only |
 | **D2-04** capabilities | Ten `registry.*`/`verification.*` keys; staff get read/review/request-info; administrators get all; residents RLS-self-scope only; platform none |
 
+**Implementation status (2026-08-02): all four are IMPLEMENTED and
+test-covered.** Slice 2 is complete (2A–2G).
+
+| Decision | Implemented by | Proof |
+| --- | --- | --- |
+| **D2-01** | 2A migrations `20260802010000`–`20260802050000`; the six keys are a database-backed lookup, and `other` requires an explanation at the CHECK level | pgTAP 05–07 |
+| **D2-02** | 2E `supersede_person` only — no merge path exists in the codebase | pgTAP `10_duplicate_resolution` (35 assertions); e2e `duplicates.spec.ts` |
+| **D2-03** | 2A metadata schema, opaque path, MIME allow-list, size ceiling and checksum fields; **completed in 2F** with the private bucket (`20260805010000`), server-brokered signed upload, server-verified finalization and short-lived read URLs | pgTAP `11_evidence_storage`; e2e `evidence.spec.ts` drives the whole journey through the browser |
+| **D2-04** | 2A capability rows; enforced by `auth_has_permission()` in every function and by RLS | pgTAP 05–07, 09; e2e `verification.spec.ts` authorization block |
+
+Slice 2 added **no** entry to the service-role allow-list and required no ADR
+amendment: every registry and verification path runs as the calling user under
+RLS.
+
 ## DEC-SCOPE-01 — Slice 2 scope is not defined in this repository
 
 - **Status:** **RESOLVED** — 2026-08-01. The product owner supplied the
@@ -125,9 +139,9 @@ inventing scope, not an omission.
 
 | Item | Reason | Arrives |
 | --- | --- | --- |
-| Transactional outbox table | No notification producer exists in Slice 1; building the table without a consumer is speculative infrastructure | Notification slice (EPIC-11/14) |
+| Transactional outbox table | No notification producer exists in Slice 1; building the table without a consumer is speculative infrastructure | **ARRIVED in Slice 2A** (`20260802010000`), once verification decisions gave it real producers. Enqueue only: four approved intents, tenant-scoped, carrying opaque ids and nothing else. **Delivery is still deferred** to the notification slice (EPIC-11/14) — no dispatcher exists, asserted by pgTAP `12_outbox_and_slice_review` |
 | PLT-08 authenticated readiness endpoint | No job queues exist to probe; a DB-touching public endpoint is an amplification vector (health route comment) | Platform slice |
-| US-UI-002 full shell chrome (bottom nav, notification centre, density controls) | Slice 1 builds the minimal verification UI only; broad UI work is out of its security-foundation scope | UI slice |
+| US-UI-002 full shell chrome (bottom nav, notification centre, density controls) | Slice 1 builds the minimal verification UI only; broad UI work is out of its security-foundation scope | UI slice — now also carries the header-link touch-target gap measured in 2G (**R-2-05**) |
 
 ## DEC-REPO-01 — application location vs Git root
 

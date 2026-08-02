@@ -13,6 +13,7 @@ import {
   hasStaffCapability,
   resolveActiveBarangay,
 } from '@/features/identity'
+import { REGISTRY_PERMISSIONS } from '@/features/registry'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -49,6 +50,16 @@ export default async function StaffLayout({ children }: { children: React.ReactN
             <Link href="/staff" className="text-sm text-neutral-700 hover:underline">
               Workspace
             </Link>
+            {active && can(context, active.barangayId, REGISTRY_PERMISSIONS.registryRead) ? (
+              <Link href="/staff/registry" className="text-sm text-neutral-700 hover:underline">
+                Registry
+              </Link>
+            ) : null}
+            {active && can(context, active.barangayId, REGISTRY_PERMISSIONS.verificationRead) ? (
+              <Link href="/staff/verification" className="text-sm text-neutral-700 hover:underline">
+                Verification
+              </Link>
+            ) : null}
             {active && can(context, active.barangayId, PERMISSIONS.membershipRead) ? (
               <Link href="/staff/members" className="text-sm text-neutral-700 hover:underline">
                 Members
