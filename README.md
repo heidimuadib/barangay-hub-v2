@@ -2,21 +2,27 @@
 
 Multi-tenant civic services platform for Philippine barangays.
 
-**Current state: Phase 7, Slice 2 complete — resident registry and
-verification, on top of the Slice 1 identity foundation.** Public sign-up with
-email confirmation, the person registry and walk-in creation, the staff
-verification queue and its decision workflow, duplicate supersede-and-link
-resolution, and private evidence Storage with signed upload/read are live.
-Business features (document requests, certificates, payments) are not, and
-notification *delivery* is not — Slice 2 enqueues intent only. See
-`docs/local-setup.md` to get running,
-`docs/architecture/identity-and-access.md` for the access model and
-`docs/architecture/resident-registry-and-verification.md` for the registry.
+**Current state: Phase 7, Slice 2 complete; Slice 3 in progress (3A).**
+Slice 2 delivered public sign-up with email confirmation, the person registry
+and walk-in creation, the staff verification queue and its decision workflow,
+duplicate supersede-and-link resolution, and private evidence Storage with
+signed upload/read. **Slice 3A** adds the document catalog and request-intake
+*domain* — schema, state machine, capabilities, RLS, audit and outbox — with
+the resident and staff surfaces still to come in 3B/3C. Certificates and
+payments are not built, and notification *delivery* is not — the outbox
+enqueues intent only. See `docs/local-setup.md` to get running,
+`docs/architecture/identity-and-access.md` for the access model,
+`docs/architecture/resident-registry-and-verification.md` for the registry and
+`docs/architecture/document-catalog-and-requests.md` for the catalog.
+
+Fees, processing times and validity periods shown anywhere in this system are
+**not confirmed** by any barangay (blocker B-08) and are carried as data that
+says so — see `values_are_placeholder` in the catalog.
 
 **Plan of record:** [docs/PROJECT_SPECIFICATION.md](./docs/PROJECT_SPECIFICATION.md)
 (what the system is) and
 [docs/IMPLEMENTATION_ROADMAP.md](./docs/IMPLEMENTATION_ROADMAP.md)
-(the order it gets built — next up: Slice 3, document requests; provisioning
+(the order it gets built — currently Slice 3, document requests; provisioning
 ruled as Option C hybrid, [ADR-0006](./docs/adr/0006-resident-provisioning-and-registry-decisions.md)).
 
 **This is the STANDALONE v2 repository** (DEC-REPO-01, resolved). It was

@@ -53,8 +53,8 @@ const checks = [
   {
     name: 'migrations recorded',
     sql: 'select count(*) from supabase_migrations.schema_migrations',
-    ok: (value) => Number(value) >= 16,
-    detail: 'expected every Slice 0a–2F migration to be recorded',
+    ok: (value) => Number(value) >= 21,
+    detail: 'expected every Slice 0a–3A migration to be recorded',
   },
   {
     name: 'seed fixtures present',
@@ -73,6 +73,21 @@ const checks = [
     sql: "select count(*) from storage.buckets where id = 'verification-evidence' and not public",
     ok: (value) => Number(value) === 1,
     detail: 'expected the PRIVATE verification-evidence bucket',
+  },
+  {
+    name: 'catalog seed present',
+    sql: 'select count(*) from public.document_types',
+    ok: (value) => Number(value) >= 5,
+    detail: 'expected the Slice 3A document-type fixtures',
+  },
+  {
+    // A confirmed-looking fee in a local database is how a synthetic amount
+    // starts being quoted as real. B-08 is open, so every seeded row must
+    // still say so.
+    name: 'catalog fees still marked placeholder',
+    sql: 'select count(*) from public.document_types where not values_are_placeholder',
+    ok: (value) => Number(value) === 0,
+    detail: 'expected every seeded document type to keep values_are_placeholder = true (B-08)',
   },
 ]
 

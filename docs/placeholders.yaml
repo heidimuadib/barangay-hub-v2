@@ -12,7 +12,7 @@
 # ============================================================================
 
 version: 1
-slice: 2
+slice: 3
 
 placeholders:
   - id: DEC-ENV-01
@@ -63,8 +63,15 @@ placeholders:
     owner: product-owner
     resolves_in: docs/adr/0006-resident-provisioning-and-registry-decisions.md
 
+  - id: B-08
+    subject: Document fee schedule, processing times and validity periods
+    current: 'UNCONFIRMED. Slice 3A (2026-08-03) ships the catalog with every figure carried as data and every row flagged `values_are_placeholder = true`. The seeded amounts are SYNTHETIC and invented for testing — no barangay has approved any of them. The flag is not a parameter of `create_document_type`: confirming a schedule is an owner act, not something a caller asserts.'
+    source: assumption
+    blocking_level: pilot
+    owner: product-owner-and-captain
+    note: 'Blocks pilot exposure, not local build (roadmap Slice 3 §8). Enforced in three places: the NOT NULL column default, the domain function that cannot set it, and `pnpm db:reset:verified`, which fails if any seeded row claims to be confirmed.'
+
 # ── Registered now, populated when their slice lands ────────────────────────
-# Fee schedule, SLAs and validity periods    → Slice 3 (DOC-001), blocker B-08
 # Certificate and summons template wording   → Slice 4, blockers B-05 / B-06
 # Signatory titles and wet-signature process → Slice 4, blocker B-07
 # Non-mediable categories and referrals      → Slice 6, blocker B-09

@@ -29,7 +29,7 @@ comes) · `v1.5` (feature-flagged, post-MVP).
 | 0b | Hosted integration assessment | **COMPLETE** | Evidence base for DEC-ENV-01; PG 17 reconciliation | 0a | — | S |
 | 1 | Identity, tenant, RBAC, RLS, audit foundation | **COMPLETE** | Secure multi-tenant identity with forced RLS and append-only audit | 0a | — | XL |
 | 2 | Resident registration, registry, verification | **COMPLETE (2A–2G)** | Verified resident profiles; staff verification workflow; registry with duplicate handling | 1 | — (DEC-AUTH-01 resolved: Option C, [ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)) | XL |
-| 3 | Document catalog and request intake | SEQUENCED | Residents and walk-ins submit document requests through one domain service | 2 | Fee/SLA confirmation (B-08) before pilot, not before build | L |
+| 3 | Document catalog and request intake | **IN PROGRESS — 3A complete** | Residents and walk-ins submit document requests through one domain service | 2 | Fee/SLA confirmation (B-08) before pilot, not before build | L |
 | 4 | Certificate generation, serials, QR, public verification | SEQUENCED | Accountable certificate issuance with public verifiability | 3 | Template/signatory confirmation (B-05–B-07) before pilot | L |
 | 5 | Payments, exemptions, ORs, release, day closure, call list | SEQUENCED | Cash-accountable release workflow | 4 | OR series policy (B-11) before pilot | XL |
 | 6 | Complaint intake, category gate, triage, docketing, evidence, timeline | SEQUENCED | Katarungang Pambarangay case intake with jurisdiction gate | 2 | Non-mediable categories (B-09) before pilot | L |
@@ -443,9 +443,33 @@ project). Slice 3 builds on this layout.
 
 ---
 
-## Slice 3 — Document catalog and request intake — SEQUENCED
+## Slice 3 — Document catalog and request intake — IN PROGRESS
 
-1–2. **3 — Document catalog & request intake**; SEQUENCED.
+**Status:** delivered in subparts on `feature/slice-3-document-requests`:
+
+| Subpart | Scope | State |
+| --- | --- | --- |
+| **3A** | Catalog and request domain foundation: `document_types` (with the B-08 `values_are_placeholder` flag), `document_type_requirements`, `document_requests`, `document_request_answers`; six capabilities and their role mapping; forced RLS + composite tenant FKs on all four tables; the four-state machine enforced at function *and* table; both creation channels converging on one record; audit triggers; two approved outbox intents; synthetic seeds; 86 new pgTAP + 44 new unit assertions | **COMPLETE** |
+| 3B | Resident catalog browse, document detail, request wizard, own-request list and status | pending |
+| 3C | Staff intake queue, request detail, walk-in creation through the same domain service | pending |
+| 3D | Supporting evidence (Slice 2 pattern), outbox review, US-UI-002/UI-001 chrome, US-UI-006 public portal, hardening, docs, final PR | pending |
+
+**Decisions taken in 3A**, recorded rather than assumed:
+
+- **Capability granularity follows Slice 2's precedent** — one capability per
+  meaningful transition (`requests.review`, `requests.mark_ready`) rather than
+  a single `requests.transition`, so a barangay can let front-desk staff start
+  a review without also letting them promise a document is ready.
+- **`request.submitted` enqueues no outbox intent**, inheriting the Slice 2
+  ruling for `verification.submitted`: it is the requester's own action,
+  already confirmed on screen. Asserted in pgTAP so it stays deliberate.
+- **No decline/cancel state was invented** — see DEC-REQ-01 in the decision
+  log; the roadmap documents four states and Slice 4 owns issuance.
+- **The catalog is not anon-readable.** The US-UI-006 public portal will need
+  that grant; opening a table to `anon` is a decision that belongs with the
+  surface that needs it, not with the domain.
+
+1–2. **3 — Document catalog & request intake**; IN PROGRESS.
 3. **Outcome:** a verified resident — or staff serving a walk-in through the
    same domain service — selects a document type, provides purpose and
    required inputs, and submits a tracked request; staff work an intake queue.

@@ -22,7 +22,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(27);
+select plan(30);
 
 create function pg_temp.impersonate(p_user uuid) returns void language plpgsql as $$
 begin
@@ -117,12 +117,16 @@ select lives_ok(
 
 select pg_temp.as_system();
 
+-- The approved inventory grows only when the ROADMAP grows it. Slice 3 adds
+-- exactly two (roadmap Slice 3 §13, "status-change intents"): the moments a
+-- requester learns something they did not cause.
 select is(
   (select array_agg(distinct event_type order by event_type)
    from public.outbox_events),
-  array['verification.approved', 'verification.info_requested',
+  array['request.in_review', 'request.ready_for_issue',
+        'verification.approved', 'verification.info_requested',
         'verification.rejected', 'verification.resubmitted'],
-  'exactly the four approved intents exist — no subpart invented a notification');
+  'exactly the six approved intents exist — no subpart invented a notification');
 
 -- The deliberate absences, asserted so they stay deliberate.
 select is(
@@ -131,21 +135,51 @@ select is(
   0,
   'submission enqueues NO intent: the resident''s own action, already confirmed on screen');
 
+-- Slice 3 inherits that ruling rather than re-deciding it.
+select is(
+  (select count(*)::int from public.outbox_events
+   where event_type = 'request.submitted'),
+  0,
+  'request submission enqueues NO intent either — the same reasoning as verification.submitted');
+
 select is(
   (select count(*)::int from public.outbox_events
    where event_type like 'person%' or event_type like '%evidence%'
-      or event_type like '%duplicate%' or event_type like '%supersede%'),
+      or event_type like '%duplicate%' or event_type like '%supersede%'
+      or event_type like 'catalog%'),
   0,
-  'registry, evidence and duplicate-resolution events enqueue nothing — internal records, not resident news');
+  'registry, evidence, duplicate-resolution and catalog events enqueue nothing — internal records, not resident news');
 
 -- ════ Payload hygiene, as a property of EVERY row ═══════════════════════════
 
+-- Asserted per FAMILY rather than as one permissive union, so that widening
+-- the allowed keys for requests cannot accidentally widen them for
+-- verification too.
+select is(
+  (select count(*)::int from public.outbox_events o
+   where o.event_type like 'verification.%'
+     and exists (
+       select 1 from jsonb_object_keys(o.payload) k
+       where k not in ('application_id', 'person_id'))),
+  0, 'every verification payload carries ONLY application_id and person_id — nothing else');
+
+select is(
+  (select count(*)::int from public.outbox_events o
+   where o.event_type like 'request.%'
+     and exists (
+       select 1 from jsonb_object_keys(o.payload) k
+       where k not in ('request_id', 'person_id'))),
+  0, 'every request payload carries ONLY request_id and person_id — nothing else');
+
+-- Every value in every payload is an opaque identifier. This is the assertion
+-- that survives a future slice adding a key nobody here anticipated: a uuid
+-- cannot be a name, an address, a purpose or a reason.
 select is(
   (select count(*)::int from public.outbox_events o
    where exists (
-     select 1 from jsonb_object_keys(o.payload) k
-     where k not in ('application_id', 'person_id'))),
-  0, 'every payload carries ONLY application_id and person_id — nothing else');
+     select 1 from jsonb_each_text(o.payload) kv
+     where kv.value !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')),
+  0, 'every payload VALUE is an opaque uuid — never free text of any kind');
 
 select is(
   (select count(*)::int from public.outbox_events o, public.persons p

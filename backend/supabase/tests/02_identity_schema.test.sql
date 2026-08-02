@@ -33,8 +33,8 @@ select is(
     where n.nspname = 'public' and c.relkind = 'r'
       and c.relrowsecurity and c.relforcerowsecurity
   ),
-  15,
-  'all fifteen tables have RLS enabled AND forced — including against the owner');
+  19,
+  'all nineteen tables have RLS enabled AND forced — including against the owner');
 
 -- ── Every table carries at least one explicit policy ────────────────────────
 
@@ -46,7 +46,7 @@ select is(
     join pg_catalog.pg_policy p on p.polrelid = c.oid
     where n.nspname = 'public'
   ),
-  15,
+  19,
   'every table has explicit policies — forced RLS with none would brick the owner path silently');
 
 -- ── Authenticated write surface is exactly as designed ──────────────────────

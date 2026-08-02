@@ -143,6 +143,35 @@ inventing scope, not an omission.
 | PLT-08 authenticated readiness endpoint | No job queues exist to probe; a DB-touching public endpoint is an amplification vector (health route comment) | Platform slice |
 | US-UI-002 full shell chrome (bottom nav, notification centre, density controls) | Slice 1 builds the minimal verification UI only; broad UI work is out of its security-foundation scope | UI slice — now also carries the header-link touch-target gap measured in 2G (**R-2-05**) |
 
+## DEC-REQ-01 — no decline or cancel state for document requests — **OPEN**
+
+- **Status:** OPEN, raised during Slice 3A (2026-08-03)
+- **Owner:** Product owner
+- **Blocking level:** not blocking 3A; should resolve before Slice 3 exits
+
+The roadmap documents exactly four request states — `draft → submitted →
+in_review → ready_for_issue` — and assigns issuance to Slice 4. 3A implemented
+those four and **no others**, because inventing a fifth would be scope nobody
+approved.
+
+The gap this leaves is real and worth naming: **there is currently no way to
+close a request that should not proceed.** A request filed in error, withdrawn
+by the resident, or refused by the office can only move forward or sit in the
+queue indefinitely.
+
+Three ways this could resolve, in ascending cost:
+
+1. Slice 4 owns it — a refusal is part of issuance, so `ready_for_issue` is
+   genuinely the end of intake and Slice 4 adds `issued` / `declined`.
+2. Slice 3 adds a `cancelled` state for withdrawal only (resident-initiated),
+   leaving refusal to Slice 4.
+3. Slice 3 adds both `cancelled` and `declined` with a mandatory reason,
+   mirroring the Slice 2 rejection rule.
+
+Recorded now so the queue's behaviour in 3C is a decision rather than an
+oversight. Until it resolves, the intake queue will accumulate requests that
+have no exit.
+
 ## DEC-REPO-01 — application location vs Git root
 
 - **Status:** **RESOLVED** — 2026-07-31, ADR-0004 Option 1 executed

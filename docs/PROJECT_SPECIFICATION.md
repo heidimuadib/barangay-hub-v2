@@ -143,6 +143,8 @@ plus `index.ts` barrel) — see §15.
 | `memberships` | Roster listing, invite-by-email, membership status transitions, barangay-role grant/revoke, roster UI |
 | `audit-trail` | Tenant and platform audit-log queries and table UI |
 | `platform` | Read-only console queries (tenant metadata, operator assignments) |
+| `registry` | Resident registry, onboarding, verification workflow, duplicate resolution, evidence (Slice 2) |
+| `documents` | **Slice 3A — domain only:** request state machine, catalog-term presentation (B-08 placeholder rules), input schemas, capability constants. Surfaces arrive in 3B/3C |
 | `apps/web/src/services/audit` | Sessionless security-event writer — the one allow-listed service-role importer (`audit-append`) |
 | `apps/web/src/hooks` | `useRefreshOnSuccess` — post-mutation route refetch (R-1-06) |
 
@@ -221,7 +223,7 @@ values are stripped centrally, not at call sites.
 
 ## 8. Database Architecture
 
-**Implemented** — seven forward-only migrations under `backend/supabase/migrations/`.
+**Implemented** — twenty-one forward-only migrations under `backend/supabase/migrations/`.
 
 Tables (all in `public`):
 
@@ -438,10 +440,10 @@ rejects, not this prose:
 
 | Suite | Where | Totals | Character |
 | --- | --- | --- | --- |
-| pgTAP | `backend/supabase/tests/` | **358** in 13 files (104) | The security proof: RLS matrix, isolation, audit immutability, schema structure, verification transitions, evidence Storage rules, duplicate resolution, outbox hygiene. Self-contained transactions, exact plans |
-| Unit/component | `apps/web/src/**`, `apps/web/tests/unit/` | **231** in 26 files (95) | Pure rules, schemas, guards (mocked repositories), hooks, plus architecture tests that independently re-assert what lint enforces |
-| End-to-end | `apps/web/tests/e2e/` | **79 per viewport project** (54) | Playwright, desktop *and* Pixel 5, seeded personas; positive *and* negative journeys (staff refused audit, platform refused tenant data, forged navigation, anonymous evidence fetch) |
-| Coverage | Vitest v8 | **89.06%** statements / **90.8%** branches ≥ 80/75 gate (83.28%) | Scoped to `lib`, `utils`, `hooks`, feature `rules` and `schemas` — the layers that must be exhaustively testable without a database; widened per slice |
+| pgTAP | `backend/supabase/tests/` | **444** in 15 files (104) | The security proof: RLS matrix, isolation, audit immutability, schema structure, verification transitions, evidence Storage rules, duplicate resolution, outbox hygiene, catalog visibility and request transitions. Self-contained transactions, exact plans |
+| Unit/component | `apps/web/src/**`, `apps/web/tests/unit/` | **275** in 29 files (95) | Pure rules, schemas, guards (mocked repositories), hooks, plus architecture tests that independently re-assert what lint enforces |
+| End-to-end | `apps/web/tests/e2e/` | **79 per viewport project** (54) | Playwright, desktop *and* Pixel 5, seeded personas; positive *and* negative journeys (staff refused audit, platform refused tenant data, forged navigation, anonymous evidence fetch). Slice 3 surfaces arrive in 3B/3C, so this total is unchanged by 3A |
+| Coverage | Vitest v8 | **90.73%** statements / **92.68%** branches ≥ 80/75 gate (83.28%) | Scoped to `lib`, `utils`, `hooks`, feature `rules` and `schemas` — the layers that must be exhaustively testable without a database; widened per slice |
 
 The coverage figure is the one a clean checkout reproduces. A higher number
 (90.65%) was recorded when 2F closed and is **not** reproducible: the
@@ -512,7 +514,16 @@ For each slice: scope as recorded in-repo, and status.
   Recorded deferrals: notification delivery (Slice 8), evidence malware
   scanning (R-2-01), a shared-store rate limiter for hosted exposure (R-1-04),
   and the shell-chrome touch targets (R-2-05, US-UI-002).
-- **Slices 3–9 and v1.5 — Sequenced.** Scope, dependencies, gates and effort
+- **Slice 3 — IN PROGRESS (3A complete, 2026-08-03):** the document catalog
+  and request-intake domain — tenant catalog with B-08 placeholder-flagged
+  fees/SLAs/validity, data-driven requirements, the
+  `draft → submitted → in_review → ready_for_issue` machine enforced at
+  function *and* table, both creation channels converging on one record, six
+  capabilities, forced RLS, audit and two approved outbox intents — see
+  [architecture](./architecture/document-catalog-and-requests.md). Resident
+  surfaces (3B), staff queue (3C) and evidence/chrome (3D) are pending.
+  Open: **DEC-REQ-01**, no decline/cancel state.
+- **Slices 4–9 and v1.5 — Sequenced.** Scope, dependencies, gates and effort
   per slice in the roadmap.
 
 ### Known conflicts between planning artefacts and implementation
