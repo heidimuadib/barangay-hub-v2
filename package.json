@@ -45,7 +45,7 @@
     "prepare": "node scripts/setup-husky.mjs"
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.8.1",
+    "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@eslint/js": "^9.27.0",
     "eslint": "^9.27.0",
