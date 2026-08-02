@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url'
+
 import type { NextConfig } from 'next'
 
 /**
@@ -22,6 +24,11 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // The app lives in a pnpm workspace (ADR-0007). Point output file tracing at
+  // the repository root so `next build` traces dependencies hoisted to the
+  // root node_modules correctly — required for a correct standalone/Vercel
+  // deployment from apps/web, and it silences Next's workspace-root inference.
+  outputFileTracingRoot: fileURLToPath(new URL('../..', import.meta.url)),
   // Development only. Playwright drives the dev server over 127.0.0.1 while
   // Next treats localhost as the origin; without this, every run prints a
   // cross-origin warning that trains people to ignore warnings.

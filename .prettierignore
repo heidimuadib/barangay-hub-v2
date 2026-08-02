@@ -3,9 +3,9 @@ node_modules/
 coverage/
 playwright-report/
 test-results/
-supabase/.temp/
-supabase/.branches/
-src/types/database.types.ts
+backend/supabase/.temp/
+backend/supabase/.branches/
+backend/supabase/generated/database.types.ts
 pnpm-lock.yaml
 *.md
 

@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 
 import { env } from '@/lib/config/env.server'
 import { InfrastructureError } from '@/lib/errors'
-import type { Database } from '@/types/database.types'
+import type { Database } from '@barangay-hub/supabase/types'
 
 /**
  * The eight system operations permitted to bypass RLS.

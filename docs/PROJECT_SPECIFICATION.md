@@ -131,7 +131,7 @@ domain-service set.
 
 ## 6. Functional Modules
 
-Feature modules live under `src/features/<name>/` with an enforced internal
+Feature modules live under `apps/web/src/features/<name>/` with an enforced internal
 grammar (`actions/ services/ repositories/ rules/ schemas/ components/ types/`,
 plus `index.ts` barrel) — see §15.
 
@@ -143,8 +143,8 @@ plus `index.ts` barrel) — see §15.
 | `memberships` | Roster listing, invite-by-email, membership status transitions, barangay-role grant/revoke, roster UI |
 | `audit-trail` | Tenant and platform audit-log queries and table UI |
 | `platform` | Read-only console queries (tenant metadata, operator assignments) |
-| `src/services/audit` | Sessionless security-event writer — the one allow-listed service-role importer (`audit-append`) |
-| `src/hooks` | `useRefreshOnSuccess` — post-mutation route refetch (R-1-06) |
+| `apps/web/src/services/audit` | Sessionless security-event writer — the one allow-listed service-role importer (`audit-append`) |
+| `apps/web/src/hooks` | `useRefreshOnSuccess` — post-mutation route refetch (R-1-06) |
 
 **Planned (deferral recorded in the [decision log](./decisions/blockers.md)):**
 transactional outbox (arrives with the notification slice, EPIC-11/14); PLT-08
@@ -169,23 +169,30 @@ authenticated readiness endpoint (platform slice); full US-UI-002 shell chrome.
 | --- | --- |
 | Framework | Next.js 15.5 (App Router, Server Actions), React 19 |
 | Language | TypeScript 5.8, strict + `exactOptionalPropertyTypes` ([ADR-0003](./adr/0003-strict-typescript-flags.md)) |
-| Styling | Tailwind CSS 4, design tokens in `src/styles/globals.css` |
+| Styling | Tailwind CSS 4, design tokens in `apps/web/src/styles/globals.css` |
 | Backend | Supabase: Postgres 17.6, GoTrue auth, PostgREST — supabase-js 2.111 / `@supabase/ssr` 0.12 |
 | Validation | Zod 3.25 |
 | Tooling | pnpm 11.4 (Node ≥ 22.13), Vitest 3, Playwright 1.52, ESLint 9, Prettier, Husky 9, pinned Supabase CLI |
 
 **Layering** (enforced by `eslint-plugin-boundaries` — an architecture that is
-lint-checked, not aspirational; `scripts/verify-boundaries.mjs` proves the
+lint-checked, not aspirational; `apps/web/scripts/verify-boundaries.mjs` proves the
 rules actually fire):
 
 ```
-src/app        routing only — thin shells, page-level convenience guards
-src/features   all behaviour; cross-feature imports ONLY via barrels
-src/services   cross-cutting infrastructure (audit; later: outbox, storage…)
-src/lib        framework adapters: supabase clients, env, errors, logger
-src/utils      pure functions
+apps/web/src/app        routing only — thin shells, page-level convenience guards
+apps/web/src/features   all behaviour; cross-feature imports ONLY via barrels
+apps/web/src/services   cross-cutting infrastructure (audit; later: outbox, storage…)
+apps/web/src/lib        framework adapters: supabase clients, env, errors, logger
+apps/web/src/utils      pure functions
         import direction: app → features → services → lib → utils
 ```
+
+Since [ADR-0007](./adr/0007-monorepo-workspace-structure.md) the repository is
+a pnpm workspace: the application above lives in `apps/web`, the Supabase
+backend (migrations, seeds, pgTAP, generated types) in `backend/supabase`, and
+shared workspace configuration in `packages/config`. The layering and its lint
+enforcement are unchanged — the workspace adds package seams *around* the app,
+it does not replace the boundary rules *inside* it.
 
 **Request path for a mutation:** client component → Server Action (zod parse →
 audited guard → service → repository, user-scoped client) → RLS re-enforces →
@@ -198,7 +205,7 @@ is the default for all server code. The service-role client requires a typed
 reason from a closed set of nine (eight named system operations plus scheduled
 jobs — Phase 4 §25.6), is import-restricted to an ESLint allow-list, and every
 addition requires an ADR. Architecture tests
-(`tests/unit/architecture/service-role.test.ts`) pin the exact importer set —
+(`apps/web/tests/unit/architecture/service-role.test.ts`) pin the exact importer set —
 currently one file.
 
 **Edge middleware** performs session cookie refresh (`getUser()`, never
@@ -209,12 +216,12 @@ defence-in-depth only, never the authorization boundary.
 **Errors and results:** typed `AppError` hierarchy → `Result` envelope at the
 action boundary; internal messages never reach clients; correlation IDs join
 user-visible failures to structured logs. Structured JSON logging with
-deep redaction (`src/lib/logger/redact.ts`) — secret- and PII-shaped keys and
+deep redaction (`apps/web/src/lib/logger/redact.ts`) — secret- and PII-shaped keys and
 values are stripped centrally, not at call sites.
 
 ## 8. Database Architecture
 
-**Implemented** — seven forward-only migrations under `supabase/migrations/`.
+**Implemented** — seven forward-only migrations under `backend/supabase/migrations/`.
 
 Tables (all in `public`):
 
@@ -236,9 +243,9 @@ profile provisioning from `auth.users`); extensions `pg_trgm`, `unaccent`,
 `pgcrypto`, `btree_gin` in the `extensions` schema.
 
 Conventions: reference data lives in migrations; development fixtures live in
-`supabase/seed/` behind a guard that refuses to run wherever a non-`test-`
+`backend/supabase/seed/` behind a guard that refuses to run wherever a non-`test-`
 tenant exists (Phase 6 §22.2). Generated types
-(`src/types/database.types.ts`) are committed and drift-checked in CI
+(`backend/supabase/generated/database.types.ts`) are committed and drift-checked in CI
 (`pnpm types:check`). Local and CI stacks run Postgres 17, reconciled with the
 hosted project in Slice 0b ([assessment](./assessments/hosted-supabase-assessment.md)).
 
@@ -351,7 +358,7 @@ Self-elevation is blocked in layers: policy (staff/residents lack
 the tenant path), bootstrap (platform writes require an existing platform
 admin), and provenance (`granted_by` stamped from `auth.uid()`, never input).
 
-The 104-assertion pgTAP suite (`supabase/tests/`) proves the matrix: anon
+The 104-assertion pgTAP suite (`backend/supabase/tests/`) proves the matrix: anon
 denial, tenant isolation, forged-ID structural failures, permission inertness
 on invited/disabled memberships, revocation immediacy, audit immutability and
 fail-closed context resolution.
@@ -431,9 +438,9 @@ rejects, not this prose:
 
 | Suite | Where | Totals | Character |
 | --- | --- | --- | --- |
-| pgTAP | `supabase/tests/` | **358** in 13 files (104) | The security proof: RLS matrix, isolation, audit immutability, schema structure, verification transitions, evidence Storage rules, duplicate resolution, outbox hygiene. Self-contained transactions, exact plans |
-| Unit/component | `src/**`, `tests/unit/` | **231** in 26 files (95) | Pure rules, schemas, guards (mocked repositories), hooks, plus architecture tests that independently re-assert what lint enforces |
-| End-to-end | `tests/e2e/` | **79 per viewport project** (54) | Playwright, desktop *and* Pixel 5, seeded personas; positive *and* negative journeys (staff refused audit, platform refused tenant data, forged navigation, anonymous evidence fetch) |
+| pgTAP | `backend/supabase/tests/` | **358** in 13 files (104) | The security proof: RLS matrix, isolation, audit immutability, schema structure, verification transitions, evidence Storage rules, duplicate resolution, outbox hygiene. Self-contained transactions, exact plans |
+| Unit/component | `apps/web/src/**`, `apps/web/tests/unit/` | **231** in 26 files (95) | Pure rules, schemas, guards (mocked repositories), hooks, plus architecture tests that independently re-assert what lint enforces |
+| End-to-end | `apps/web/tests/e2e/` | **79 per viewport project** (54) | Playwright, desktop *and* Pixel 5, seeded personas; positive *and* negative journeys (staff refused audit, platform refused tenant data, forged navigation, anonymous evidence fetch) |
 | Coverage | Vitest v8 | **89.06%** statements / **90.8%** branches ≥ 80/75 gate (83.28%) | Scoped to `lib`, `utils`, `hooks`, feature `rules` and `schemas` — the layers that must be exhaustively testable without a database; widened per slice |
 
 The coverage figure is the one a clean checkout reproduces. A higher number
