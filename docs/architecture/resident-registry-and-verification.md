@@ -1,21 +1,36 @@
 # Resident registry and verification — Slice 2 architecture
 
 The registry, verification lifecycle and outbox foundation delivered by
-**Slice 2A**. Policy source: [ADR-0006](../adr/0006-resident-provisioning-and-registry-decisions.md)
+**Slice 2**. Policy source: [ADR-0006](../adr/0006-resident-provisioning-and-registry-decisions.md)
 (DEC-AUTH-01 Option C; D2-01…D2-04). Scope source:
 [implementation roadmap](../IMPLEMENTATION_ROADMAP.md), Slice 2.
 
-**State after 2A + 2B + 2C + 2D + 2E:** database, domain functions, RLS,
-audit, seeds, rules and the typed service layer are **implemented** (2A);
-public sign-up with mandatory email confirmation, rate limiting, resident
-onboarding into the shared registry and the verification status surface are
-**implemented** (2B); the staff registry list, tenant-scoped search, safe
-person detail and walk-in creation are **implemented** (2C); the verification
-queue, review detail and the full decision workflow are **implemented** (2D);
-the duplicate review and supersede-link resolution surface is **implemented**
-(2E); the private evidence bucket, signed upload/read brokering and
-browser-driven submission are **implemented** (2F, closing R-2-04). Only the
-Slice 2G hardening pass remains.
+**State: Slice 2 is COMPLETE (2A–2G, 2026-08-02).** Database, domain
+functions, RLS, audit, seeds, rules and the typed service layer (2A); public
+sign-up with mandatory email confirmation, rate limiting, resident onboarding
+into the shared registry and the verification status surface (2B); the staff
+registry list, tenant-scoped search, safe person detail and walk-in creation
+(2C); the verification queue, review detail and the full decision workflow
+(2D); duplicate review and supersede-link resolution (2E); the private
+evidence bucket, signed upload/read brokering and browser-driven submission
+(2F, closing R-2-04); and the hardening, outbox review, accessibility baseline
+and documentation pass (2G).
+
+**What Slice 2 deliberately does NOT do**, so the next reader does not go
+looking for it:
+
+- **Deliver notifications.** The outbox is enqueue-only. There is no
+  dispatcher, no worker and no email template in the database — asserted, not
+  merely intended, by pgTAP `12_outbox_and_slice_review`. Delivery is Slice 8.
+- **Scan evidence for malware.** No such service exists in any environment;
+  2F did not invent one. The residual is R-2-01 and gates any real-file
+  decision (DEC-ENV-03/-04).
+- **Accept real resident data anywhere.** Every fixture, persona and uploaded
+  byte in this repository is synthetic. DEC-ENV-04 stands.
+- **Rate-limit across instances.** The limiter is in-process behind a seam;
+  hosted public exposure needs a shared store first (R-1-04).
+- **Un-supersede a record.** Resolution is one-way by ruling (D2-02); the
+  audited correction workflow is a separate future decision.
 
 ### Duplicate review and resolution (2E)
 
@@ -258,25 +273,62 @@ workflow (D2-02), not an `UPDATE`.
 
 ## Audit and outbox
 
-Every event listed in the roadmap is emitted by trigger, in the same
-transaction as its mutation: `person.created` (with `source_channel`),
-`person.updated` (**field names only**), `person.superseded` (survivor id),
-`person_account.linked` / `.unlinked` (with reason where supplied),
-`verification.submitted`, `verification.state_changed` (from/to),
-`verification.evidence_added` / `.evidence_removed` (kind and MIME — never a
-filename), and `outbox.enqueued` (event type).
+Every event is emitted by trigger, in the same transaction as its mutation, so
+an audit row cannot be lost or forged independently of the change it describes:
 
-Metadata carries ids, states, kinds and field names — never passwords,
-tokens, raw evidence, filenames, addresses or narrative text. The one
-free-text value that *is* recorded is a staff-authored reason
-(unlink/supersede/rejection), which is a deliberate accountability record and
-is treated as PII by the central log redaction.
+| Event | Metadata |
+| --- | --- |
+| `person.created` | `source_channel` |
+| `person.updated` | changed **field names only** — never values |
+| `person.superseded` | `survivor_id`, `reason_present` |
+| `person_account.linked` / `.unlinked` | `user_id`; unlink also carries the staff-authored `reason` |
+| `verification.submitted` | none — the id and tenant say everything |
+| `verification.state_changed` | `from_state`, `to_state`, plus `note_present` (→ `info_requested`) or `reason_present` (→ `rejected`) |
+| `verification.evidence_added` | `application_id`, `kind`, `mime_type` — never a filename |
+| `verification.evidence_finalized` | the above plus `size_bytes` and `content_hash` (2F) |
+| `verification.evidence_removed` | `kind`, `mime_type` |
+| `outbox.enqueued` | `event_type` — so the audit log alone shows that an intent was raised, without exposing the outbox itself |
+
+**Free text is recorded in exactly one place: the unlink `reason`.** It is a
+deliberate accountability record and is treated as PII by the central log
+redaction. Everywhere else a staff member writes prose — an information-request
+note, a rejection reason, a supersede reason — the audit records only that it
+was **present**. The text itself lives on the domain row, which is
+tenant-scoped and capability-gated; the audit log is read by more people than
+the record is. The trigger writes the boolean even on an owner path that
+bypasses the functions, so the signal survives routes the application does not
+control.
 
 **Outbox:** `enqueue_outbox()` is owner-internal — no client role can execute
 it, so an intent can only exist as the side effect of a real domain mutation.
 Rows accept dispatch bookkeeping only and cannot be deleted (retention is a
 Slice 8/9 policy decision). pgTAP proves atomicity in both directions: an
 approval enqueues exactly one intent, and a *refused* decision enqueues none.
+
+**Exactly four intents exist**, all reviewed in 2G and pinned by
+`12_outbox_and_slice_review`:
+
+| Intent | Enqueued when |
+| --- | --- |
+| `verification.info_requested` | a reviewer asks the resident for more |
+| `verification.resubmitted` | the resident answers — the queue needs to know |
+| `verification.approved` | terminal decision |
+| `verification.rejected` | terminal decision |
+
+The **absences are deliberate and asserted**, so a later session cannot quietly
+add a notification nobody approved. `verification.submitted` enqueues nothing:
+it is the resident's own action, already confirmed on screen. Registry, evidence
+and duplicate-resolution events enqueue nothing: they are internal records, not
+resident news.
+
+Every payload carries **only** `application_id` and `person_id`. The 2G suite
+asserts this as a property of every row rather than of a sample — no name, no
+date, no evidence path, no signed URL, no staff-authored note, and a tenant on
+the row's own column rather than in the payload. A notification worker will
+therefore have to re-read the domain under the recipient's own authorization to
+compose anything, which is the point: an intent that already contained the
+message would be a copy of personal data sitting in a queue, waiting to be
+delivered somewhere nobody re-checked.
 
 ## Evidence and Storage (D2-03)
 

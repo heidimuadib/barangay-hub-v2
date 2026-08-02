@@ -73,7 +73,13 @@ export default async function ResidentDashboardPage() {
             <p className="mt-3 text-neutral-700">
               Registered with <span className="font-medium">{registry.barangay_name}</span>.
             </p>
-            <Link href="/verification" className="text-brand-700 mt-3 inline-block underline">
+            {/* Same 44px target as its sibling CTA above: this is the
+                resident's primary next action once registered, and it was
+                sitting at 27px (Slice 2G accessibility review). */}
+            <Link
+              href="/verification"
+              className="text-brand-700 mt-3 inline-flex min-h-11 items-center underline"
+            >
               View my registration
             </Link>
           </>

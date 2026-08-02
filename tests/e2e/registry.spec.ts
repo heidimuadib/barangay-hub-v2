@@ -186,6 +186,16 @@ test.describe('walk-in creation', () => {
     await page.goto('/staff/registry')
 
     await page.getByRole('link', { name: /add a walk-in resident/i }).click()
+    // A soft navigation updates the URL only once the destination's payload
+    // arrives, so the ARRIVAL is what says the navigation finished — the URL
+    // check that follows is about the SHAPE of the address (no query string,
+    // no id), which is the part worth pinning. The two sibling tests below
+    // `goto` this route directly, so this is the only place the affordance
+    // itself is exercised; on a loaded dev server the round trip has been
+    // measured past Playwright's 5s default.
+    await expect(page.getByRole('heading', { name: /add a walk-in resident/i })).toBeVisible({
+      timeout: 15_000,
+    })
     await expect(page).toHaveURL(/\/staff\/registry\/new$/)
 
     const surname = `Walkin${Date.now()} (Test)`

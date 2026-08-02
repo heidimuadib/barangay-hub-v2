@@ -57,12 +57,27 @@ keys into it without a specific reason.
 ## 4. Apply migrations and seeds
 
 ```bash
-pnpm db:reset
+pnpm db:reset:verified
 ```
 
 This drops the local database, replays every migration from empty, and runs the
 seed files. It is safe to run as often as you like — that is the point of a local
 stack.
+
+`db:reset:verified` wraps the plain `pnpm db:reset`. The Supabase CLI restarts
+its containers after seeding and waits for them to report healthy; on a loaded
+machine the Storage container can miss that window, and the CLI exits non-zero
+**after the database was already reset correctly**. An exit code that is wrong
+half the time teaches you to ignore it — and then a genuine reset failure sends
+the whole suite against a half-migrated database. That happened once during 2F
+and cost a full verification cycle.
+
+So the wrapper checks the resulting database rather than the exit status: every
+migration recorded, both synthetic tenants present, the registry fixtures
+present, and the private evidence bucket created. It prints which check failed
+and exits non-zero if any does — it never converts a real failure into a pass.
+Use plain `pnpm db:reset` in CI, where the stack is fresh and the exit code is
+trustworthy.
 
 ## 5. Generate database types
 
@@ -98,8 +113,20 @@ machine, and the e2e suite reads the link from Mailpit's API.
 ```bash
 pnpm test         # unit + component (Vitest + Testing Library)
 pnpm e2e          # end-to-end (Playwright) — REQUIRES the local stack since Slice 1
+pnpm e2e:local    # the same suite, one worker per project — prefer this locally
 pnpm db:test      # database (pgTAP) — requires Docker
+pnpm verify:slice2  # the whole gate: verify:full + verified reset + pgTAP + types
 ```
+
+**Run `pnpm db:test` on a freshly reset database, and before `pnpm e2e` — not
+after.** Several pgTAP assertions check exact seeded counts ("all nine seeded
+memberships were captured by the audit trigger"), which is the only way to
+prove a trigger fired for *every* row rather than merely for some. The e2e
+suites deliberately create residents and drive real approvals, so running them
+first leaves 11 memberships where the seed had 9, and those assertions fail
+with `have: 11 / want: 9`. That is the suite reporting a changed database
+correctly, not a defect — reset and re-run. `pnpm verify:slice2` sequences this
+for you.
 
 Before the first `pnpm e2e`, install the browser once:
 
@@ -111,8 +138,62 @@ Playwright starts its own dev server on **port 3100** so it never collides with 
 dev server you already have on 3000. Override with `PLAYWRIGHT_PORT`.
 
 **Since Slice 1 the e2e suite signs in with seeded accounts**, so it needs
-`pnpm db:start` (with seeds applied — a fresh start or `pnpm db:reset` both do)
-and a `.env.local` carrying the local stack keys.
+`pnpm db:start` (with seeds applied — a fresh start or `pnpm db:reset:verified`
+both do) and a `.env.local` carrying the local stack keys.
+
+### Running the e2e suite locally without fighting it
+
+Four things learned the hard way in Slices 2C–2G. None is a workaround for a
+product defect; each is a property of this environment.
+
+1. **Use `pnpm e2e:local`, or pass `--workers=1` yourself.** On Windows,
+   parallel Playwright workers intermittently die with `0xC0000142` and can take
+   the shared dev server down with them. One worker per project is slower and
+   honest; a crashed worker otherwise reads as a test failure.
+
+2. **Never run `pnpm build` while the e2e suite is running.** Both write the
+   same `.next` directory, and the resulting failures look like application
+   bugs. Run the gates in sequence, which is what `verify:slice2` does.
+
+3. **Reset the database before a full run, not between specs.** Several suites
+   mint their own residents through sign-up; a stale database from a previous
+   run is the usual cause of a first-run-only failure.
+
+4. **Public sign-up is rate-limited, deliberately (R-1-04):** 10 per client per
+   15 minutes and 3 per email digest per hour. A suite that signs up more often
+   than that will see throttled attempts — which by design return the same
+   uniform response as success but send **no** email, so the test hangs waiting
+   on Mailpit. If you hit it, wait out the window rather than raising the limit:
+   the limit is a security control, and the e2e suites are written to lean on
+   seeded personas precisely to stay under it.
+
+If the stack has been running for a long time, containers can degrade in ways a
+reset alone will not clear. `pnpm db:stop && pnpm db:start` is the fix.
+
+### Memory is the binding constraint, and it looks like test failures
+
+The full suite needs roughly **2 GB of headroom** beyond the Supabase stack. On
+an 8 GB machine running Docker, a full-suite dev server grows past 1.2 GB and
+free memory falls under 10% — at which point Next cannot fork render workers
+and the run fails in two distinctive ways. Both look like application bugs and
+neither is one:
+
+| Symptom | What it actually means |
+| --- | --- |
+| `Jest worker encountered N child process exceptions, exceeding retry limit`, repeating on one route | The dev server cannot spawn render workers. Measured in 2G at 8% free RAM. |
+| A wall of `net::ERR_CONNECTION_REFUSED` starting abruptly mid-run | The dev server died. Playwright cannot tell a dead server from a broken page, so **one** failure is reported as dozens — in 2G, 67 tests passed, the 68th timed out, and the remaining 12 were all refused. Re-run in isolation, all 12 passed. |
+
+**Check free memory before blaming a test.** If it is under ~15%, close the
+other consumers or run the suite in chunks of two or three spec files, which
+keeps each dev server short-lived:
+
+```bash
+pnpm e2e --project=chromium-mobile --workers=1 tests/e2e/smoke.spec.ts tests/e2e/verification.spec.ts
+```
+
+Chunking is how the 2G mobile run was completed (19 + 32 + 28 = 79) after the
+single-process run exhausted memory partway through. It is a workaround for the
+machine, not for the suite: CI runs the whole thing in one go.
 
 ## Local test accounts (Slice 1 seeds)
 

@@ -22,6 +22,7 @@
     "db:stop": "supabase stop",
     "db:status": "supabase status",
     "db:reset": "supabase db reset",
+    "db:reset:verified": "node scripts/db-reset-verified.mjs",
     "db:test": "supabase test db",
     "db:diff": "supabase db diff",
     "types:gen": "node scripts/gen-types.mjs",
@@ -32,12 +33,16 @@
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:install": "playwright install --with-deps chromium",
+    "e2e:local": "pnpm run e2e:local:desktop && pnpm run e2e:local:mobile",
+    "e2e:local:desktop": "playwright test --project=chromium-desktop --workers=1",
+    "e2e:local:mobile": "playwright test --project=chromium-mobile --workers=1",
     "check:bundle-secrets": "node scripts/check-bundle-secrets.mjs",
     "check:env-example": "node scripts/check-env-example.mjs",
     "check:boundaries": "node scripts/verify-boundaries.mjs",
     "verify": "pnpm run typecheck && pnpm run lint && pnpm run format:check && pnpm run check:env-example && pnpm run check:boundaries && pnpm run test",
     "verify:full": "pnpm run verify && pnpm run build && pnpm run check:bundle-secrets",
-    "prepare": "node scripts/setup-husky.mjs"
+    "prepare": "node scripts/setup-husky.mjs",
+    "verify:slice2": "pnpm run verify:full && pnpm run db:reset:verified && pnpm run db:test && pnpm run types:check"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

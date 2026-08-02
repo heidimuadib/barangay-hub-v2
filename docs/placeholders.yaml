@@ -12,7 +12,7 @@
 # ============================================================================
 
 version: 1
-slice: 1
+slice: 2
 
 placeholders:
   - id: DEC-ENV-01
@@ -32,11 +32,12 @@ placeholders:
 
   - id: DEC-REPO-01
     subject: Application directory location
-    current: 'v2/ subdirectory of the legacy repository — Git hooks and CI are inactive'
-    source: assumption
-    blocking_level: slice-1
+    current: 'RESOLVED 2026-07-31 — ADR-0004 Option 1 executed: standalone repository, v2 history preserved via git subtree split. Husky hooks and GitHub Actions are ACTIVE.'
+    source: confirmed
+    blocking_level: none
     owner: tech-lead
     resolves_in: docs/adr/0004-application-directory-location.md
+    note: 'Was still recorded as blocking slice-1 until Slice 2G; the decision log had it resolved since 2026-07-31.'
 
   - id: SUPABASE-PG-VERSION
     subject: Local Postgres major version
@@ -56,7 +57,7 @@ placeholders:
 
   - id: DEC-AUTH-01
     subject: Public resident self-registration policy
-    current: 'RESOLVED 2026-08-01 — Option C hybrid: public sign-up with mandatory email confirmation, unverified until reviewer approval; staff creation/invitation retained. Implementation arrives with Slice 2.'
+    current: 'RESOLVED 2026-08-01 — Option C hybrid: public sign-up with mandatory email confirmation, unverified until reviewer approval; staff creation/invitation retained. IMPLEMENTED in Slice 2 (2026-08-02): both paths share one set of registry services, and an account proves nothing until a capability-holding reviewer approves the verification application.'
     source: confirmed
     blocking_level: none
     owner: product-owner

@@ -28,7 +28,7 @@ comes) · `v1.5` (feature-flagged, post-MVP).
 | 0a | Engineering skeleton | **COMPLETE** | Verifiable foundation: tooling, gates, shells, local stack | — | — | L |
 | 0b | Hosted integration assessment | **COMPLETE** | Evidence base for DEC-ENV-01; PG 17 reconciliation | 0a | — | S |
 | 1 | Identity, tenant, RBAC, RLS, audit foundation | **COMPLETE** | Secure multi-tenant identity with forced RLS and append-only audit | 0a | — | XL |
-| 2 | Resident registration, registry, verification | **IN PROGRESS — 2A–2F complete** | Verified resident profiles; staff verification workflow; registry with duplicate handling | 1 | — (DEC-AUTH-01 resolved: Option C, [ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)) | XL |
+| 2 | Resident registration, registry, verification | **COMPLETE (2A–2G)** | Verified resident profiles; staff verification workflow; registry with duplicate handling | 1 | — (DEC-AUTH-01 resolved: Option C, [ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)) | XL |
 | 3 | Document catalog and request intake | SEQUENCED | Residents and walk-ins submit document requests through one domain service | 2 | Fee/SLA confirmation (B-08) before pilot, not before build | L |
 | 4 | Certificate generation, serials, QR, public verification | SEQUENCED | Accountable certificate issuance with public verifiability | 3 | Template/signatory confirmation (B-05–B-07) before pilot | L |
 | 5 | Payments, exemptions, ORs, release, day closure, call list | SEQUENCED | Cash-accountable release workflow | 4 | OR series policy (B-11) before pilot | XL |
@@ -152,8 +152,9 @@ These restate the standing non-negotiables so no slice section needs to:
 1. **Slice number and title:** PHASE 7 SLICE 2 — RESIDENT REGISTRATION,
    REGISTRY, AND VERIFICATION
 
-2. **Status:** **IN PROGRESS.** Delivered in subparts on
-   `feature/slice-2-resident-registry-verification`:
+2. **Status:** **COMPLETE (2026-08-02).** Delivered in subparts on
+   `feature/slice-2-resident-registry-verification`, reviewed as one unit in
+   PR #14:
 
    | Subpart | Scope | State |
    | --- | --- | --- |
@@ -163,7 +164,28 @@ These restate the standing non-negotiables so no slice section needs to:
    | **2D** | Verification queue (state filters, oldest-first, pagination), review detail with evidence metadata behind its own capability and duplicate context, the four reviewer transitions split by capability, resident resubmission, `info_requested`/`resubmitted` outbox intents; 41 new pgTAP + 34 new unit + 22 new Playwright assertions | **COMPLETE** |
    | **2E** | Duplicate review on the registry record: side-by-side comparison with banded score explanations, explicit-survivor supersede-and-link behind `registry.resolve_duplicates`, superseded↔survivor cross-links, full refusal matrix (self/cross-tenant/cycles/both-accounts/open-application) proven at the database; 35 new pgTAP + 11 new unit + 11 new Playwright assertions | **COMPLETE** |
    | **2F** | Private `verification-evidence` bucket with Storage RLS mirroring the table policies, metadata-before-upload with signed one-object tickets, server-verified finalization (size read from the object, not the client), on-demand signed reads, evidence removal, and browser-driven submission — **closes R-2-04**; 33 new pgTAP + 29 new unit + 14 new Playwright assertions | **COMPLETE** |
-   | 2G | Outbox intents review, hardening, e2e, docs, PR | pending |
+   | **2G** | Slice-wide hardening and review: the outbox audited as a whole (four approved intents, asserted absences, payload hygiene as a property of every row, no dispatcher), slice-wide structural invariants re-proven across all six tables at once, an accessibility baseline over every Slice 2 route on both viewports, the approve journey extended to prove the audit trail it leaves, a `db:reset` wrapper that verifies the outcome instead of the exit code, and the documentation reconciled with what was actually built; 27 new pgTAP + 14 new Playwright assertions | **COMPLETE** |
+
+   **Totals at slice close:** 358 pgTAP · 231 unit/component · 79 Playwright
+   per viewport project (desktop and mobile). Slice 2 added **no** service-role
+   allow-list entry and required no ADR amendment.
+
+   **Found and fixed during 2G**, recorded because each was a real defect rather
+   than a test adjustment:
+
+   - the resident dashboard's "View my registration" call to action was a 27px
+     touch target while its sibling was 44px — found by the new accessibility
+     sweep, fixed in the component;
+   - the risk register's Slice 2 rows sat below a blank line, which markdown
+     renders as a separate headerless table — they were silently detached from
+     their own header;
+   - the architecture note still described rejection and supersede reasons as
+     recorded audit text; 2D and 2E had changed both to presence booleans;
+   - the README credited the transactional outbox and a non-existent
+     `QueueShell` to Slice 1 (both recorded as known conflicts in the
+     specification, resolved here now that Slice 2 supplies the real answer);
+   - `docs/placeholders.yaml` still marked DEC-REPO-01 as blocking slice-1,
+     though the decision log recorded it resolved on 2026-07-31.
 
    Architecture as built: [resident-registry-and-verification.md](./architecture/resident-registry-and-verification.md).
    DEC-AUTH-01 is resolved —

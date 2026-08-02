@@ -395,6 +395,11 @@ test.describe('review workflow', () => {
     await page.getByRole('button', { name: /start review/i }).click()
     await expect(visibleRow(page, 'in review')).toBeVisible({ timeout: 15_000 })
 
+    // The opaque id of the application this journey has been driving — needed
+    // below to pick its own audit rows out of the tenant log.
+    const applicationId = page.url().split('/').pop() ?? ''
+    expect(applicationId).toMatch(/^[0-9a-f-]{36}$/)
+
     // Approval is confirmed deliberately, never on the first click.
     await page.getByRole('button', { name: /approve…/i }).click()
     await expect(page.getByText(/approval is final/i)).toBeVisible()
@@ -413,6 +418,50 @@ test.describe('review workflow', () => {
     await expect(page.getByText(/verified resident/i)).toBeVisible()
     // No resubmission control survives a terminal decision.
     await expect(page.getByRole('button', { name: /resubmit/i })).toHaveCount(0)
+    await signOut(page)
+
+    // ── The journey left a complete, non-personal trail (Slice 2G) ──────────
+    // Every subpart proved its own audit row in pgTAP. What only this journey
+    // can show is that the WHOLE lifecycle is reconstructable afterwards from
+    // the screen a barangay actually has — and that reconstructing it exposes
+    // nobody's personal details.
+    await signIn(page, ACCOUNTS.adminA)
+    await page.goto('/staff/audit')
+
+    const trail = page.getByRole('row').filter({ hasText: applicationId })
+    // Ten rows and no more — the count is the "nothing else was recorded"
+    // assertion, and it is deterministic because this journey mints its own
+    // application rather than reusing a fixture.
+    await expect(trail, 'the whole journey is reconstructable').toHaveCount(10)
+
+    // The lifecycle: the submission, then in_review → info_requested →
+    // resubmitted → in_review → approved.
+    const lifecycle = trail.filter({ hasText: 'verification_application' })
+    await expect(lifecycle.filter({ hasText: 'verification.submitted' })).toHaveCount(1)
+    await expect(lifecycle.filter({ hasText: 'verification.state_changed' })).toHaveCount(5)
+
+    // The evidence: each of the two documents recorded when it was declared and
+    // again when its bytes were confirmed in Storage (Slice 2F).
+    const evidence = trail.filter({ hasText: 'verification_evidence' })
+    await expect(evidence.filter({ hasText: 'verification.evidence_added' })).toHaveCount(2)
+    await expect(evidence.filter({ hasText: 'verification.evidence_finalized' })).toHaveCount(2)
+
+    // No step was recorded as anything but a success.
+    await expect(trail.getByText('failure')).toHaveCount(0)
+
+    // The audit trail is the densest concentration of Slice 2 metadata in the
+    // product, so it is the right place to assert the hygiene rule end-to-end:
+    // the resident's name and the staff-authored note reach the application
+    // row, and stop there (Phase 6 §37.2).
+    const trailText = (await trail.allInnerTexts()).join('\n')
+    expect(trailText, 'no resident name in the audit trail').not.toContain(surname)
+    expect(trailText, 'no staff note in the audit trail').not.toMatch(/proof of residency/i)
+    expect(trailText, 'no evidence object path in the audit trail').not.toMatch(
+      /verification-evidence\//,
+    )
+    // Presence, not content — that is the whole contract.
+    expect(trailText).toContain('"note_present":true')
+    expect(trailText).toMatch(/"to_state":"approved"/)
   })
 
   test('an administrator rejects with a reason, and the resident sees it', async ({ page }) => {
