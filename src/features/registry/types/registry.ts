@@ -75,6 +75,43 @@ export interface VerificationQueueEntry {
   readonly hasAccount: boolean
 }
 
+/**
+ * One evidence item as the RESIDENT sees it (Slice 2F). Carries no storage
+ * path and no signed URL — both are server-side concerns, requested on
+ * demand and never rendered into the page.
+ */
+export interface EvidenceItem {
+  readonly evidenceId: string
+  readonly kind: EvidenceKind
+  readonly mimeType: string
+  readonly declaredSizeBytes: number
+  /** Trusted size, read from the stored object at finalization. */
+  readonly sizeBytes: number | null
+  /** Non-null once the object was verified to exist — i.e. finalized. */
+  readonly uploadedAt: string | null
+  readonly createdAt: string
+}
+
+/** Whether the minimum-evidence rule is satisfied (mirrors the SQL). */
+export interface EvidenceReadiness {
+  readonly hasIdentity: boolean
+  readonly hasResidency: boolean
+  readonly pendingCount: number
+  readonly canSubmit: boolean
+}
+
+/**
+ * A one-object, short-lived upload authorization (Slice 2F).
+ *
+ * The browser receives a complete signed URL and nothing else — no bucket
+ * name to reason about, no path to reconstruct, and no Supabase client (which
+ * would pull the server environment schema into the client bundle).
+ */
+export interface EvidenceUploadTicket {
+  readonly evidenceId: string
+  readonly signedUrl: string
+}
+
 /** Evidence METADATA for the review detail — never file contents (2F). */
 export interface EvidenceSummary {
   readonly evidenceId: string

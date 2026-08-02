@@ -484,15 +484,16 @@ For each slice: scope as recorded in-repo, and status.
 - **Slice 1 — Implemented.** §5 and §8–§13 in full, plus minimal verification
   UI (§3), seeds for nine personas across two synthetic tenants, and the four
   test suites. Recorded deferrals: outbox, PLT-08, full shell chrome.
-- **Slice 2 — IN PROGRESS (2A–2E complete: registry, verification and outbox
+- **Slice 2 — IN PROGRESS (2A–2F complete: registry, verification and outbox
   foundation; public sign-up and resident onboarding; staff registry and
   walk-in creation; verification queue and decision workflow; duplicate
-  review and supersede-link resolution — see
+  review and supersede-link resolution; private evidence Storage with signed
+  upload/read and browser-driven submission — see
   [architecture](./architecture/resident-registry-and-verification.md))
   ([roadmap](./IMPLEMENTATION_ROADMAP.md); provisioning ruled Option C and
   D2-01…04 approved,
   [ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)).**
-  Remaining: 2F evidence Storage broker, 2G hardening and the slice PR.
+  Remaining: 2G hardening and the slice PR.
   Hardening already delivered (R-1-06 fix and measurement record).
 - **Slices 3–9 and v1.5 — Sequenced.** Scope, dependencies, gates and effort
   per slice in the roadmap.

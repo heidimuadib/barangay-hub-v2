@@ -56,6 +56,12 @@ function localEnv(name: string): string {
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'http://127.0.0.1:54321'
 
+/** A 1x1 PNG. Synthetic by construction — no real document, ever. */
+const SYNTHETIC_BYTES = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64',
+)
+
 /**
  * The resident's own access token, read from the session cookie `@supabase/ssr`
  * writes (chunked when large).
@@ -77,15 +83,19 @@ async function accessTokenFor(page: Page): Promise<string> {
 }
 
 /**
- * Attaches the minimum evidence and submits, AS THE RESIDENT, through the
- * same granted RPCs the 2F upload surface will call.
+ * Attaches the minimum evidence and submits, AS THE RESIDENT, through the same
+ * granted RPCs and Storage policies the 2F browser flow uses.
  *
- * This stands in for a UI that does not exist yet: onboarding opens a `draft`
- * application, and `submit_verification` requires one identity and one
- * residency item, so nothing in 2A–2D can reach `submitted` through the
- * browser alone. Doing it on the resident's own token keeps the real
- * authorization path under test — no service-role shortcut, no direct table
- * write. Metadata only; no bytes are uploaded anywhere (DEC-ENV-04).
+ * This is a FIXTURE shortcut, not a coverage claim: the real browser upload
+ * journey is proven in `evidence.spec.ts`. Here it just gets an application
+ * into `submitted` cheaply so the 2D decision workflow has something to
+ * review — on the resident's own token throughout, so no service-role
+ * shortcut and no direct table write are involved.
+ *
+ * Since 2F, metadata alone is not enough: `confirm_evidence_upload` reads
+ * `storage.objects` and `submit_verification` requires FINALIZED items, so
+ * this uploads real (synthetic) bytes. A 1×1 PNG — nothing resembling a
+ * document, let alone a real one (DEC-ENV-04).
  */
 async function submitOwnApplication(page: Page): Promise<void> {
   const token = await accessTokenFor(page)
@@ -117,10 +127,38 @@ async function submitOwnApplication(page: Page): Promise<void> {
         p_application_id: application.id,
         p_kind: kind,
         p_mime_type: mime,
-        p_declared_size_bytes: 2048,
+        p_declared_size_bytes: SYNTHETIC_BYTES.byteLength,
       },
     })
     expect(added.ok(), `evidence metadata (${kind}) accepted`).toBeTruthy()
+    const rows = (await added.json()) as { evidence_id: string; storage_path: string }[]
+    const row = rows[0]
+    if (!row) throw new Error('add_evidence_metadata returned no row')
+
+    // Slice 2F: the object must genuinely EXIST before it can be finalized —
+    // `confirm_evidence_upload` reads storage.objects and takes the size from
+    // there. Uploaded on the resident's own token, so the Storage INSERT
+    // policy authorizes it exactly as the browser flow does.
+    const uploaded = await page.request.post(
+      `${SUPABASE_URL}/storage/v1/object/verification-evidence/${row.storage_path}`,
+      {
+        headers: { apikey: anonKey, Authorization: `Bearer ${token}`, 'content-type': mime },
+        data: SYNTHETIC_BYTES,
+      },
+    )
+    expect(uploaded.ok(), `synthetic ${kind} object uploaded`).toBeTruthy()
+
+    const finalized = await page.request.post(
+      `${SUPABASE_URL}/rest/v1/rpc/confirm_evidence_upload`,
+      {
+        headers,
+        data: {
+          p_evidence_id: row.evidence_id,
+          p_content_hash: '0'.repeat(64),
+        },
+      },
+    )
+    expect(finalized.ok(), `${kind} evidence finalized`).toBeTruthy()
   }
 
   const submitted = await page.request.post(`${SUPABASE_URL}/rest/v1/rpc/submit_verification`, {

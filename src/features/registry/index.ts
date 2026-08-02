@@ -8,9 +8,17 @@
  * Storage broker (2F) arrive with their subparts.
  */
 export {
+  EVIDENCE_FILE_EXTENSIONS,
+  EVIDENCE_KIND_LABELS,
   EVIDENCE_MAX_BYTES,
+  EVIDENCE_MIME_LABELS,
   EVIDENCE_MIME_TYPES,
   REGISTRY_PERMISSIONS,
+  evidenceKindLabel,
+  evidenceMimeLabel,
+  formatEvidenceSize,
+  screenEvidenceFile,
+  type EvidenceRejection,
   type RegistryPermissionKey,
 } from './constants'
 
@@ -19,8 +27,11 @@ export type {
   DuplicateCandidate,
   DuplicateComparisonRow,
   DuplicateReview,
+  EvidenceItem,
   EvidenceKind,
+  EvidenceReadiness,
   EvidenceSummary,
+  EvidenceUploadTicket,
   PersonLink,
   PersonSearchHit,
   PersonSource,
@@ -40,7 +51,9 @@ export {
   availableReviewActions,
   candidatePriority,
   canTransition,
+  evidenceReadiness,
   isActionableByStaff,
+  isAllowedEvidenceMime,
   isCandidateScore,
   isDecisionAction,
   isEditable,
@@ -51,6 +64,7 @@ export {
   requiresExplanation,
   requiresReason,
   residentNextStep,
+  similarityBand,
   throwRegistryFailure,
   unwrap,
   type RegistryFailure,
@@ -61,8 +75,14 @@ export {
 } from './services/registry-service'
 
 export {
+  EVIDENCE_KINDS,
   VERIFICATION_STATE_KEYS,
+  evidenceFinalizeSchema,
   evidenceMetadataSchema,
+  evidenceReadSchema,
+  evidenceRemoveSchema,
+  evidenceUploadRequestSchema,
+  submitApplicationSchema,
   personDetailsSchema,
   queueFilterSchema,
   rejectSchema,
@@ -99,6 +119,19 @@ export {
   type VerificationQueuePage,
 } from './services/verification-service'
 
+export {
+  canReadEvidence,
+  listOwnEvidence,
+  requestEvidenceReadUrl,
+} from './services/evidence-service'
+
+export {
+  finalizeEvidenceAction,
+  prepareEvidenceUploadAction,
+  removeEvidenceAction,
+  requestEvidenceUrlAction,
+  submitApplicationAction,
+} from './actions/evidence'
 export { completeOnboardingAction } from './actions/onboarding'
 export { resolveDuplicateAction, type ResolveDuplicateResult } from './actions/resolve-duplicate'
 export { createWalkInAction, searchRegistryAction, type WalkInOutcome } from './actions/walk-in'
@@ -112,6 +145,8 @@ export {
 } from './actions/verification'
 
 export { DuplicateResolutionPanel } from './components/duplicate-resolution'
+export { EvidenceManager } from './components/evidence-manager'
+export { EvidenceViewButton } from './components/evidence-viewer'
 export { OnboardingForm } from './components/onboarding-form'
 export { RegistrySearch } from './components/registry-search'
 export { RegistryRows, RegistryTable } from './components/registry-table'

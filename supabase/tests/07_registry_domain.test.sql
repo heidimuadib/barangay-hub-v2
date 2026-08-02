@@ -11,7 +11,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(52);
+select plan(56);
 
 create function pg_temp.impersonate(p_user uuid) returns void language plpgsql as $$
 begin
@@ -229,21 +229,70 @@ select is(
 select pg_temp.impersonate('00000000-0000-4000-8000-000000000002');
 select pg_temp.remember('ev_identity2', (public.add_evidence_metadata(
   pg_temp.recall('app2'), 'identity', 'image/jpeg', 2048)).evidence_id);
-select lives_ok(
-  format($f$select public.confirm_evidence_upload('%s',
-    '4444444444444444444444444444444444444444444444444444444444444444', 2048)$f$,
-    pg_temp.recall('ev_identity2')),
-  'upload confirmation records the hash and size');
+
+-- Slice 2F: confirmation now reads the OBJECT, so a metadata row alone cannot
+-- be finalized. Without bytes in the bucket the call refuses outright.
 select throws_ok(
   format($f$select public.confirm_evidence_upload('%s',
-    '5555555555555555555555555555555555555555555555555555555555555555', 2048)$f$,
+    '4444444444444444444444444444444444444444444444444444444444444444')$f$,
+    pg_temp.recall('ev_identity2')),
+  'P0001', 'EVIDENCE_OBJECT_MISSING',
+  'confirmation refuses when no object was actually uploaded (Slice 2F)');
+
+-- Stand in for the browser's upload: place the object where the metadata says
+-- it belongs. Written as the system role because storage.objects is owned by
+-- the Storage service; the RLS path is proven in 11_evidence_storage.
+select pg_temp.as_system();
+insert into storage.objects (bucket_id, name, owner, metadata)
+select 'verification-evidence', e.storage_path, null,
+       jsonb_build_object('size', 2048, 'mimetype', 'image/jpeg')
+from public.verification_evidence e where e.id = pg_temp.recall('ev_identity2');
+
+select pg_temp.impersonate('00000000-0000-4000-8000-000000000002');
+select lives_ok(
+  format($f$select public.confirm_evidence_upload('%s',
+    '4444444444444444444444444444444444444444444444444444444444444444')$f$,
+    pg_temp.recall('ev_identity2')),
+  'upload confirmation records the hash and the object''s trusted size');
+select is(
+  (select size_bytes from public.verification_evidence
+   where id = pg_temp.recall('ev_identity2')),
+  2048::bigint,
+  'the size comes from the stored object, not from a client parameter');
+select throws_ok(
+  format($f$select public.confirm_evidence_upload('%s',
+    '5555555555555555555555555555555555555555555555555555555555555555')$f$,
     pg_temp.recall('ev_identity2')),
   'P0001', 'EVIDENCE_ALREADY_CONFIRMED', 'confirmation is one-shot');
+
+-- The residency item added earlier is still PENDING, so the tightened rule
+-- refuses: a metadata row is an intention, not a document (Slice 2F).
+select throws_ok(
+  format($f$select public.submit_verification('%s')$f$,
+         pg_temp.recall('app2')),
+  'P0001', 'EVIDENCE_INCOMPLETE',
+  'a pending residency upload does not satisfy the minimum-evidence rule');
+
+select pg_temp.as_system();
+insert into storage.objects (bucket_id, name, owner, metadata)
+select 'verification-evidence', e.storage_path, null,
+       jsonb_build_object('size', 4096, 'mimetype', 'application/pdf')
+from public.verification_evidence e
+where e.application_id = pg_temp.recall('app2') and e.kind = 'residency';
+
+select pg_temp.impersonate('00000000-0000-4000-8000-000000000002');
+select lives_ok(
+  format($f$select public.confirm_evidence_upload(
+    (select e.id::text from public.verification_evidence e
+     where e.application_id = '%s' and e.kind = 'residency')::uuid,
+    '6666666666666666666666666666666666666666666666666666666666666666')$f$,
+    pg_temp.recall('app2')),
+  'the residency item is finalized too');
 
 select lives_ok(
   format($f$select public.submit_verification('%s')$f$,
          pg_temp.recall('app2')),
-  'with both kinds present the application submits');
+  'with both kinds FINALIZED the application submits');
 select pg_temp.as_system();
 select is(
   (select count(*)::int from public.audit_events

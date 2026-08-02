@@ -140,6 +140,19 @@ then sign in as `applicant.sanisidro@` to see the note and resubmit. Come back
 as `admin.sanisidro@` to re-open the review and approve or reject it; only the
 administrator is offered those two.
 
+**Uploading evidence and submitting (Slice 2F).** Sign up a fresh account,
+confirm it through Mailpit, onboard, then on **My registration** add one
+identity document and one proof of residency. Any small JPEG, PNG, WebP or PDF
+works — **use a synthetic file, never a real ID** (DEC-ENV-04). The picker
+uploads straight into the private `verification-evidence` bucket through a
+short-lived one-object ticket; the server then verifies the object exists
+before the document counts. "Send for verification" only enables once both
+categories show *added*. As a reviewer with
+`verification.evidence.read` (`admin.sanisidro@`), the review detail lists
+metadata and mints a signed URL only when you press **View** — nothing is
+embedded or prefetched. The bucket is private: a signed URL expires in about a
+minute, and there is no public URL form.
+
 **Reviewing a duplicate pair (Slice 2E).** Open the registry as
 `admin.sanisidro@` and search "maria santos" — the seeded pair (plain and
 accented spellings, same birthdate) each show the side-by-side comparison on

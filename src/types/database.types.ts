@@ -678,11 +678,7 @@ export type Database = {
       }
       caller_owns_person: { Args: { p_person_id: string }; Returns: boolean }
       confirm_evidence_upload: {
-        Args: {
-          p_content_hash: string
-          p_evidence_id: string
-          p_size_bytes: number
-        }
+        Args: { p_content_hash: string; p_evidence_id: string }
         Returns: undefined
       }
       create_membership_by_email: {
@@ -754,6 +750,14 @@ export type Database = {
           p_payload: Json
         }
         Returns: number
+      }
+      evidence_object_readable: {
+        Args: { p_object_name: string }
+        Returns: boolean
+      }
+      evidence_object_writable: {
+        Args: { p_object_name: string }
+        Returns: boolean
       }
       link_person_account: {
         Args: { p_person_id: string; p_user_id: string }

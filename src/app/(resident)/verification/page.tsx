@@ -3,7 +3,15 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { getAuthorizationContext } from '@/features/identity'
-import { ResubmissionForm, VerificationStatusPanel, getOwnRegistryState } from '@/features/registry'
+import {
+  EvidenceManager,
+  ResubmissionForm,
+  VerificationStatusPanel,
+  evidenceReadiness,
+  getOwnRegistryState,
+  isEditable,
+  listOwnEvidence,
+} from '@/features/registry'
 import type { VerificationState } from '@/features/registry'
 
 export const metadata: Metadata = {
@@ -23,6 +31,10 @@ export default async function VerificationPage() {
   }
 
   const state = (registry.state ?? 'draft') as VerificationState
+  // Slice 2F: documents are managed while the application is editable
+  // (draft or info_requested) — the same rule the database enforces.
+  const evidence = registry.application_id ? await listOwnEvidence(registry.application_id) : []
+  const editable = isEditable(state)
 
   return (
     <div className="flex flex-col gap-6">
@@ -57,24 +69,16 @@ export default async function VerificationPage() {
         </section>
       ) : null}
 
-      <section
-        aria-labelledby="documents-heading"
-        className="rounded-lg border border-neutral-200 bg-white p-6"
-      >
-        <h2 id="documents-heading" className="text-lg font-bold">
-          Your documents
-        </h2>
-        <p className="mt-2 text-neutral-700">
-          {registry.evidence_count === 0
-            ? 'You have not added any documents yet.'
-            : `${registry.evidence_count} document${registry.evidence_count === 1 ? '' : 's'} attached to your registration.`}
-        </p>
-        <p className="mt-3 text-sm text-neutral-500">
-          Uploading proof of identity and residency is being finished and will appear here. Until
-          then, bring your documents to the barangay office and staff can complete your registration
-          with you.
-        </p>
-      </section>
+      {/* Slice 2F: real upload, removal and submission. Replaces the 2B
+          placeholder that told residents to bring documents to the office. */}
+      {registry.application_id ? (
+        <EvidenceManager
+          applicationId={registry.application_id}
+          items={evidence}
+          editable={editable}
+          readiness={evidenceReadiness(evidence)}
+        />
+      ) : null}
 
       <p className="text-sm text-neutral-500">
         <Link href="/dashboard" className="text-brand-700 underline">

@@ -323,8 +323,13 @@ test.describe('authorization', () => {
     await expect(page.getByRole('link', { name: /add a walk-in resident/i })).toHaveCount(0)
 
     // ...and the route itself refuses, which is the control that matters.
+    //
+    // Waited for explicitly rather than asserted with `toHaveURL`: the server
+    // redirect is real but can land after that matcher's 5s default on a
+    // loaded machine, which turned a passing SECURITY control into recurring
+    // noise. This waits on the navigation itself instead.
     await page.goto('/staff/registry/new')
-    await expect(page).toHaveURL(/\/access-denied$/)
+    await page.waitForURL(/\/access-denied$/, { timeout: 30_000 })
   })
 
   test('an administrator is offered the walk-in affordance', async ({ page }) => {

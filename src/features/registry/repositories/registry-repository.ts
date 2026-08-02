@@ -208,3 +208,34 @@ export function confirmEvidenceUpload(args: Rpc['confirm_evidence_upload']['Args
 export function removeEvidence(args: Rpc['remove_evidence']['Args']) {
   return callRpc('remove_evidence', args)
 }
+
+/**
+ * The storage path and finalization state of one evidence row (Slice 2F).
+ *
+ * RLS admits only the owner or a `verification.evidence.read` holder, so a
+ * wrong-tenant id returns nothing — indistinguishable from a nonexistent one.
+ * The path never leaves the server: callers use it to mint a signed URL.
+ */
+export async function fetchEvidencePath(
+  evidenceId: string,
+  barangayId?: string,
+): Promise<{ storage_path: string; uploaded_at: string | null } | null> {
+  const supabase = await createServerSupabaseClient()
+  let query = supabase
+    .from('verification_evidence')
+    .select('storage_path, uploaded_at')
+    .eq('id', evidenceId)
+
+  // Staff callers pass their active tenant so a forged id cannot reach across
+  // barangays even if RLS were ever loosened; the resident path relies on the
+  // ownership branch of the policy, which is already single-tenant.
+  if (barangayId !== undefined) {
+    query = query.eq('barangay_id', barangayId)
+  }
+
+  const { data, error } = await query.maybeSingle()
+  if (error) {
+    throw new Error(`evidence path query failed: ${error.code}`)
+  }
+  return data
+}

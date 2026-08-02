@@ -10,11 +10,15 @@ import {
   resolveActiveBarangay,
 } from '@/features/identity'
 import {
+  EvidenceViewButton,
   QueueStateChip,
   REGISTRY_PERMISSIONS,
   RESIDENCY_BASES,
   ReviewActions,
   availableReviewActions,
+  evidenceKindLabel,
+  evidenceMimeLabel,
+  formatEvidenceSize,
   getApplicationDetail,
   isTerminal,
 } from '@/features/registry'
@@ -207,13 +211,31 @@ export default async function VerificationDetailPage({
                 key={item.evidenceId}
                 className="flex flex-wrap items-center justify-between gap-2 py-3"
               >
-                <span className="font-medium text-neutral-900 capitalize">{item.kind}</span>
-                <span className="text-sm text-neutral-500">
-                  {item.mimeType} ·{' '}
-                  {item.uploadedAt
-                    ? `uploaded ${item.uploadedAt.slice(0, 10)}`
-                    : 'upload not confirmed'}
-                </span>
+                <div className="flex flex-col">
+                  <span className="font-medium text-neutral-900">
+                    {evidenceKindLabel(item.kind)}
+                  </span>
+                  <span className="text-sm text-neutral-500">
+                    {evidenceMimeLabel(item.mimeType)}
+                    {item.uploadedAt !== null && item.sizeBytes !== null
+                      ? ` · ${formatEvidenceSize(item.sizeBytes)}`
+                      : ''}{' '}
+                    ·{' '}
+                    {item.uploadedAt
+                      ? `added ${item.uploadedAt.slice(0, 10)}`
+                      : 'upload not finished'}
+                  </span>
+                </div>
+                {/* Slice 2F: a signed URL is requested only when the reviewer
+                    asks, and only for finalized objects. Nothing is embedded
+                    or prefetched, and the path is never rendered. */}
+                {item.uploadedAt !== null ? (
+                  <EvidenceViewButton
+                    barangayId={active.barangayId}
+                    evidenceId={item.evidenceId}
+                    label={evidenceKindLabel(item.kind).toLowerCase()}
+                  />
+                ) : null}
               </li>
             ))}
           </ul>

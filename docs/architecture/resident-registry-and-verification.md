@@ -13,7 +13,9 @@ onboarding into the shared registry and the verification status surface are
 person detail and walk-in creation are **implemented** (2C); the verification
 queue, review detail and the full decision workflow are **implemented** (2D);
 the duplicate review and supersede-link resolution surface is **implemented**
-(2E). The Storage broker (2F) is **planned** and marked below.
+(2E); the private evidence bucket, signed upload/read brokering and
+browser-driven submission are **implemented** (2F, closing R-2-04). Only the
+Slice 2G hardening pass remains.
 
 ### Duplicate review and resolution (2E)
 
@@ -286,11 +288,69 @@ ceiling are enforced by CHECK and mirrored in TypeScript. Upload confirmation
 records sha-256 and byte size, one-shot. Metadata is immutable apart from
 those confirmation fields.
 
-**Planned (2F):** the private bucket, server-brokered signed upload URLs,
-short-lived authorized read URLs, Storage policies mirroring the table
-policies, object cleanup on removal, and the unauthenticated/cross-tenant
-fetch probes. Until then no bytes are stored anywhere. Synthetic files only,
-always (DEC-ENV-04).
+### Implemented (2F): the bytes half
+
+**The bucket** `verification-evidence` is created by MIGRATION, not by a
+dashboard click, so `pnpm db:reset` reproduces it from an empty stack and
+pgTAP can assert it: `public = false`, a 10 MiB `file_size_limit`, and the
+D2-03 MIME allow-list enforced at the Storage layer as well as the table.
+
+**No service-role client is used anywhere in this subpart.** Signed uploads,
+signed reads and deletes all run on the caller's own session against
+`storage.objects` policies. Those policies join the object name to
+`verification_evidence.storage_path` — unique and server-generated — so
+Storage authorization and metadata authorization resolve through the same row
+and cannot drift apart:
+
+| Operation | Who | Condition |
+| --- | --- | --- |
+| INSERT / DELETE | owner only | `evidence_object_writable`: owns the application AND it is `draft`/`info_requested` |
+| SELECT | owner, or `verification.evidence.read` in the object's own barangay | `evidence_object_readable` |
+| anything | `anon` | **no policy exists** — denied by deny-by-default |
+
+There is no UPDATE policy: an evidence object is written once. Staff never
+write resident evidence, and a platform administrator matches neither branch.
+
+**Finalization cannot be forged.** Storage lives in the same database, so
+`confirm_evidence_upload` reads `storage.objects` directly: the object must
+exist, and the recorded `size_bytes` is taken **from the object**, never from
+a client parameter. A browser that merely claims an upload succeeded raises
+`EVIDENCE_OBJECT_MISSING` and finalizes nothing. `submit_verification` was
+tightened to match — it now requires one *finalized* identity item and one
+*finalized* residency item, closing the completeness gap 2A deferred.
+
+**The upload sequence:** metadata row first (server generates the opaque
+path) → one-object signed ticket → the browser PUTs directly to the private
+bucket → the server verifies and finalizes. Only finalized evidence counts.
+A failed upload leaves a PENDING row that satisfies nothing and can be
+retried or removed.
+
+**Reads are on demand.** A reviewer's page lists metadata only; nothing is
+embedded or prefetched. A signed URL is minted when the reviewer asks, lives
+about a minute, covers exactly one object, and is never logged, never placed
+in a route parameter, and never persisted client-side.
+
+**Removal is ordered, not atomic** — and the document says so because Storage
+and Postgres cannot share a transaction. The OBJECT is deleted first, then
+the metadata row:
+
+- object delete fails → nothing else happens; the item is unchanged and the
+  resident retries. No silent success.
+- object gone, row remains → a retry deletes a missing object (Storage treats
+  that as success) and then removes the row. The operation is idempotent.
+
+The reverse order was rejected: it would leave a row pointing at nothing while
+reporting success. An orphaned OBJECT is inert instead — every Storage policy
+resolves through a metadata row, so an object without one is unreachable.
+
+**Audit:** `verification.evidence_added` (kind + MIME), the new
+`verification.evidence_finalized` (kind, MIME, trusted size, content hash) and
+`verification.evidence_removed` (kind). Never a filename, never an object
+path, never a signed URL — pgTAP asserts the path does not appear.
+
+Synthetic files only, always (DEC-ENV-04): the e2e suite generates a 1×1 PNG
+and a minimal PDF in-process, so no document resembling a real ID exists
+anywhere in this repository.
 
 ## Public sign-up security (2B — implemented)
 

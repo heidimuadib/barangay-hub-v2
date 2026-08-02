@@ -27,7 +27,10 @@ export {
   candidatePriority,
   isCandidateScore,
   normalizeName,
+  similarityBand,
 } from '../rules/duplicate-scoring'
+
+export { evidenceReadiness, isAllowedEvidenceMime } from '../rules/evidence'
 export {
   RESIDENCY_BASES,
   RESIDENCY_BASIS_KEYS,
