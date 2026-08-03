@@ -35,6 +35,12 @@ export default async function ResidentLayout({ children }: { children: React.Rea
             <Link href="/dashboard" className="text-sm text-neutral-700 hover:underline">
               Dashboard
             </Link>
+            <Link href="/documents" className="text-sm text-neutral-700 hover:underline">
+              Documents
+            </Link>
+            <Link href="/requests" className="text-sm text-neutral-700 hover:underline">
+              My requests
+            </Link>
             <Link href="/account" className="text-sm text-neutral-700 hover:underline">
               My account
             </Link>

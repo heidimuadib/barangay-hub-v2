@@ -172,6 +172,40 @@ Recorded now so the queue's behaviour in 3C is a decision rather than an
 oversight. Until it resolves, the intake queue will accumulate requests that
 have no exit.
 
+## DEC-REQ-02 — may staff file a request for an UNVERIFIED person? — **OPEN**
+
+- **Status:** OPEN, raised during Slice 3B (2026-08-03)
+- **Owner:** Product owner
+- **Blocking level:** not blocking 3B; should resolve with the 3C counter
+  workflow
+
+3B added the verification gate the roadmap asks for (Slice 3 §3, ADR-0006
+point 4): `create_own_request` now refuses a resident whose registration has
+not been approved, with `RESIDENT_NOT_VERIFIED`. Migration `20260807010000`.
+
+`create_walk_in_request` was deliberately **not** given the same gate, and the
+asymmetry is asserted in pgTAP so it stays a decision rather than an
+oversight. The reasoning: the self-service path has no human in it, so the
+database is the only check; a staff member at the counter is looking at the
+person, has to record a reason, and is audited by name. Gating the counter
+would also make the assisted path *stricter* than the resident path in a way
+the roadmap never asked for — a walk-in exists precisely for people the online
+flow does not serve.
+
+But it is a real asymmetry, and it is the kind that gets discovered later as a
+loophole rather than a decision. Three ways it could resolve:
+
+1. **Keep it.** Staff judgement plus audit is the control; the counter is
+   where exceptions belong.
+2. **Gate it too**, and let staff verify the person first — one workflow, no
+   exceptions, at the cost of turning away someone standing in front of them.
+3. **Gate it with an override**: allowed, but the assisted request records that
+   the person was unverified when it was filed, so the queue can show it.
+
+Until this resolves, 3C's counter surface should not *advertise* filing for an
+unverified person; the database permits it, and that permission is now
+visible rather than accidental.
+
 ## DEC-REPO-01 — application location vs Git root
 
 - **Status:** **RESOLVED** — 2026-07-31, ADR-0004 Option 1 executed

@@ -1,12 +1,12 @@
 # Document catalog and request intake — as built
 
-Slice 3A, 2026-08-03. Companion to
+Slices 3A–3B, 2026-08-03. Companion to
 [resident-registry-and-verification.md](./resident-registry-and-verification.md);
 this note covers what a barangay offers and how someone asks for it.
 
-**Scope of this document:** the domain foundation only. The resident and staff
-surfaces arrive in 3B/3C, supporting evidence in 3D. Where this note and the
-code disagree, the code is the fact.
+**Scope of this document:** the domain foundation (3A) and the RESIDENT
+surfaces built on it (3B). The staff intake queue arrives in 3C and supporting
+evidence in 3D. Where this note and the code disagree, the code is the fact.
 
 ## The shape of the thing
 
@@ -200,3 +200,166 @@ No routes, no server actions, no services, no repositories, no components —
 Slice 2 pattern verbatim). No serials, artifacts, QR payloads, payments or
 release records: those are Slices 4–5, and `ready_for_issue` is where this
 slice stops.
+
+---
+
+# Slice 3B — the resident surfaces
+
+Five routes, all inside the `(resident)` group:
+
+| Route | What it is |
+| --- | --- |
+| `/documents` | the active catalog for the resident's barangay |
+| `/documents/[documentTypeId]` | one document: terms, requirements, the call to action |
+| `/requests` | the resident's own requests, paginated |
+| `/requests/new?type=` | composing a draft |
+| `/requests/[requestId]` | one own request: answers, progress, submission |
+
+Every path segment beyond the route name is a bare UUID, and search runs
+nowhere near a query string — only `?page=` and `?type=` exist, and both carry
+opaque values (P6-C-E). A Playwright test walks all five and asserts it.
+
+## Browsing needs membership; requesting needs verification
+
+The two gates are deliberately different, and the split is the main design
+decision of this subpart.
+
+**Browsing is open to any active member.** An applicant waiting on a decision
+can see what their barangay offers and exactly what each document will ask
+for, so they arrive prepared rather than discovering the requirements only
+once they are finally allowed to act. This is also what 3A's RLS already said
+(`auth_is_active_member`), so the service simply agrees with it.
+
+**Creating a request needs standing.** 3A required the caller to *be* a
+person in the barangay, which is Slice 2's "an account proves nothing" rule —
+but onboarding creates the person record immediately, so that check would have
+admitted an applicant whose verification was still `submitted`,
+`info_requested` or `rejected`. Migration `20260807010000` closes it:
+
+```
+create_own_request:
+  auth.uid() is null            → AUTHENTICATION_REQUIRED
+  no person in this barangay    → AUTHORIZATION_DENIED
+  person not verified           → RESIDENT_NOT_VERIFIED     ← 3B
+  type inactive / cross-tenant  → DOCUMENT_TYPE_NOT_AVAILABLE
+```
+
+The order matters and is asserted: standing is checked **before** the catalog,
+so an unverified caller naming a withdrawn type learns nothing about the type.
+
+`person_is_verified` is "an approved application EXISTS, ever" — not "the
+newest application is approved". Approval is terminal and re-enterable only
+through a new application, so a resident who later opens a fresh one keeps
+their standing. The server-side read mirrors that exactly rather than taking
+the most recent row, because the two would otherwise disagree the moment
+anyone re-applied.
+
+`create_walk_in_request` was **not** gated. That asymmetry is a decision, not
+an oversight — recorded as **DEC-REQ-02** and asserted in pgTAP.
+
+### The refusal is a step, not a wall
+
+`rules/resident-eligibility.ts` turns standing into one of six outcomes rather
+than a boolean, because "not eligible" is not one state: someone who never
+registered, someone whose barangay asked them a question, and someone who was
+rejected each need a different next action. Every ineligible branch renders a
+panel that names the action and links to it. A boolean here is how dead ends
+get built.
+
+## The three-place rule, again
+
+Nothing about this is trusted to the page:
+
+| Layer | What it does |
+| --- | --- |
+| Page | hides the form, explains why, links to the fix |
+| Server Action | re-parses the input and re-checks standing — a Server Action is a network endpoint, not a continuation of the page that rendered it |
+| Database | `create_own_request` refuses regardless |
+
+The action raises the *same* error the repository maps
+`RESIDENT_NOT_VERIFIED` to, rather than composing its own message, so the two
+cannot drift apart in wording.
+
+## Own-means-own, three times
+
+`document_requests` RLS admits the requester **or** a holder of
+`requests.read`. That second branch is right for the 3C staff queue and wrong
+for a resident route, so the resident reads also filter by the caller's
+`person_id`, resolved from the account↔person link. A staff member who
+navigates to `/requests` sees their own requests and nobody else's.
+
+The detail page re-checks the same thing, and another resident's request id
+renders **404, not 403** — a distinguishable refusal would confirm that the id
+names a real request.
+
+## A requester keeps reading their own history
+
+3A shows residents active types only, which is right for browsing: a withdrawn
+document cannot be requested. But a request references its type forever, and a
+resident opening a request they filed last year must still be able to read
+what they asked for and which questions they answered. Withdrawing a type
+would otherwise silently blank the history of everyone who ever used it.
+
+So `20260807010000` adds one more permissive branch to the catalog policies:
+
+```sql
+auth_is_active_member(barangay_id) and caller_has_request_for_type(id)
+```
+
+Both conjuncts matter. Without the membership check, owning a request would
+make a *non-member* a catalog audience — which is precisely the property
+`13_document_catalog` pins down, and it failed loudly when this policy was
+first written without it. The helper is `SECURITY DEFINER` for the same reason
+`caller_owns_request` is: a policy on `document_types` that queried
+`document_requests` directly would re-enter that table's own RLS.
+
+## Composing a request
+
+Creation and submission are separate acts, because 3A's surface is two
+functions and because a resident should be able to look at what they wrote
+before sending it:
+
+1. `/requests/new` → `create_own_request` (a **draft**), then one
+   `set_request_answer` per answered requirement;
+2. `/requests/[id]` → review, edit answers, `submit_request`.
+
+A failure between the two leaves a draft with incomplete answers. That is a
+legitimate, recoverable state rather than a defect: the draft is visible, its
+answers are editable (`set_request_answer` upserts), and `submit_request`
+refuses until every required answer exists. The submit control is offered only
+when the *server* has computed that the same completeness rule passes — and
+when it is withheld, it says how many answers are missing, because a disabled
+button with no explanation is how people give up.
+
+The purpose is fixed at creation and shown read-only afterwards:
+`document_requests_guard` freezes it once the request leaves draft, and there
+is no RPC to change it, so offering an edit would promise something the
+database refuses.
+
+Answer fields are namespaced `answer.<key>` in the form. Requirement keys are
+barangay-authored, so a type could legitimately declare one called `purpose`
+and overwrite the request's own field; `.` is forbidden by the key CHECK,
+which makes the prefix collision-proof rather than merely unlikely.
+
+## Presenting unconfirmed terms
+
+`presentTerms()` is called on the **server**, and components receive the
+classified result. A component therefore cannot render an amount while
+dropping the qualifier — the two arrive in one object, which is why that
+object exists. The same three readings appear on the catalog card, the
+document detail, the request form and the request detail:
+
+- **undecided** — "Not set by the barangay yet". Never `₱0.00`.
+- **provisional** — the figure, plus the RES-06 "Not yet confirmed" chip, plus
+  the explanation that qualifies all three figures.
+- **confirmed** — plain. Unreachable while B-08 is open, and that is fine: the
+  branch exists so confirming a schedule needs no code change.
+
+## What 3B deliberately does not include
+
+No staff surface — the intake queue, the request detail with reviewer
+controls, and walk-in creation are 3C. No supporting-evidence upload: the
+document detail says so plainly rather than offering a control that does
+nothing (3D). No public catalog: US-UI-006 needs the `anon` grant 3A withheld,
+and that decision belongs with the surface that needs it. No decline or cancel
+— still DEC-REQ-01.

@@ -905,6 +905,10 @@ export type Database = {
         Returns: boolean
       }
       auth_is_platform_admin: { Args: never; Returns: boolean }
+      caller_has_request_for_type: {
+        Args: { p_document_type_id: string }
+        Returns: boolean
+      }
       caller_owns_application: {
         Args: { p_application_id: string }
         Returns: boolean
@@ -1045,6 +1049,7 @@ export type Database = {
         Args: { p_correlation_id?: string; p_request_id: string }
         Returns: undefined
       }
+      person_is_verified: { Args: { p_person_id: string }; Returns: boolean }
       person_search: {
         Args: { p_barangay_id: string; p_limit?: number; p_query: string }
         Returns: {

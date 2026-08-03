@@ -30,3 +30,13 @@ export const PLACEHOLDER_EXPLANATION =
 
 /** The register entry these values are blocked on. */
 export const PLACEHOLDER_BLOCKER = 'B-08'
+
+/**
+ * Namespace for requirement answers inside the request form's FormData.
+ *
+ * Requirement keys are authored by each barangay, so one could legitimately be
+ * called `purpose` and collide with the request's own field. The `.` is not
+ * permitted by the key CHECK, which makes the prefix collision-proof rather
+ * than merely unlikely.
+ */
+export const ANSWER_FIELD_PREFIX = 'answer.'

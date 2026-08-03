@@ -53,8 +53,8 @@ const checks = [
   {
     name: 'migrations recorded',
     sql: 'select count(*) from supabase_migrations.schema_migrations',
-    ok: (value) => Number(value) >= 21,
-    detail: 'expected every Slice 0a–3A migration to be recorded',
+    ok: (value) => Number(value) >= 22,
+    detail: 'expected every Slice 0a–3B migration to be recorded',
   },
   {
     name: 'seed fixtures present',
@@ -88,6 +88,21 @@ const checks = [
     sql: 'select count(*) from public.document_types where not values_are_placeholder',
     ok: (value) => Number(value) === 0,
     detail: 'expected every seeded document type to keep values_are_placeholder = true (B-08)',
+  },
+  {
+    // The 3B request gate is only meaningfully testable while a member who is
+    // NOT verified exists. If this fixture goes missing the suite would still
+    // pass, having quietly stopped exercising the rule.
+    name: 'unverified-member persona present',
+    sql: `select count(*) from public.memberships m
+          join public.person_accounts pa on pa.user_id = m.user_id
+           and pa.barangay_id = m.barangay_id
+          where m.status = 'active'
+            and not exists (
+              select 1 from public.verification_applications va
+              where va.person_id = pa.person_id and va.state = 'approved')`,
+    ok: (value) => Number(value) >= 1,
+    detail: 'expected the Slice 3B active-but-unverified member fixture',
   },
 ]
 

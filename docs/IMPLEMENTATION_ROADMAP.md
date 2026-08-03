@@ -450,7 +450,7 @@ project). Slice 3 builds on this layout.
 | Subpart | Scope | State |
 | --- | --- | --- |
 | **3A** | Catalog and request domain foundation: `document_types` (with the B-08 `values_are_placeholder` flag), `document_type_requirements`, `document_requests`, `document_request_answers`; six capabilities and their role mapping; forced RLS + composite tenant FKs on all four tables; the four-state machine enforced at function *and* table; both creation channels converging on one record; audit triggers; two approved outbox intents; synthetic seeds; 86 new pgTAP + 44 new unit assertions | **COMPLETE** |
-| 3B | Resident catalog browse, document detail, request wizard, own-request list and status | pending |
+| **3B** | Resident surfaces: catalog browse, document detail, draft composition, submission, own-request list and detail; the **verification gate** on request creation (migration `20260807010000`), own-request catalog visibility, US-RES-004 dashboard content; 35 new pgTAP + 81 new unit/component + 20 new Playwright assertions per viewport | **COMPLETE** |
 | 3C | Staff intake queue, request detail, walk-in creation through the same domain service | pending |
 | 3D | Supporting evidence (Slice 2 pattern), outbox review, US-UI-002/UI-001 chrome, US-UI-006 public portal, hardening, docs, final PR | pending |
 
@@ -468,6 +468,28 @@ project). Slice 3 builds on this layout.
 - **The catalog is not anon-readable.** The US-UI-006 public portal will need
   that grant; opening a table to `anon` is a decision that belongs with the
   surface that needs it, not with the domain.
+
+**Decisions taken in 3B:**
+
+- **Browsing needs membership; requesting needs verification.** 3A's
+  `create_own_request` required only a person record, and onboarding creates
+  one immediately — so an applicant whose verification was still `submitted`
+  could have filed requests. Migration `20260807010000` adds the gate
+  (`RESIDENT_NOT_VERIFIED`), checked **before** the catalog lookup so an
+  unverified caller learns nothing about a document type. Browsing stays open
+  to any active member: someone waiting on a decision should be able to see
+  what a document will ask for.
+- **`create_walk_in_request` was NOT gated the same way** — staff see the
+  person in front of them, record a reason and are audited by name. The
+  asymmetry is asserted in pgTAP and raised as **DEC-REQ-02** for a ruling
+  with the 3C counter workflow.
+- **A requester keeps reading the type behind their own request**, even after
+  the barangay withdraws it — otherwise withdrawing a document would blank the
+  history of everyone who used it. Scoped to active members, so owning a
+  request never turns a non-member into a catalog audience.
+- **Ineligibility is six states, not a boolean.** Never-registered,
+  mid-registration, awaiting a decision, information requested and rejected
+  each get their own explanation and next step.
 
 1–2. **3 — Document catalog & request intake**; IN PROGRESS.
 3. **Outcome:** a verified resident — or staff serving a walk-in through the

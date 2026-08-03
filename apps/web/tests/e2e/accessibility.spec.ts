@@ -19,6 +19,8 @@ const PASSWORD = 'password123-local'
 const ACCOUNTS = {
   adminA: 'admin.sanisidro@barangay-hub.test',
   applicant: 'applicant.sanisidro@barangay-hub.test',
+  /** Verified in tenant A — the only persona the Slice 3B forms exist for. */
+  residentA: 'resident.sanisidro@barangay-hub.test',
 } as const
 
 /** Seeded tenant-A fixtures, reachable read-only. */
@@ -170,6 +172,47 @@ test.describe('accessibility baseline — resident routes', () => {
     test.slow()
     await page.goto('/sign-up')
     await assertBaseline(page, '/sign-up')
+  })
+})
+
+/**
+ * Slice 3B routes, held to the same baseline.
+ *
+ * Driven by the VERIFIED resident, because the composition surfaces only exist
+ * for someone who may actually use them — an ineligible persona would render
+ * the explanation panel instead and the form would go unchecked.
+ */
+test.describe('accessibility baseline — resident document routes', () => {
+  const CLEARANCE = 'f0000000-0000-4000-8000-000000000001'
+
+  test('the catalog and one document meet the baseline', async ({ page }) => {
+    test.slow()
+    await signIn(page, ACCOUNTS.residentA)
+
+    await page.goto('/documents')
+    await assertBaseline(page, '/documents')
+
+    await page.goto(`/documents/${CLEARANCE}`)
+    await assertBaseline(page, `/documents/[documentTypeId]`)
+
+    // B-08 is conveyed as TEXT beside the figure, never by colour alone.
+    await expect(page.getByText(/not yet confirmed/i).first()).toBeVisible()
+  })
+
+  test('the request list and the composition form meet the baseline', async ({ page }) => {
+    test.slow()
+    await signIn(page, ACCOUNTS.residentA)
+
+    await page.goto('/requests')
+    await assertBaseline(page, '/requests')
+
+    await page.goto(`/requests/new?type=${CLEARANCE}`)
+    await assertBaseline(page, '/requests/new')
+
+    // Every data-driven control carries a real label, not a placeholder.
+    await expect(page.getByLabel('Purpose')).toBeVisible()
+    await expect(page.getByLabel(/years of residency/i)).toBeVisible()
+    await expect(page.getByLabel(/intended use/i)).toBeVisible()
   })
 })
 

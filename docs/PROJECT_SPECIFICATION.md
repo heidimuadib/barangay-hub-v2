@@ -71,7 +71,7 @@ Four user-facing surfaces, implemented today as Next.js route groups
 | Surface | Route group | Audience | State at `9fbd783` |
 | --- | --- | --- | --- |
 | Public portal | `(public)` | Anyone | Placeholder page; access-denied page. Real portal (US-UI-006) is **Future** |
-| Resident portal | `(resident)` | Authenticated residents | **Implemented (minimal):** dashboard with live membership context, account page with self-service display-name editing |
+| Resident portal | `(resident)` | Authenticated residents | **Implemented:** dashboard with live membership context and own document requests, account page with self-service display-name editing, onboarding and verification status, the document catalog (`/documents`, `/documents/[documentTypeId]`) and request intake and tracking (`/requests`, `/requests/new`, `/requests/[requestId]`) |
 | Staff workspace | `(staff)` | Barangay staff/administrators | **Implemented (minimal):** workspace shell, member roster with invite/status/role administration, tenant audit-log viewer |
 | Platform console | `(platform)` | Platform operators | **Implemented (read-only):** tenant metadata list, operator list, platform-scope audit trail. Visually distinct chrome so operators always know which console they are in (Phase 5 §13.1) |
 
@@ -144,7 +144,7 @@ plus `index.ts` barrel) — see §15.
 | `audit-trail` | Tenant and platform audit-log queries and table UI |
 | `platform` | Read-only console queries (tenant metadata, operator assignments) |
 | `registry` | Resident registry, onboarding, verification workflow, duplicate resolution, evidence (Slice 2) |
-| `documents` | **Slice 3A — domain only:** request state machine, catalog-term presentation (B-08 placeholder rules), input schemas, capability constants. Surfaces arrive in 3B/3C |
+| `documents` | **Slices 3A–3B:** request state machine, catalog-term presentation (B-08 placeholder rules), input schemas, capability constants (3A); resident catalog, document detail, draft composition, submission and own-request tracking, behind the verification gate (3B). Staff intake queue arrives in 3C |
 | `apps/web/src/services/audit` | Sessionless security-event writer — the one allow-listed service-role importer (`audit-append`) |
 | `apps/web/src/hooks` | `useRefreshOnSuccess` — post-mutation route refetch (R-1-06) |
 
@@ -223,7 +223,7 @@ values are stripped centrally, not at call sites.
 
 ## 8. Database Architecture
 
-**Implemented** — twenty-one forward-only migrations under `backend/supabase/migrations/`.
+**Implemented** — twenty-two forward-only migrations under `backend/supabase/migrations/`.
 
 Tables (all in `public`):
 
@@ -440,10 +440,10 @@ rejects, not this prose:
 
 | Suite | Where | Totals | Character |
 | --- | --- | --- | --- |
-| pgTAP | `backend/supabase/tests/` | **444** in 15 files (104) | The security proof: RLS matrix, isolation, audit immutability, schema structure, verification transitions, evidence Storage rules, duplicate resolution, outbox hygiene, catalog visibility and request transitions. Self-contained transactions, exact plans |
-| Unit/component | `apps/web/src/**`, `apps/web/tests/unit/` | **275** in 29 files (95) | Pure rules, schemas, guards (mocked repositories), hooks, plus architecture tests that independently re-assert what lint enforces |
-| End-to-end | `apps/web/tests/e2e/` | **79 per viewport project** (54) | Playwright, desktop *and* Pixel 5, seeded personas; positive *and* negative journeys (staff refused audit, platform refused tenant data, forged navigation, anonymous evidence fetch). Slice 3 surfaces arrive in 3B/3C, so this total is unchanged by 3A |
-| Coverage | Vitest v8 | **90.73%** statements / **92.68%** branches ≥ 80/75 gate (83.28%) | Scoped to `lib`, `utils`, `hooks`, feature `rules` and `schemas` — the layers that must be exhaustively testable without a database; widened per slice |
+| pgTAP | `backend/supabase/tests/` | **479** in 16 files (104) | The security proof: RLS matrix, isolation, audit immutability, schema structure, verification transitions, evidence Storage rules, duplicate resolution, outbox hygiene, catalog visibility, request transitions and the resident request-intake gate. Self-contained transactions, exact plans |
+| Unit/component | `apps/web/src/**`, `apps/web/tests/unit/` | **356** in 34 files (95) | Pure rules, schemas, guards (mocked repositories), hooks, plus architecture tests that independently re-assert what lint enforces |
+| End-to-end | `apps/web/tests/e2e/` | **99 per viewport project** (54) | Playwright, desktop *and* Pixel 5, seeded personas; positive *and* negative journeys (staff refused audit, platform refused tenant data, forged navigation, anonymous evidence fetch, unverified resident refused a document request, cross-resident and cross-tenant request access) |
+| Coverage | Vitest v8 | **91.41%** statements / **93.49%** branches ≥ 80/75 gate (83.28%) | Scoped to `lib`, `utils`, `hooks`, feature `rules` and `schemas` — the layers that must be exhaustively testable without a database; widened per slice |
 
 The coverage figure is the one a clean checkout reproduces. A higher number
 (90.65%) was recorded when 2F closed and is **not** reproducible: the
@@ -514,15 +514,20 @@ For each slice: scope as recorded in-repo, and status.
   Recorded deferrals: notification delivery (Slice 8), evidence malware
   scanning (R-2-01), a shared-store rate limiter for hosted exposure (R-1-04),
   and the shell-chrome touch targets (R-2-05, US-UI-002).
-- **Slice 3 — IN PROGRESS (3A complete, 2026-08-03):** the document catalog
-  and request-intake domain — tenant catalog with B-08 placeholder-flagged
-  fees/SLAs/validity, data-driven requirements, the
+- **Slice 3 — IN PROGRESS (3A and 3B complete, 2026-08-03):** the document
+  catalog and request-intake domain — tenant catalog with B-08
+  placeholder-flagged fees/SLAs/validity, data-driven requirements, the
   `draft → submitted → in_review → ready_for_issue` machine enforced at
   function *and* table, both creation channels converging on one record, six
-  capabilities, forced RLS, audit and two approved outbox intents — see
-  [architecture](./architecture/document-catalog-and-requests.md). Resident
-  surfaces (3B), staff queue (3C) and evidence/chrome (3D) are pending.
-  Open: **DEC-REQ-01**, no decline/cancel state.
+  capabilities, forced RLS, audit and two approved outbox intents (3A) — plus
+  the resident surfaces on top of it: `/documents`, `/documents/[id]`,
+  `/requests`, `/requests/new` and `/requests/[id]`, a **verification gate**
+  on request creation (`RESIDENT_NOT_VERIFIED`, migration `20260807010000`),
+  own-request catalog visibility, and the US-RES-004 dashboard content (3B).
+  See [architecture](./architecture/document-catalog-and-requests.md). Staff
+  queue (3C) and evidence/chrome (3D) are pending. Open: **DEC-REQ-01**, no
+  decline/cancel state; **DEC-REQ-02**, whether the staff walk-in path should
+  carry the same verification gate.
 - **Slices 4–9 and v1.5 — Sequenced.** Scope, dependencies, gates and effort
   per slice in the roadmap.
 

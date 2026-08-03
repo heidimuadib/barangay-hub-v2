@@ -218,7 +218,8 @@ name twin) are in
 | `inforeq.sanisidro@barangay-hub.test` | Application returned for more information (Slice 2) |
 | `rejected.sanisidro@barangay-hub.test` | Rejected application — terminal state (Slice 2) |
 | `staff.sanisidro@barangay-hub.test` | Staff: reads the roster and registry, starts reviews and requests information — but is refused approve/reject (Slice 2D capability split) |
-| `resident.sanisidro@barangay-hub.test` | Resident self-service |
+| `resident.sanisidro@barangay-hub.test` | Resident self-service — the one **verified** persona, so the only one that may file a document request (Slice 3B) |
+| `unverified.sanisidro@barangay-hub.test` | ACTIVE member whose registration is still `submitted`: browses the catalog, and is refused a request (Slice 3B verification gate) |
 | `platform.admin@barangay-hub.test` | Platform console WITHOUT tenant access |
 
 **Walking the verification workflow (Slice 2D).** Sign in as
@@ -227,6 +228,20 @@ submitted application is waiting. Start the review, request more information,
 then sign in as `applicant.sanisidro@` to see the note and resubmit. Come back
 as `admin.sanisidro@` to re-open the review and approve or reject it; only the
 administrator is offered those two.
+
+**Requesting a document (Slice 3B).** Sign in as `resident.sanisidro@` and
+open **Documents**. Every fee, processing time and validity period you see is
+INVENTED for testing and marked "Not yet confirmed" (blocker B-08); *Business
+Permit Endorsement* has no decided fee at all and says so rather than showing
+₱0.00. Pick *Barangay Clearance*, request it, answer the two required
+questions, and you land on the draft — nothing has reached the barangay yet.
+Submit it there, and it moves to "Waiting for review".
+
+Then sign in as `unverified.sanisidro@` and try the same thing: the catalog
+still opens (browsing needs membership), but the request control is replaced
+by an explanation and a link to their registration. The database refuses it
+too — `create_own_request` raises `RESIDENT_NOT_VERIFIED` — so the screen is
+explaining a rule rather than being the rule.
 
 **Uploading evidence and submitting (Slice 2F).** Sign up a fresh account,
 confirm it through Mailpit, onboard, then on **My registration** add one

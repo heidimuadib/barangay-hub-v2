@@ -65,11 +65,11 @@ placeholders:
 
   - id: B-08
     subject: Document fee schedule, processing times and validity periods
-    current: 'UNCONFIRMED. Slice 3A (2026-08-03) ships the catalog with every figure carried as data and every row flagged `values_are_placeholder = true`. The seeded amounts are SYNTHETIC and invented for testing — no barangay has approved any of them. The flag is not a parameter of `create_document_type`: confirming a schedule is an owner act, not something a caller asserts.'
+    current: 'UNCONFIRMED. Slice 3A (2026-08-03) ships the catalog with every figure carried as data and every row flagged `values_are_placeholder = true`. The seeded amounts are SYNTHETIC and invented for testing — no barangay has approved any of them. The flag is not a parameter of `create_document_type`: confirming a schedule is an owner act, not something a caller asserts. Slice 3B (2026-08-03) puts those figures on screen for the first time, and renders each one WITH its status: an unconfirmed figure carries the RES-06 "Not yet confirmed" chip and an explanation, and a figure nobody has decided reads "Not set by the barangay yet" rather than as a currency zero.'
     source: assumption
     blocking_level: pilot
     owner: product-owner-and-captain
-    note: 'Blocks pilot exposure, not local build (roadmap Slice 3 §8). Enforced in three places: the NOT NULL column default, the domain function that cannot set it, and `pnpm db:reset:verified`, which fails if any seeded row claims to be confirmed.'
+    note: 'Blocks pilot exposure, not local build (roadmap Slice 3 §8). Enforced in four places: the NOT NULL column default, the domain function that cannot set it, `pnpm db:reset:verified` (which fails if any seeded row claims to be confirmed), and `presentTerms`, which is computed on the server and returns each figure together with its status so a component cannot render the amount while dropping the qualifier. Asserted by component tests and by Playwright on both viewports.'
 
 # ── Registered now, populated when their slice lands ────────────────────────
 # Certificate and summons template wording   → Slice 4, blockers B-05 / B-06
