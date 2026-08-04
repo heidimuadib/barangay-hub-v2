@@ -2,22 +2,43 @@
 
 Multi-tenant civic services platform for Philippine barangays.
 
-**Current state: Phase 7, Slice 2 complete — resident registry and
-verification, on top of the Slice 1 identity foundation.** Public sign-up with
-email confirmation, the person registry and walk-in creation, the staff
-verification queue and its decision workflow, duplicate supersede-and-link
-resolution, and private evidence Storage with signed upload/read are live.
-Business features (document requests, certificates, payments) are not, and
-notification *delivery* is not — Slice 2 enqueues intent only. See
+**Current state: Phase 7, Slices 1–3 complete.**
+Slice 2 delivered public sign-up with email confirmation, the person registry
+and walk-in creation, the staff verification queue and its decision workflow,
+duplicate supersede-and-link resolution, and private evidence Storage with
+signed upload/read. **Slice 3A** adds the document catalog and request-intake
+*domain* — schema, state machine, capabilities, RLS, audit and outbox.
+**Slice 3B** puts the resident surfaces on it: browse the catalog, read what a
+document needs, compose a draft, submit it, and track your own requests — with
+request creation gated on being a *verified* resident, enforced in the page,
+the Server Action and the database. **Slice 3C** adds the staff side: an intake
+queue with state filters, a request detail whose controls follow the
+review/mark-ready capability split, and counter filing for residents with no
+online account — which goes through the resident's own submit function rather
+than a staff-only copy. **Slice 3D** completes it: supporting documents on a
+private bucket with server-verified uploads, a **public portal** where anyone
+can see what a barangay issues before travelling there, 44px shell touch
+targets, and eight contrast-validated accent palettes. Certificates and
+payments are not built, and notification *delivery* is not — the outbox
+enqueues intent only. See
 `docs/local-setup.md` to get running,
-`docs/architecture/identity-and-access.md` for the access model and
-`docs/architecture/resident-registry-and-verification.md` for the registry.
+`docs/architecture/identity-and-access.md` for the access model,
+`docs/architecture/resident-registry-and-verification.md` for the registry and
+`docs/architecture/document-catalog-and-requests.md` for the catalog.
+
+Fees, processing times and validity periods shown anywhere in this system are
+**not confirmed** by any barangay (blocker B-08) and are carried as data that
+says so — see `values_are_placeholder` in the catalog. Every screen that shows
+one of those figures renders it with that status attached: an unconfirmed
+amount carries a "Not yet confirmed" chip, and an amount nobody has decided
+reads "Not set by the barangay yet" rather than `₱0.00`.
 
 **Plan of record:** [docs/PROJECT_SPECIFICATION.md](./docs/PROJECT_SPECIFICATION.md)
 (what the system is) and
 [docs/IMPLEMENTATION_ROADMAP.md](./docs/IMPLEMENTATION_ROADMAP.md)
-(the order it gets built — next up: Slice 3, document requests; provisioning
-ruled as Option C hybrid, [ADR-0006](./docs/adr/0006-resident-provisioning-and-registry-decisions.md)).
+(the order it gets built — Slice 3 complete; next is Slice 4, certificate
+generation. Provisioning ruled as Option C hybrid,
+[ADR-0006](./docs/adr/0006-resident-provisioning-and-registry-decisions.md)).
 
 **This is the STANDALONE v2 repository** (DEC-REPO-01, resolved). It was
 promoted out of the legacy `barangayhub` repository with v2 history preserved
@@ -40,8 +61,8 @@ These are enforced by tooling, not by convention. Read `docs/adr/` before changi
 | Resident and walk-in transactions use the same domain service | Shared registry services (Slice 2) |
 | The service-role client is restricted to eight named operations | `eslint.config.mjs` allow-list |
 | No secret carries the `NEXT_PUBLIC_` prefix | ESLint + `check:bundle-secrets` + runtime assertion |
-| No personal value appears in a shareable URL | No-parameter policy: opaque ids and state keys only, e2e-asserted (Slice 2) |
-| Unconfirmed fees, SLAs, templates and legal text stay visibly marked as placeholders | `docs/placeholders.yaml` + `values_are_placeholder` |
+| No personal value appears in a shareable URL | No-parameter policy: opaque ids and state keys only, e2e-asserted (Slices 2–3) |
+| Unconfirmed fees, SLAs, templates and legal text stay visibly marked as placeholders | `docs/placeholders.yaml` + `values_are_placeholder` + `presentTerms`, which returns every figure with its status so no surface can show the amount alone (Slice 3) |
 | WCAG 2.2 AA is part of Definition of Done | Lint, axe, manual pass per slice |
 
 ## Environments

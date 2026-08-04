@@ -42,9 +42,16 @@ select throws_ok(
 
 -- ── Seed-time capture ───────────────────────────────────────────────────────
 
+-- Derived rather than pinned to a literal. The property is that EVERY seeded
+-- membership produced an audit row, and the two counts come from independent
+-- sources — the seed's inserts and the trigger's writes. A hard-coded number
+-- restated that property as a fixture census, and broke whenever a slice added
+-- a persona (it did, when 3B added the active-but-unverified member).
+-- Runs on the system path, so neither side is RLS-filtered.
 select is(
   (select count(*)::int from public.audit_events where action = 'membership.created'),
-  9, 'all nine seeded memberships were captured by the audit trigger');
+  (select count(*)::int from public.memberships),
+  'every seeded membership was captured by the audit trigger');
 
 -- ── Same-transaction capture on the system path ─────────────────────────────
 

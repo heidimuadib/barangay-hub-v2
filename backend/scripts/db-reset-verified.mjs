@@ -53,8 +53,8 @@ const checks = [
   {
     name: 'migrations recorded',
     sql: 'select count(*) from supabase_migrations.schema_migrations',
-    ok: (value) => Number(value) >= 16,
-    detail: 'expected every Slice 0a–2F migration to be recorded',
+    ok: (value) => Number(value) >= 24,
+    detail: 'expected every Slice 0a–3D migration to be recorded',
   },
   {
     name: 'seed fixtures present',
@@ -73,6 +73,52 @@ const checks = [
     sql: "select count(*) from storage.buckets where id = 'verification-evidence' and not public",
     ok: (value) => Number(value) === 1,
     detail: 'expected the PRIVATE verification-evidence bucket',
+  },
+  {
+    name: 'catalog seed present',
+    sql: 'select count(*) from public.document_types',
+    ok: (value) => Number(value) >= 5,
+    detail: 'expected the Slice 3A document-type fixtures',
+  },
+  {
+    // A confirmed-looking fee in a local database is how a synthetic amount
+    // starts being quoted as real. B-08 is open, so every seeded row must
+    // still say so.
+    name: 'catalog fees still marked placeholder',
+    sql: 'select count(*) from public.document_types where not values_are_placeholder',
+    ok: (value) => Number(value) === 0,
+    detail: 'expected every seeded document type to keep values_are_placeholder = true (B-08)',
+  },
+  {
+    // The 3B request gate is only meaningfully testable while a member who is
+    // NOT verified exists. If this fixture goes missing the suite would still
+    // pass, having quietly stopped exercising the rule.
+    name: 'unverified-member persona present',
+    sql: `select count(*) from public.memberships m
+          join public.person_accounts pa on pa.user_id = m.user_id
+           and pa.barangay_id = m.barangay_id
+          where m.status = 'active'
+            and not exists (
+              select 1 from public.verification_applications va
+              where va.person_id = pa.person_id and va.state = 'approved')`,
+    ok: (value) => Number(value) >= 1,
+    detail: 'expected the Slice 3B active-but-unverified member fixture',
+  },
+  {
+    name: 'request-evidence bucket created by migration',
+    sql: "select count(*) from storage.buckets where id = 'request-evidence' and not public",
+    ok: (value) => Number(value) === 1,
+    detail: 'expected the PRIVATE request-evidence bucket (Slice 3D)',
+  },
+  {
+    // The public catalog is the one deliberate anon grant in this database.
+    // If it ever widens beyond these two tables, this check says so.
+    name: 'anon reads exactly the public catalog and nothing else',
+    sql: `select coalesce(string_agg(table_name, ',' order by table_name), '')
+          from information_schema.role_table_grants
+          where grantee = 'anon' and table_schema = 'public'`,
+    ok: (value) => value === 'document_type_requirements,document_types',
+    detail: 'expected anon to hold SELECT on the two catalog tables ONLY (US-UI-006)',
   },
 ]
 

@@ -118,6 +118,273 @@ export type Database = {
         }
         Relationships: []
       }
+      document_request_answers: {
+        Row: {
+          barangay_id: string
+          created_at: string
+          id: string
+          request_id: string
+          requirement_id: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          barangay_id: string
+          created_at?: string
+          id?: string
+          request_id: string
+          requirement_id: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          barangay_id?: string
+          created_at?: string
+          id?: string
+          request_id?: string
+          requirement_id?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_request_answers_request_id_barangay_id_fkey"
+            columns: ["request_id", "barangay_id"]
+            isOneToOne: false
+            referencedRelation: "document_requests"
+            referencedColumns: ["id", "barangay_id"]
+          },
+          {
+            foreignKeyName: "document_request_answers_requirement_id_barangay_id_fkey"
+            columns: ["requirement_id", "barangay_id"]
+            isOneToOne: false
+            referencedRelation: "document_type_requirements"
+            referencedColumns: ["id", "barangay_id"]
+          },
+        ]
+      }
+      document_request_evidence: {
+        Row: {
+          barangay_id: string
+          content_hash: string | null
+          created_at: string
+          declared_size_bytes: number
+          id: string
+          mime_type: string
+          request_id: string
+          size_bytes: number | null
+          storage_path: string
+          uploaded_at: string | null
+        }
+        Insert: {
+          barangay_id: string
+          content_hash?: string | null
+          created_at?: string
+          declared_size_bytes: number
+          id?: string
+          mime_type: string
+          request_id: string
+          size_bytes?: number | null
+          storage_path: string
+          uploaded_at?: string | null
+        }
+        Update: {
+          barangay_id?: string
+          content_hash?: string | null
+          created_at?: string
+          declared_size_bytes?: number
+          id?: string
+          mime_type?: string
+          request_id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          uploaded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_request_evidence_request_id_barangay_id_fkey"
+            columns: ["request_id", "barangay_id"]
+            isOneToOne: false
+            referencedRelation: "document_requests"
+            referencedColumns: ["id", "barangay_id"]
+          },
+        ]
+      }
+      document_requests: {
+        Row: {
+          barangay_id: string
+          created_at: string
+          created_by: string | null
+          creation_reason: string | null
+          document_type_id: string
+          id: string
+          person_id: string
+          purpose: string
+          ready_at: string | null
+          review_started_at: string | null
+          source_channel: Database["public"]["Enums"]["request_source"]
+          state: Database["public"]["Enums"]["document_request_state"]
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          barangay_id: string
+          created_at?: string
+          created_by?: string | null
+          creation_reason?: string | null
+          document_type_id: string
+          id?: string
+          person_id: string
+          purpose: string
+          ready_at?: string | null
+          review_started_at?: string | null
+          source_channel: Database["public"]["Enums"]["request_source"]
+          state?: Database["public"]["Enums"]["document_request_state"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          barangay_id?: string
+          created_at?: string
+          created_by?: string | null
+          creation_reason?: string | null
+          document_type_id?: string
+          id?: string
+          person_id?: string
+          purpose?: string
+          ready_at?: string | null
+          review_started_at?: string | null
+          source_channel?: Database["public"]["Enums"]["request_source"]
+          state?: Database["public"]["Enums"]["document_request_state"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_requests_document_type_id_barangay_id_fkey"
+            columns: ["document_type_id", "barangay_id"]
+            isOneToOne: false
+            referencedRelation: "document_types"
+            referencedColumns: ["id", "barangay_id"]
+          },
+          {
+            foreignKeyName: "document_requests_person_id_barangay_id_fkey"
+            columns: ["person_id", "barangay_id"]
+            isOneToOne: false
+            referencedRelation: "persons"
+            referencedColumns: ["id", "barangay_id"]
+          },
+        ]
+      }
+      document_type_requirements: {
+        Row: {
+          barangay_id: string
+          created_at: string
+          document_type_id: string
+          help_text: string | null
+          id: string
+          input_kind: Database["public"]["Enums"]["requirement_input_kind"]
+          is_required: boolean
+          key: string
+          label: string
+          options: Json
+          sort_order: number
+        }
+        Insert: {
+          barangay_id: string
+          created_at?: string
+          document_type_id: string
+          help_text?: string | null
+          id?: string
+          input_kind?: Database["public"]["Enums"]["requirement_input_kind"]
+          is_required?: boolean
+          key: string
+          label: string
+          options?: Json
+          sort_order?: number
+        }
+        Update: {
+          barangay_id?: string
+          created_at?: string
+          document_type_id?: string
+          help_text?: string | null
+          id?: string
+          input_kind?: Database["public"]["Enums"]["requirement_input_kind"]
+          is_required?: boolean
+          key?: string
+          label?: string
+          options?: Json
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_type_requirements_document_type_id_barangay_id_fkey"
+            columns: ["document_type_id", "barangay_id"]
+            isOneToOne: false
+            referencedRelation: "document_types"
+            referencedColumns: ["id", "barangay_id"]
+          },
+        ]
+      }
+      document_types: {
+        Row: {
+          barangay_id: string
+          code: string
+          created_at: string
+          description: string | null
+          fee_amount: number | null
+          fee_currency: string
+          id: string
+          is_active: boolean
+          name: string
+          requires_supporting_evidence: boolean
+          sla_days: number | null
+          updated_at: string
+          validity_days: number | null
+          values_are_placeholder: boolean
+        }
+        Insert: {
+          barangay_id: string
+          code: string
+          created_at?: string
+          description?: string | null
+          fee_amount?: number | null
+          fee_currency?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          requires_supporting_evidence?: boolean
+          sla_days?: number | null
+          updated_at?: string
+          validity_days?: number | null
+          values_are_placeholder?: boolean
+        }
+        Update: {
+          barangay_id?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          fee_amount?: number | null
+          fee_currency?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          requires_supporting_evidence?: boolean
+          sla_days?: number | null
+          updated_at?: string
+          validity_days?: number | null
+          values_are_placeholder?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_types_barangay_id_fkey"
+            columns: ["barangay_id"]
+            isOneToOne: false
+            referencedRelation: "barangays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       membership_roles: {
         Row: {
           barangay_id: string
@@ -628,12 +895,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_document_type_requirement: {
+        Args: {
+          p_document_type_id: string
+          p_help_text?: string
+          p_input_kind?: Database["public"]["Enums"]["requirement_input_kind"]
+          p_is_required?: boolean
+          p_key: string
+          p_label: string
+          p_options?: Json
+          p_sort_order?: number
+        }
+        Returns: string
+      }
       add_evidence_metadata: {
         Args: {
           p_application_id: string
           p_declared_size_bytes: number
           p_kind: Database["public"]["Enums"]["evidence_kind"]
           p_mime_type: string
+        }
+        Returns: {
+          evidence_id: string
+          storage_path: string
+        }[]
+      }
+      add_request_evidence_metadata: {
+        Args: {
+          p_declared_size_bytes: number
+          p_mime_type: string
+          p_request_id: string
         }
         Returns: {
           evidence_id: string
@@ -672,14 +963,38 @@ export type Database = {
         Returns: boolean
       }
       auth_is_platform_admin: { Args: never; Returns: boolean }
+      barangay_is_public: { Args: { p_barangay_id: string }; Returns: boolean }
+      caller_has_request_for_type: {
+        Args: { p_document_type_id: string }
+        Returns: boolean
+      }
       caller_owns_application: {
         Args: { p_application_id: string }
         Returns: boolean
       }
       caller_owns_person: { Args: { p_person_id: string }; Returns: boolean }
+      caller_owns_request: { Args: { p_request_id: string }; Returns: boolean }
+      caller_person_in: { Args: { p_barangay_id: string }; Returns: string }
       confirm_evidence_upload: {
         Args: { p_content_hash: string; p_evidence_id: string }
         Returns: undefined
+      }
+      confirm_request_evidence_upload: {
+        Args: { p_content_hash: string; p_evidence_id: string }
+        Returns: undefined
+      }
+      create_document_type: {
+        Args: {
+          p_barangay_id: string
+          p_code: string
+          p_description?: string
+          p_fee_amount?: number
+          p_name: string
+          p_requires_supporting_evidence?: boolean
+          p_sla_days?: number
+          p_validity_days?: number
+        }
+        Returns: string
       }
       create_membership_by_email: {
         Args: {
@@ -704,6 +1019,14 @@ export type Database = {
         }
         Returns: string
       }
+      create_own_request: {
+        Args: {
+          p_barangay_id: string
+          p_document_type_id: string
+          p_purpose: string
+        }
+        Returns: string
+      }
       create_verification_application: {
         Args: { p_person_id: string }
         Returns: string
@@ -723,6 +1046,20 @@ export type Database = {
           p_suffix?: string
         }
         Returns: string
+      }
+      create_walk_in_request: {
+        Args: {
+          p_barangay_id: string
+          p_document_type_id: string
+          p_person_id: string
+          p_purpose: string
+          p_reason: string
+        }
+        Returns: string
+      }
+      document_type_is_visible: {
+        Args: { p_document_type_id: string }
+        Returns: boolean
       }
       duplicate_candidates: {
         Args: {
@@ -771,6 +1108,19 @@ export type Database = {
           name: string
         }[]
       }
+      list_public_barangays: {
+        Args: never
+        Returns: {
+          code: string
+          id: string
+          name: string
+        }[]
+      }
+      mark_request_ready: {
+        Args: { p_correlation_id?: string; p_request_id: string }
+        Returns: undefined
+      }
+      person_is_verified: { Args: { p_person_id: string }; Returns: boolean }
       person_search: {
         Args: { p_barangay_id: string; p_limit?: number; p_query: string }
         Returns: {
@@ -795,6 +1145,18 @@ export type Database = {
         Returns: undefined
       }
       remove_evidence: { Args: { p_evidence_id: string }; Returns: undefined }
+      remove_request_evidence: {
+        Args: { p_evidence_id: string }
+        Returns: undefined
+      }
+      request_evidence_object_readable: {
+        Args: { p_object_name: string }
+        Returns: boolean
+      }
+      request_evidence_object_writable: {
+        Args: { p_object_name: string }
+        Returns: boolean
+      }
       request_information: {
         Args: {
           p_application_id: string
@@ -807,8 +1169,24 @@ export type Database = {
         Args: { p_application_id: string; p_correlation_id?: string }
         Returns: undefined
       }
+      review_request: {
+        Args: { p_correlation_id?: string; p_request_id: string }
+        Returns: undefined
+      }
       review_verification: {
         Args: { p_application_id: string }
+        Returns: undefined
+      }
+      set_request_answer: {
+        Args: {
+          p_request_id: string
+          p_requirement_id: string
+          p_value: string
+        }
+        Returns: string
+      }
+      submit_request: {
+        Args: { p_correlation_id?: string; p_request_id: string }
         Returns: undefined
       }
       submit_verification: {
@@ -825,9 +1203,22 @@ export type Database = {
       }
     }
     Enums: {
+      document_request_state:
+        | "draft"
+        | "submitted"
+        | "in_review"
+        | "ready_for_issue"
       evidence_kind: "identity" | "residency" | "supporting"
       membership_status: "invited" | "active" | "disabled"
       person_source: "self" | "staff"
+      request_source: "self" | "staff"
+      requirement_input_kind:
+        | "text"
+        | "textarea"
+        | "number"
+        | "date"
+        | "boolean"
+        | "select"
       residency_basis:
         | "property_owner"
         | "renter"
@@ -974,9 +1365,24 @@ export const Constants = {
   },
   public: {
     Enums: {
+      document_request_state: [
+        "draft",
+        "submitted",
+        "in_review",
+        "ready_for_issue",
+      ],
       evidence_kind: ["identity", "residency", "supporting"],
       membership_status: ["invited", "active", "disabled"],
       person_source: ["self", "staff"],
+      request_source: ["self", "staff"],
+      requirement_input_kind: [
+        "text",
+        "textarea",
+        "number",
+        "date",
+        "boolean",
+        "select",
+      ],
       residency_basis: [
         "property_owner",
         "renter",

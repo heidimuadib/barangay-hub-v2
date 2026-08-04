@@ -3,14 +3,15 @@
 --
 -- Structural guarantees: enums, forced RLS on every table, security-definer
 -- functions with pinned search_path, append-only wiring, and the grant
--- surface (anon holds nothing; authenticated may write only display_name).
+-- surface (anon holds ONLY the US-UI-006 public catalog since Slice 3D;
+-- authenticated may write only display_name).
 -- ============================================================================
 
 begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(24);
+select plan(25);
 
 -- ── Enumerations ────────────────────────────────────────────────────────────
 
@@ -33,8 +34,8 @@ select is(
     where n.nspname = 'public' and c.relkind = 'r'
       and c.relrowsecurity and c.relforcerowsecurity
   ),
-  15,
-  'all fifteen tables have RLS enabled AND forced — including against the owner');
+  20,
+  'all twenty tables have RLS enabled AND forced — including against the owner');
 
 -- ── Every table carries at least one explicit policy ────────────────────────
 
@@ -46,7 +47,7 @@ select is(
     join pg_catalog.pg_policy p on p.polrelid = c.oid
     where n.nspname = 'public'
   ),
-  15,
+  20,
   'every table has explicit policies — forced RLS with none would brick the owner path silently');
 
 -- ── Authenticated write surface is exactly as designed ──────────────────────
@@ -73,15 +74,32 @@ select is(
   0,
   'catalogs and barangays are read-only for authenticated');
 
--- anon holds no privilege on any Slice 1 table.
+-- anon holds EXACTLY the public catalog, and nothing else.
+--
+-- This was `count = 0` until Slice 3D. US-UI-006 needs an anonymous visitor to
+-- read what a barangay issues, so 3A's deliberate withholding of that grant
+-- ended with the surface that needed it (migration 20260808020000).
+--
+-- Restated as an exhaustive INVENTORY rather than a relaxed count: a naked
+-- "how many" would pass just as happily if a future migration handed `anon`
+-- the requests table. Naming the tables means any addition fails here.
+select is(
+  (
+    select coalesce(string_agg(distinct table_name, ',' order by table_name), '')
+    from information_schema.role_table_grants
+    where table_schema = 'public' and grantee = 'anon'
+  ),
+  'document_type_requirements,document_types',
+  'anon holds table privileges on the public catalog ONLY');
+
 select is(
   (
     select count(*)::int
     from information_schema.role_table_grants
-    where table_schema = 'public' and grantee = 'anon'
+    where table_schema = 'public' and grantee = 'anon' and privilege_type <> 'SELECT'
   ),
   0,
-  'anon holds no table privilege of any kind');
+  'and that privilege is SELECT — anon can write nothing, anywhere');
 
 -- Column-level: display_name is the only updatable profile column.
 select is(
@@ -156,15 +174,18 @@ select is(
   0,
   'no SECURITY DEFINER function exists without a pinned search_path');
 
--- anon can execute NO function in public.
+-- anon may execute exactly one public function: the US-UI-006 directory.
+--
+-- Also `count = 0` until Slice 3D. Named rather than counted, for the same
+-- reason as the table grant above.
 select is(
   (
-    select count(*)::int
+    select coalesce(string_agg(distinct routine_name, ',' order by routine_name), '')
     from information_schema.routine_privileges
     where routine_schema = 'public' and grantee = 'anon'
   ),
-  0,
-  'anon may execute no public function');
+  'barangay_is_public,list_public_barangays',
+  'anon may execute the public barangay directory and no other function');
 
 -- ── Audit wiring ────────────────────────────────────────────────────────────
 

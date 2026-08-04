@@ -127,9 +127,12 @@ select throws_ok(
 
 select pg_temp.impersonate('00000000-0000-4000-8000-000000000003');
 
-select is((select count(*)::int from public.memberships), 6,
+-- 7 since the Slice 3B seed added the active-but-unverified member fixture.
+-- The property under test is tenant SCOPE, not the number: staff see tenant
+-- A's roster entire and tenant B's not at all (asserted below).
+select is((select count(*)::int from public.memberships), 7,
   'staff sees the full tenant-A roster via membership.read');
-select is((select count(*)::int from public.user_profiles), 6,
+select is((select count(*)::int from public.user_profiles), 7,
   'staff sees co-member profiles via membership.read');
 
 update public.memberships set status = 'active'

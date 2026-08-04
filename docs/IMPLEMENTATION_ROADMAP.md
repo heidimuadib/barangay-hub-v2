@@ -29,7 +29,7 @@ comes) · `v1.5` (feature-flagged, post-MVP).
 | 0b | Hosted integration assessment | **COMPLETE** | Evidence base for DEC-ENV-01; PG 17 reconciliation | 0a | — | S |
 | 1 | Identity, tenant, RBAC, RLS, audit foundation | **COMPLETE** | Secure multi-tenant identity with forced RLS and append-only audit | 0a | — | XL |
 | 2 | Resident registration, registry, verification | **COMPLETE (2A–2G)** | Verified resident profiles; staff verification workflow; registry with duplicate handling | 1 | — (DEC-AUTH-01 resolved: Option C, [ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)) | XL |
-| 3 | Document catalog and request intake | SEQUENCED | Residents and walk-ins submit document requests through one domain service | 2 | Fee/SLA confirmation (B-08) before pilot, not before build | L |
+| 3 | Document catalog and request intake | **COMPLETE (3A–3D)** | Residents and walk-ins submit document requests through one domain service | 2 | Fee/SLA confirmation (B-08) before pilot, not before build | L |
 | 4 | Certificate generation, serials, QR, public verification | SEQUENCED | Accountable certificate issuance with public verifiability | 3 | Template/signatory confirmation (B-05–B-07) before pilot | L |
 | 5 | Payments, exemptions, ORs, release, day closure, call list | SEQUENCED | Cash-accountable release workflow | 4 | OR series policy (B-11) before pilot | XL |
 | 6 | Complaint intake, category gate, triage, docketing, evidence, timeline | SEQUENCED | Katarungang Pambarangay case intake with jurisdiction gate | 2 | Non-mediable categories (B-09) before pilot | L |
@@ -443,9 +443,94 @@ project). Slice 3 builds on this layout.
 
 ---
 
-## Slice 3 — Document catalog and request intake — SEQUENCED
+## Slice 3 — Document catalog and request intake — COMPLETE
 
-1–2. **3 — Document catalog & request intake**; SEQUENCED.
+**Status:** **COMPLETE (2026-08-04).** Delivered in subparts on `feature/slice-3-document-requests`, reviewed as one unit in PR #17:
+
+| Subpart | Scope | State |
+| --- | --- | --- |
+| **3A** | Catalog and request domain foundation: `document_types` (with the B-08 `values_are_placeholder` flag), `document_type_requirements`, `document_requests`, `document_request_answers`; six capabilities and their role mapping; forced RLS + composite tenant FKs on all four tables; the four-state machine enforced at function *and* table; both creation channels converging on one record; audit triggers; two approved outbox intents; synthetic seeds; 86 new pgTAP + 44 new unit assertions | **COMPLETE** |
+| **3B** | Resident surfaces: catalog browse, document detail, draft composition, submission, own-request list and detail; the **verification gate** on request creation (migration `20260807010000`), own-request catalog visibility, US-RES-004 dashboard content; 35 new pgTAP + 81 new unit/component + 20 new Playwright assertions per viewport | **COMPLETE** |
+| **3C** | Staff intake queue (state filters, oldest-first, pagination), request detail with the capability-split transitions, and counter filing that files **and submits** through the resident's own functions; walk-in-equals-resident re-asserted at the surface; 32 new pgTAP + 20 new unit/component + 12 new Playwright assertions | **COMPLETE** |
+| **3D** | Supporting evidence on the Slice 2F pattern (private bucket, signed one-object tickets, server-verified finalization, seventh capability) with `submit_request` gated on it; the US-UI-006 public portal and its narrow `anon` grant; US-UI-002 shell touch targets closing **R-2-05**; US-UI-001's seven accent palettes with a contrast + colour-distance test that parses the stylesheet; the outbox audited as a whole; slice-wide structural review; 42 new pgTAP + 44 new unit/component + 12 new Playwright assertions | **COMPLETE** |
+
+**Decisions taken in 3A**, recorded rather than assumed:
+
+- **Capability granularity follows Slice 2's precedent** — one capability per
+  meaningful transition (`requests.review`, `requests.mark_ready`) rather than
+  a single `requests.transition`, so a barangay can let front-desk staff start
+  a review without also letting them promise a document is ready.
+- **`request.submitted` enqueues no outbox intent**, inheriting the Slice 2
+  ruling for `verification.submitted`: it is the requester's own action,
+  already confirmed on screen. Asserted in pgTAP so it stays deliberate.
+- **No decline/cancel state was invented** — see DEC-REQ-01 in the decision
+  log; the roadmap documents four states and Slice 4 owns issuance.
+- **The catalog is not anon-readable.** The US-UI-006 public portal will need
+  that grant; opening a table to `anon` is a decision that belongs with the
+  surface that needs it, not with the domain.
+
+**Decisions taken in 3B:**
+
+- **Browsing needs membership; requesting needs verification.** 3A's
+  `create_own_request` required only a person record, and onboarding creates
+  one immediately — so an applicant whose verification was still `submitted`
+  could have filed requests. Migration `20260807010000` adds the gate
+  (`RESIDENT_NOT_VERIFIED`), checked **before** the catalog lookup so an
+  unverified caller learns nothing about a document type. Browsing stays open
+  to any active member: someone waiting on a decision should be able to see
+  what a document will ask for.
+- **`create_walk_in_request` was NOT gated the same way** — staff see the
+  person in front of them, record a reason and are audited by name. The
+  asymmetry is asserted in pgTAP and raised as **DEC-REQ-02** for a ruling
+  with the 3C counter workflow.
+- **A requester keeps reading the type behind their own request**, even after
+  the barangay withdraws it — otherwise withdrawing a document would blank the
+  history of everyone who used it. Scoped to active members, so owning a
+  request never turns a non-member into a catalog audience.
+- **Ineligibility is six states, not a boolean.** Never-registered,
+  mid-registration, awaiting a decision, information requested and rejected
+  each get their own explanation and next step.
+
+**Decisions taken in 3C:**
+
+- **The queue offers no `draft` filter.** A draft belongs to the resident
+  composing it and has been sent to nobody; a staff filter for other people's
+  unfinished work would be a surveillance surface. Drafts stay reachable by id,
+  because a counter-filed one is staff's to finish.
+- **Counter filing files AND submits in one action.** A walk-in draft would sit
+  in nobody's queue — the resident may have no account to return with. The
+  submit goes through `submit_request`, the resident's own function, rather
+  than a staff-only variant.
+- **The requester's name degrades honestly.** The queue needs `requests.read`
+  but the name needs `registry.read`; every current role holds both, and if
+  that ever changes the queue says the name is unavailable rather than printing
+  a placeholder that would hide the mapping mistake.
+- **The answer controls are now shared** between the resident and counter
+  forms rather than duplicated — a second copy is how the two channels start
+  diverging.
+
+**Decisions taken in 3D:**
+
+- **The `anon` grant is exactly two tables and one function**, asserted as an
+  exhaustive inventory in three pgTAP files and in `db:reset:verified`. Every
+  other table refuses `anon` at the GRANT level, before any policy runs — the
+  stronger guarantee, and stated as such.
+- **Evidence has no `kind` taxonomy.** Verification needed identity *and*
+  residency; a request needs whatever its type asks for, and
+  `requires_supporting_evidence` already says whether anything is needed.
+- **A seventh capability, `requests.evidence.read`**, administrator-only,
+  mirroring D2-04's ruling that evidence is the most sensitive surface.
+- **R-2-05 is closed** and the accessibility spec's `nav` exemption removed
+  with it — an exemption that outlives its reason lets the fix regress.
+- **US-UI-002's bottom nav, notification centre and density controls remain
+  deferred.** A notification centre would be a facade while delivery is Slice
+  8 and no notification exists to show.
+- **The palette colour-distance threshold is ΔE 15, not 20**, because every
+  accent must also clear AAA contrast, which confines them to one end of the
+  space. Relaxing contrast to buy separation would trade the property that
+  serves users for one that serves tidiness.
+
+1–2. **3 — Document catalog & request intake**; COMPLETE.
 3. **Outcome:** a verified resident — or staff serving a walk-in through the
    same domain service — selects a document type, provides purpose and
    required inputs, and submits a tracked request; staff work an intake queue.

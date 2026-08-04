@@ -141,7 +141,70 @@ inventing scope, not an omission.
 | --- | --- | --- |
 | Transactional outbox table | No notification producer exists in Slice 1; building the table without a consumer is speculative infrastructure | **ARRIVED in Slice 2A** (`20260802010000`), once verification decisions gave it real producers. Enqueue only: four approved intents, tenant-scoped, carrying opaque ids and nothing else. **Delivery is still deferred** to the notification slice (EPIC-11/14) — no dispatcher exists, asserted by pgTAP `12_outbox_and_slice_review` |
 | PLT-08 authenticated readiness endpoint | No job queues exist to probe; a DB-touching public endpoint is an amplification vector (health route comment) | Platform slice |
-| US-UI-002 full shell chrome (bottom nav, notification centre, density controls) | Slice 1 builds the minimal verification UI only; broad UI work is out of its security-foundation scope | UI slice — now also carries the header-link touch-target gap measured in 2G (**R-2-05**) |
+| US-UI-002 full shell chrome (bottom nav, notification centre, density controls) | Slice 1 builds the minimal verification UI only; broad UI work is out of its security-foundation scope | **PARTIALLY ARRIVED in Slice 3D (2026-08-04).** The touch-target half — R-2-05, the header links — is **done and the risk closed**; every shell nav link is 44px and the accessibility exemption that hid the gap was removed. The bottom navigation, notification centre and density controls are **still deferred**: a notification centre is a facade while delivery is Slice 8 and no notification exists to show it, and density controls are a preference feature with no user request behind them. Revisit with Slice 8 (notifications) and Slice 9 (settings) |
+
+## DEC-REQ-01 — no decline or cancel state for document requests — **OPEN**
+
+- **Status:** OPEN, raised during Slice 3A (2026-08-03)
+- **Owner:** Product owner
+- **Blocking level:** not blocking 3A; should resolve before Slice 3 exits
+
+The roadmap documents exactly four request states — `draft → submitted →
+in_review → ready_for_issue` — and assigns issuance to Slice 4. 3A implemented
+those four and **no others**, because inventing a fifth would be scope nobody
+approved.
+
+The gap this leaves is real and worth naming: **there is currently no way to
+close a request that should not proceed.** A request filed in error, withdrawn
+by the resident, or refused by the office can only move forward or sit in the
+queue indefinitely.
+
+Three ways this could resolve, in ascending cost:
+
+1. Slice 4 owns it — a refusal is part of issuance, so `ready_for_issue` is
+   genuinely the end of intake and Slice 4 adds `issued` / `declined`.
+2. Slice 3 adds a `cancelled` state for withdrawal only (resident-initiated),
+   leaving refusal to Slice 4.
+3. Slice 3 adds both `cancelled` and `declined` with a mandatory reason,
+   mirroring the Slice 2 rejection rule.
+
+Recorded now so the queue's behaviour in 3C is a decision rather than an
+oversight. Until it resolves, the intake queue will accumulate requests that
+have no exit.
+
+## DEC-REQ-02 — may staff file a request for an UNVERIFIED person? — **OPEN**
+
+- **Status:** OPEN, raised during Slice 3B (2026-08-03)
+- **Owner:** Product owner
+- **Blocking level:** not blocking 3B; should resolve with the 3C counter
+  workflow
+
+3B added the verification gate the roadmap asks for (Slice 3 §3, ADR-0006
+point 4): `create_own_request` now refuses a resident whose registration has
+not been approved, with `RESIDENT_NOT_VERIFIED`. Migration `20260807010000`.
+
+`create_walk_in_request` was deliberately **not** given the same gate, and the
+asymmetry is asserted in pgTAP so it stays a decision rather than an
+oversight. The reasoning: the self-service path has no human in it, so the
+database is the only check; a staff member at the counter is looking at the
+person, has to record a reason, and is audited by name. Gating the counter
+would also make the assisted path *stricter* than the resident path in a way
+the roadmap never asked for — a walk-in exists precisely for people the online
+flow does not serve.
+
+But it is a real asymmetry, and it is the kind that gets discovered later as a
+loophole rather than a decision. Three ways it could resolve:
+
+1. **Keep it.** Staff judgement plus audit is the control; the counter is
+   where exceptions belong.
+2. **Gate it too**, and let staff verify the person first — one workflow, no
+   exceptions, at the cost of turning away someone standing in front of them.
+3. **Gate it with an override**: allowed, but the assisted request records that
+   the person was unverified when it was filed, so the queue can show it.
+
+Until this resolves, 3C's counter surface should not *advertise* filing for an
+unverified person; the database permits it, and that permission is now
+visible rather than accidental.
 
 ## DEC-REPO-01 — application location vs Git root
 

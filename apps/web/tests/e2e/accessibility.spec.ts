@@ -19,6 +19,8 @@ const PASSWORD = 'password123-local'
 const ACCOUNTS = {
   adminA: 'admin.sanisidro@barangay-hub.test',
   applicant: 'applicant.sanisidro@barangay-hub.test',
+  /** Verified in tenant A — the only persona the Slice 3B forms exist for. */
+  residentA: 'resident.sanisidro@barangay-hub.test',
 } as const
 
 /** Seeded tenant-A fixtures, reachable read-only. */
@@ -119,17 +121,17 @@ async function assertBaseline(page: Page, label: string): Promise<void> {
 
           const rect = node.getBoundingClientRect()
           const hiddenUntilFocused = rect.height < 4
-          // Inline text links — in prose, a table cell, or the shell's nav
-          // bar — are measured by their line box, and the row or sentence
-          // provides the reachable area.
+          // Inline text links — in prose, a table cell or a list row — are
+          // measured by their line box, and the sentence or row provides the
+          // reachable area.
           //
-          // NOTE: the Slice 1 header links are 20–27px, below this project's
-          // stated 44px DoD. That is a REAL pre-existing gap in the shell
-          // chrome, recorded in the risk register for the US-UI-002 rework.
-          // It is exempted here rather than silently passed — and rather than
-          // redesigning Slice 1's header from inside Slice 2.
-          const inlineTextLink =
-            node.tagName === 'A' && node.closest('p,li,dd,span,nav,td') !== null
+          // `nav` was on this list until Slice 3D. It was there because the
+          // Slice 1 shell header's links were 20–27px (R-2-05), and exempting
+          // them made the gap VISIBLE in the test rather than silently passed.
+          // US-UI-002 was assigned to this slice, the links now carry
+          // `min-h-11`, and so the exemption is gone: shell navigation is held
+          // to the same 44px as everything else, and a regression fails here.
+          const inlineTextLink = node.tagName === 'A' && node.closest('p,li,dd,span,td') !== null
           return !hiddenUntilFocused && !inlineTextLink && rect.height > 0 && rect.height < 44
         })
         .map(
@@ -170,6 +172,47 @@ test.describe('accessibility baseline — resident routes', () => {
     test.slow()
     await page.goto('/sign-up')
     await assertBaseline(page, '/sign-up')
+  })
+})
+
+/**
+ * Slice 3B routes, held to the same baseline.
+ *
+ * Driven by the VERIFIED resident, because the composition surfaces only exist
+ * for someone who may actually use them — an ineligible persona would render
+ * the explanation panel instead and the form would go unchecked.
+ */
+test.describe('accessibility baseline — resident document routes', () => {
+  const CLEARANCE = 'f0000000-0000-4000-8000-000000000001'
+
+  test('the catalog and one document meet the baseline', async ({ page }) => {
+    test.slow()
+    await signIn(page, ACCOUNTS.residentA)
+
+    await page.goto('/documents')
+    await assertBaseline(page, '/documents')
+
+    await page.goto(`/documents/${CLEARANCE}`)
+    await assertBaseline(page, `/documents/[documentTypeId]`)
+
+    // B-08 is conveyed as TEXT beside the figure, never by colour alone.
+    await expect(page.getByText(/not yet confirmed/i).first()).toBeVisible()
+  })
+
+  test('the request list and the composition form meet the baseline', async ({ page }) => {
+    test.slow()
+    await signIn(page, ACCOUNTS.residentA)
+
+    await page.goto('/requests')
+    await assertBaseline(page, '/requests')
+
+    await page.goto(`/requests/new?type=${CLEARANCE}`)
+    await assertBaseline(page, '/requests/new')
+
+    // Every data-driven control carries a real label, not a placeholder.
+    await expect(page.getByLabel('Purpose')).toBeVisible()
+    await expect(page.getByLabel(/years of residency/i)).toBeVisible()
+    await expect(page.getByLabel(/intended use/i)).toBeVisible()
   })
 })
 

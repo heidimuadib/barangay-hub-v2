@@ -218,7 +218,8 @@ name twin) are in
 | `inforeq.sanisidro@barangay-hub.test` | Application returned for more information (Slice 2) |
 | `rejected.sanisidro@barangay-hub.test` | Rejected application — terminal state (Slice 2) |
 | `staff.sanisidro@barangay-hub.test` | Staff: reads the roster and registry, starts reviews and requests information — but is refused approve/reject (Slice 2D capability split) |
-| `resident.sanisidro@barangay-hub.test` | Resident self-service |
+| `resident.sanisidro@barangay-hub.test` | Resident self-service — the one **verified** persona, so the only one that may file a document request (Slice 3B) |
+| `unverified.sanisidro@barangay-hub.test` | ACTIVE member whose registration is still `submitted`: browses the catalog, and is refused a request (Slice 3B verification gate) |
 | `platform.admin@barangay-hub.test` | Platform console WITHOUT tenant access |
 
 **Walking the verification workflow (Slice 2D).** Sign in as
@@ -227,6 +228,56 @@ submitted application is waiting. Start the review, request more information,
 then sign in as `applicant.sanisidro@` to see the note and resubmit. Come back
 as `admin.sanisidro@` to re-open the review and approve or reject it; only the
 administrator is offered those two.
+
+**Requesting a document (Slice 3B).** Sign in as `resident.sanisidro@` and
+open **Documents**. Every fee, processing time and validity period you see is
+INVENTED for testing and marked "Not yet confirmed" (blocker B-08); *Business
+Permit Endorsement* has no decided fee at all and says so rather than showing
+₱0.00. Pick *Barangay Clearance*, request it, answer the two required
+questions, and you land on the draft — nothing has reached the barangay yet.
+Submit it there, and it moves to "Waiting for review".
+
+Then sign in as `unverified.sanisidro@` and try the same thing: the catalog
+still opens (browsing needs membership), but the request control is replaced
+by an explanation and a link to their registration. The database refuses it
+too — `create_own_request` raises `RESIDENT_NOT_VERIFIED` — so the screen is
+explaining a rule rather than being the rule.
+
+**Working the intake queue (Slice 3C).** Sign in as `staff.sanisidro@` and open
+**Requests**. The default view is everything needing action, oldest first;
+the filter chips narrow it and put nothing but a state key in the URL. Open a
+submitted request and you are offered **Start review** — and *not* mark-ready,
+because `requests.mark_ready` is the administrator's. Sign in as
+`admin.sanisidro@` on the same request to finish it.
+
+**Filing at the counter (Slice 3C).** As `admin.sanisidro@`, open any registry
+record — `Juan Dela Cruz (Test)` has no online account, which is the case the
+counter exists for — and choose **File a document request**. Pick the document,
+answer the same questions the resident would, and record why you are filing it.
+The request is filed *and* submitted, so it lands in the queue rather than
+sitting as a draft nobody can reach. `staff.sanisidro@` is offered none of
+this: the call to action is absent from the registry record and the route
+redirects.
+
+**The public portal (Slice 3D, US-UI-006).** Open <http://localhost:3000/> in a
+private window — no account, no session. The home page lists each active
+barangay; choosing one shows its catalog with every fee marked exactly as a
+signed-in resident sees it. Try `/requests` or `/staff/requests` in the same
+window and you are bounced to sign-in: anonymous access reaches the two catalog
+tables and nothing else, which `pnpm db:reset:verified` re-checks on every
+reset.
+
+**Attaching a supporting document (Slice 3D).** As `resident.sanisidro@`,
+request *Certificate of Indigency* — the seeded type that requires supporting
+evidence. The submit control stays disabled and says why until you attach a
+file. Use a small synthetic JPEG, PNG, WebP or PDF, **never a real ID**
+(DEC-ENV-04). The browser uploads straight into the private `request-evidence`
+bucket through a one-object ticket; the server then verifies the object exists
+before it counts. An upload that fails is listed as *not uploaded — does not
+count yet* rather than silently missing. As `admin.sanisidro@` (who holds
+`requests.evidence.read`), the staff request detail lists the file and mints a
+signed URL only when you press **View**; `staff.sanisidro@` sees a note that
+the documents are not theirs to open.
 
 **Uploading evidence and submitting (Slice 2F).** Sign up a fresh account,
 confirm it through Mailpit, onboard, then on **My registration** add one

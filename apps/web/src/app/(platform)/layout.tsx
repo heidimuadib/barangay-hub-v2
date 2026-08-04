@@ -31,10 +31,16 @@ export default async function PlatformLayout({ children }: { children: React.Rea
       <header className="border-b-4 border-neutral-900 bg-neutral-900 text-white">
         <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <nav aria-label="Primary" className="flex flex-wrap items-center gap-4">
-            <Link href="/platform" className="font-semibold text-white">
+            <Link
+              href="/platform"
+              className="inline-flex min-h-11 items-center font-semibold text-white"
+            >
               Barangay Hub · Platform console
             </Link>
-            <Link href="/dashboard" className="text-sm text-neutral-200 hover:underline">
+            <Link
+              href="/dashboard"
+              className="inline-flex min-h-11 items-center text-sm text-neutral-200 hover:underline"
+            >
               My dashboard
             </Link>
           </nav>

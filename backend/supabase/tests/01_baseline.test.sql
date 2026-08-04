@@ -42,9 +42,16 @@ select bag_eq(
     'person_accounts',
     'verification_applications',
     'verification_evidence',
-    'outbox_events'
+    'outbox_events',
+    -- Slice 3A
+    'document_types',
+    'document_type_requirements',
+    'document_requests',
+    'document_request_answers',
+    -- Slice 3D
+    'document_request_evidence'
   ],
-  'public schema contains exactly the Slice 1 + Slice 2A tables'
+  'public schema contains exactly the Slice 1 + Slice 2 + Slice 3 tables'
 );
 
 select has_schema('extensions', 'the extensions schema exists');
