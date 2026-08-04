@@ -259,6 +259,26 @@ sitting as a draft nobody can reach. `staff.sanisidro@` is offered none of
 this: the call to action is absent from the registry record and the route
 redirects.
 
+**The public portal (Slice 3D, US-UI-006).** Open <http://localhost:3000/> in a
+private window — no account, no session. The home page lists each active
+barangay; choosing one shows its catalog with every fee marked exactly as a
+signed-in resident sees it. Try `/requests` or `/staff/requests` in the same
+window and you are bounced to sign-in: anonymous access reaches the two catalog
+tables and nothing else, which `pnpm db:reset:verified` re-checks on every
+reset.
+
+**Attaching a supporting document (Slice 3D).** As `resident.sanisidro@`,
+request *Certificate of Indigency* — the seeded type that requires supporting
+evidence. The submit control stays disabled and says why until you attach a
+file. Use a small synthetic JPEG, PNG, WebP or PDF, **never a real ID**
+(DEC-ENV-04). The browser uploads straight into the private `request-evidence`
+bucket through a one-object ticket; the server then verifies the object exists
+before it counts. An upload that fails is listed as *not uploaded — does not
+count yet* rather than silently missing. As `admin.sanisidro@` (who holds
+`requests.evidence.read`), the staff request detail lists the file and mints a
+signed URL only when you press **View**; `staff.sanisidro@` sees a note that
+the documents are not theirs to open.
+
 **Uploading evidence and submitting (Slice 2F).** Sign up a fresh account,
 confirm it through Mailpit, onboard, then on **My registration** add one
 identity document and one proof of residency. Any small JPEG, PNG, WebP or PDF

@@ -78,7 +78,11 @@ test.describe('security headers', () => {
 
 test.describe('public shells render; protected shells refuse', () => {
   const publicShells = [
-    { path: '/', heading: /engineering foundation/i },
+    // The home page's h1 was the Slice 0a placeholder ("engineering
+    // foundation") until Slice 3D replaced it with the real US-UI-006 portal.
+    // The property this test owns — exactly one h1, exactly one main — is
+    // unchanged; only the heading it identifies the page by has moved on.
+    { path: '/', heading: /barangay documents/i },
     { path: '/sign-in', heading: /sign in/i },
   ]
 

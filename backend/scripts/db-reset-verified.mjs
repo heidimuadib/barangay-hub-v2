@@ -53,8 +53,8 @@ const checks = [
   {
     name: 'migrations recorded',
     sql: 'select count(*) from supabase_migrations.schema_migrations',
-    ok: (value) => Number(value) >= 22,
-    detail: 'expected every Slice 0a–3B migration to be recorded',
+    ok: (value) => Number(value) >= 24,
+    detail: 'expected every Slice 0a–3D migration to be recorded',
   },
   {
     name: 'seed fixtures present',
@@ -103,6 +103,22 @@ const checks = [
               where va.person_id = pa.person_id and va.state = 'approved')`,
     ok: (value) => Number(value) >= 1,
     detail: 'expected the Slice 3B active-but-unverified member fixture',
+  },
+  {
+    name: 'request-evidence bucket created by migration',
+    sql: "select count(*) from storage.buckets where id = 'request-evidence' and not public",
+    ok: (value) => Number(value) === 1,
+    detail: 'expected the PRIVATE request-evidence bucket (Slice 3D)',
+  },
+  {
+    // The public catalog is the one deliberate anon grant in this database.
+    // If it ever widens beyond these two tables, this check says so.
+    name: 'anon reads exactly the public catalog and nothing else',
+    sql: `select coalesce(string_agg(table_name, ',' order by table_name), '')
+          from information_schema.role_table_grants
+          where grantee = 'anon' and table_schema = 'public'`,
+    ok: (value) => value === 'document_type_requirements,document_types',
+    detail: 'expected anon to hold SELECT on the two catalog tables ONLY (US-UI-006)',
   },
 ]
 

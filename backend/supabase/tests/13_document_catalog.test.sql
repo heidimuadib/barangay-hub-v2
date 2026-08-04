@@ -20,7 +20,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(38);
+select plan(40);
 
 create function pg_temp.impersonate(p_user uuid) returns void language plpgsql as $$
 begin
@@ -106,13 +106,19 @@ select is(
      and privilege_type <> 'SELECT'),
   0, 'authenticated and anon hold no INSERT/UPDATE/DELETE on any Slice 3 table');
 
+-- Slice 3D opened the CATALOG to anon for the US-UI-006 public portal, and
+-- nothing else. Stated as an inventory so the boundary is exact: requests and
+-- answers must still be unreachable without a session.
 select is(
-  (select count(*)::int from information_schema.role_table_grants
+  (select coalesce(string_agg(distinct table_name, ',' order by table_name), '')
+   from information_schema.role_table_grants
    where table_schema = 'public'
      and table_name in ('document_types', 'document_type_requirements',
-                        'document_requests', 'document_request_answers')
+                        'document_requests', 'document_request_answers',
+                        'document_request_evidence')
      and grantee = 'anon'),
-  0, 'anon holds NO privilege at all on the Slice 3 tables');
+  'document_type_requirements,document_types',
+  'anon reads the catalog, and no request, answer or document');
 
 -- ════ Capabilities and role mapping ═════════════════════════════════════════
 
@@ -120,9 +126,9 @@ select is(
   (select array_agg(key order by key) from public.permissions
    where key like 'documents.%' or key like 'requests.%'),
   array['documents.catalog.manage', 'documents.catalog.read',
-        'requests.create_walk_in', 'requests.mark_ready',
-        'requests.read', 'requests.review'],
-  'exactly the six approved Slice 3 capabilities exist');
+        'requests.create_walk_in', 'requests.evidence.read',
+        'requests.mark_ready', 'requests.read', 'requests.review'],
+  'exactly the seven approved Slice 3 capabilities exist (the seventh, requests.evidence.read, arrived with 3D evidence)');
 
 select is(
   (select array_agg(permission_key order by permission_key)
@@ -136,7 +142,7 @@ select is(
   (select count(*)::int from public.role_permissions
    where role_key = 'barangay_administrator'
      and (permission_key like 'documents.%' or permission_key like 'requests.%')),
-  6, 'the administrator holds all six');
+  7, 'the administrator holds all seven');
 
 select is(
   (select count(*)::int from public.role_permissions
@@ -252,10 +258,24 @@ select is(
    where barangay_id = 'a0000000-0000-4000-8000-000000000001'),
   0, 'tenant B''s administrator cannot read tenant A''s catalog');
 
--- anon holds nothing.
+-- anon reads the ACTIVE catalog — the "later, reviewed change" this assertion
+-- anticipated in 3A arrived in 3D as US-UI-006 (migration 20260808020000).
+-- Inverted rather than deleted: the interesting property was never "anon is
+-- refused", it was "anon sees exactly what a barangay chose to publish".
 select pg_temp.as_anon();
-select throws_ok('select count(*) from public.document_types', '42501',
-  null, 'anon cannot read the catalog (the public portal is a later, reviewed change)');
+
+select ok(
+  (select count(*)::int from public.document_types) > 0,
+  'anon CAN read the public catalog since 3D — US-UI-006');
+
+select is(
+  (select count(*)::int from public.document_types where not is_active),
+  0, 'but a withdrawn type is never published');
+
+-- Refused at the GRANT level, before any policy is consulted — a stronger
+-- statement than "the policy filtered it to zero".
+select throws_ok('select count(*) from public.document_requests', '42501',
+  null, 'and the catalog grant reaches no request');
 
 -- ════ Catalog management is capability-gated ════════════════════════════════
 

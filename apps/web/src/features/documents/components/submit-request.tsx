@@ -24,11 +24,14 @@ export function SubmitRequest({
   requestId,
   canSubmit,
   missingCount,
+  evidenceMissing = false,
 }: {
   barangayId: string
   requestId: string
   canSubmit: boolean
   missingCount: number
+  /** Slice 3D: the type asks for a supporting document and none is finalized. */
+  evidenceMissing?: boolean
 }) {
   const [state, formAction, isPending] = useActionState<Result<RequestActionData> | null, FormData>(
     submitRequestAction,
@@ -66,9 +69,16 @@ export function SubmitRequest({
             Once you submit, your answers can no longer be changed.
           </p>
         ) : (
+          // Both reasons are stated, because fixing one and still being
+          // blocked by the other is exactly how people give up.
           <p className="mt-2 text-sm text-neutral-700">
-            Answer {missingCount} more required question{missingCount === 1 ? '' : 's'} before
-            submitting.
+            {missingCount > 0
+              ? `Answer ${missingCount} more required question${missingCount === 1 ? '' : 's'}`
+              : ''}
+            {missingCount > 0 && evidenceMissing ? ', and attach' : ''}
+            {missingCount === 0 && evidenceMissing ? 'Attach' : ''}
+            {evidenceMissing ? ' the supporting document this request needs' : ''}
+            {' before submitting.'}
           </p>
         )}
       </div>

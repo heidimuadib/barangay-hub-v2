@@ -45,38 +45,62 @@ export default async function StaffLayout({ children }: { children: React.ReactN
       <header className="border-b border-neutral-200 bg-white">
         <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <nav aria-label="Primary" className="flex flex-wrap items-center gap-4">
-            <Link href="/staff" className="text-brand-700 font-semibold">
+            <Link
+              href="/staff"
+              className="text-brand-700 inline-flex min-h-11 items-center font-semibold"
+            >
               Barangay Hub · Staff
             </Link>
-            <Link href="/staff" className="text-sm text-neutral-700 hover:underline">
+            <Link
+              href="/staff"
+              className="inline-flex min-h-11 items-center text-sm text-neutral-700 hover:underline"
+            >
               Workspace
             </Link>
             {active && can(context, active.barangayId, REGISTRY_PERMISSIONS.registryRead) ? (
-              <Link href="/staff/registry" className="text-sm text-neutral-700 hover:underline">
+              <Link
+                href="/staff/registry"
+                className="inline-flex min-h-11 items-center text-sm text-neutral-700 hover:underline"
+              >
                 Registry
               </Link>
             ) : null}
             {active && can(context, active.barangayId, REGISTRY_PERMISSIONS.verificationRead) ? (
-              <Link href="/staff/verification" className="text-sm text-neutral-700 hover:underline">
+              <Link
+                href="/staff/verification"
+                className="inline-flex min-h-11 items-center text-sm text-neutral-700 hover:underline"
+              >
                 Verification
               </Link>
             ) : null}
             {active && can(context, active.barangayId, DOCUMENT_PERMISSIONS.requestsRead) ? (
-              <Link href="/staff/requests" className="text-sm text-neutral-700 hover:underline">
+              <Link
+                href="/staff/requests"
+                className="inline-flex min-h-11 items-center text-sm text-neutral-700 hover:underline"
+              >
                 Requests
               </Link>
             ) : null}
             {active && can(context, active.barangayId, PERMISSIONS.membershipRead) ? (
-              <Link href="/staff/members" className="text-sm text-neutral-700 hover:underline">
+              <Link
+                href="/staff/members"
+                className="inline-flex min-h-11 items-center text-sm text-neutral-700 hover:underline"
+              >
                 Members
               </Link>
             ) : null}
             {active && can(context, active.barangayId, PERMISSIONS.auditRead) ? (
-              <Link href="/staff/audit" className="text-sm text-neutral-700 hover:underline">
+              <Link
+                href="/staff/audit"
+                className="inline-flex min-h-11 items-center text-sm text-neutral-700 hover:underline"
+              >
                 Audit log
               </Link>
             ) : null}
-            <Link href="/dashboard" className="text-sm text-neutral-700 hover:underline">
+            <Link
+              href="/dashboard"
+              className="inline-flex min-h-11 items-center text-sm text-neutral-700 hover:underline"
+            >
               My dashboard
             </Link>
           </nav>

@@ -12,11 +12,14 @@ import {
 import {
   DOCUMENT_PERMISSIONS,
   DocumentTerms,
+  RequestEvidenceViewer,
   RequestProgress,
   RequestQueueChip,
   RequestReviewActions,
   availableRequestActions,
+  canReadRequestEvidence,
   getStaffRequestDetail,
+  listRequestEvidence,
   presentTerms,
   requestTimeline,
   reviewerCapabilities,
@@ -68,6 +71,12 @@ export default async function StaffRequestDetailPage({
     detail.state,
     reviewerCapabilities(context, active.barangayId),
   )
+  // RLS would return an empty list to a caller without the capability, and
+  // "no documents" must never be conflated with "not yours to see" — so the
+  // capability is checked explicitly and the page renders the difference.
+  const mayReadEvidence = canReadRequestEvidence(context, active.barangayId)
+  const evidence = mayReadEvidence ? await listRequestEvidence(detail.requestId) : null
+
   const terms = presentTerms(detail.documentType.terms)
   const steps = requestTimeline(detail.state, {
     createdAt: detail.createdAt,
@@ -179,6 +188,18 @@ export default async function StaffRequestDetailPage({
             ))}
           </dl>
         )}
+      </section>
+
+      <section
+        aria-labelledby="evidence-heading"
+        className="rounded-lg border border-neutral-200 bg-white p-6"
+      >
+        <h2 id="evidence-heading" className="text-lg font-bold">
+          Supporting documents
+        </h2>
+        <div className="mt-3">
+          <RequestEvidenceViewer barangayId={active.barangayId} items={evidence} />
+        </div>
       </section>
 
       <section

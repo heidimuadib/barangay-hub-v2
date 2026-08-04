@@ -11,11 +11,17 @@
 export {
   ANSWER_FIELD_PREFIX,
   DOCUMENT_PERMISSIONS,
+  REQUEST_EVIDENCE_FILE_EXTENSIONS,
+  REQUEST_EVIDENCE_MAX_BYTES,
+  REQUEST_EVIDENCE_MIME_TYPES,
+  formatRequestEvidenceSize,
+  requestEvidenceMimeLabel,
+  screenRequestEvidenceFile,
   PLACEHOLDER_BLOCKER,
   PLACEHOLDER_EXPLANATION,
   PLACEHOLDER_NOTICE,
 } from './constants'
-export type { DocumentPermissionKey } from './constants'
+export type { DocumentPermissionKey, RequestEvidenceRejection } from './constants'
 
 export type {
   CatalogEntry,
@@ -35,6 +41,8 @@ export type {
   RequestSource,
   RequirementField,
   RequirementInputKind,
+  RequestEvidenceItem,
+  RequestEvidenceUploadTicket,
   ResidentStanding,
   StaffRequestDetail,
   VerificationState,
@@ -80,6 +88,17 @@ export {
 } from './services/documents-service'
 
 export { getDocumentTypeDetail, getResidentCatalog } from './services/catalog-service'
+export {
+  getPublicBarangays,
+  getPublicCatalog,
+  type PublicBarangay,
+} from './services/public-catalog-service'
+export { canReadRequestEvidence, listRequestEvidence } from './services/request-evidence-service'
+export {
+  isAllowedRequestEvidenceMime,
+  requestEvidenceReadiness,
+  type RequestEvidenceReadiness,
+} from './rules/request-evidence'
 export {
   REQUEST_QUEUE_PAGE_SIZE,
   fileWalkInRequest,
@@ -136,6 +155,8 @@ export { EligibilityNotice } from './components/eligibility-notice'
 export { AnswerForm, RequestForm } from './components/request-form'
 export { RequestList, RequestStateChip } from './components/request-list'
 export { RequestQueue, RequestQueueChip, RequestQueueFilters } from './components/request-queue'
+export { RequestEvidenceManager } from './components/request-evidence-manager'
+export { RequestEvidenceViewer } from './components/request-evidence-viewer'
 export { RequestReviewActions } from './components/request-review-actions'
 export { WalkInRequestForm } from './components/walk-in-request-form'
 export { RequestProgress } from './components/request-progress'

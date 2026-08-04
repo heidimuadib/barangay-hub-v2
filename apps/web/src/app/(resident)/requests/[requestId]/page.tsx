@@ -11,13 +11,16 @@ import {
 import {
   AnswerForm,
   DocumentTerms,
+  RequestEvidenceManager,
   RequestProgress,
   RequestStateChip,
   SubmitRequest,
   getOwnRequestDetail,
   isEditable,
+  listRequestEvidence,
   missingRequirementKeys,
   presentTerms,
+  requestEvidenceReadiness,
   requestTimeline,
 } from '@/features/documents'
 
@@ -75,6 +78,15 @@ export default async function RequestDetailPage({
   )
   const missing = missingRequirementKeys(detail.requirements, answersByKey)
   const draft = isEditable(detail.state)
+
+  // Evidence is only relevant where the type asks for it — but it is listed
+  // whenever any exists, so a resident can see what they attached to a request
+  // whose type stopped requiring it.
+  const evidence = await listRequestEvidence(detail.requestId)
+  const evidenceReady = requestEvidenceReadiness(
+    evidence,
+    detail.documentType.requiresSupportingEvidence,
+  )
 
   return (
     <div className="flex flex-col gap-6">
@@ -146,6 +158,34 @@ export default async function RequestDetailPage({
         )}
       </section>
 
+      {detail.documentType.requiresSupportingEvidence || evidence.length > 0 ? (
+        <section
+          aria-labelledby="evidence-heading"
+          className="rounded-lg border border-neutral-200 bg-white p-6"
+        >
+          <h2 id="evidence-heading" className="text-lg font-bold">
+            Supporting documents
+          </h2>
+          <div className="mt-3">
+            {draft ? (
+              <RequestEvidenceManager
+                requestId={detail.requestId}
+                items={evidence}
+                required={detail.documentType.requiresSupportingEvidence}
+              />
+            ) : evidence.length === 0 ? (
+              <p className="text-neutral-700">Nothing was attached.</p>
+            ) : (
+              <p className="text-neutral-700">
+                {evidenceReady.finalizedCount} document
+                {evidenceReady.finalizedCount === 1 ? '' : 's'} attached. They can no longer be
+                changed.
+              </p>
+            )}
+          </div>
+        </section>
+      ) : null}
+
       {draft ? (
         <>
           <section aria-labelledby="edit-heading" className="flex flex-col gap-3">
@@ -171,8 +211,9 @@ export default async function RequestDetailPage({
               <SubmitRequest
                 barangayId={active.barangayId}
                 requestId={detail.requestId}
-                canSubmit={missing.length === 0}
+                canSubmit={missing.length === 0 && evidenceReady.satisfied}
                 missingCount={missing.length}
+                evidenceMissing={!evidenceReady.satisfied}
               />
             </div>
           </section>

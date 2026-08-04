@@ -108,6 +108,36 @@ export type VerificationState = Database['public']['Enums']['verification_state'
 /** How the PERSON reached the registry — distinct from `RequestSource`. */
 export type PersonSource = Database['public']['Enums']['person_source']
 
+/**
+ * One supporting document as its owner sees it (Slice 3D).
+ *
+ * Carries no storage path and no signed URL — both are server-side concerns,
+ * requested on demand and never rendered into the page. `uploadedAt` is the
+ * only thing that distinguishes a real document from a reserved slot.
+ */
+export interface RequestEvidenceItem {
+  readonly evidenceId: string
+  readonly mimeType: string
+  readonly declaredSizeBytes: number
+  /** Trusted size, read from the stored object at finalization. */
+  readonly sizeBytes: number | null
+  /** Non-null once the object was verified to exist — i.e. finalized. */
+  readonly uploadedAt: string | null
+  readonly createdAt: string
+}
+
+/**
+ * A one-object, short-lived upload authorization.
+ *
+ * The browser receives a complete signed URL and nothing else — no bucket name
+ * to reason about, no path to reconstruct, and no Supabase client (which would
+ * pull the server environment schema into the client bundle).
+ */
+export interface RequestEvidenceUploadTicket {
+  readonly evidenceId: string
+  readonly signedUrl: string
+}
+
 // ── Staff-facing view models (Slice 3C) ─────────────────────────────────────
 // These carry what counter work needs and what the resident views omit:
 // who the requester is, which door the request came through, and why staff

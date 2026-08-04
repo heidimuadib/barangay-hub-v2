@@ -2,7 +2,7 @@
 
 Multi-tenant civic services platform for Philippine barangays.
 
-**Current state: Phase 7, Slice 2 complete; Slice 3 in progress (3A, 3B, 3C).**
+**Current state: Phase 7, Slices 1–3 complete.**
 Slice 2 delivered public sign-up with email confirmation, the person registry
 and walk-in creation, the staff verification queue and its decision workflow,
 duplicate supersede-and-link resolution, and private evidence Storage with
@@ -15,8 +15,12 @@ the Server Action and the database. **Slice 3C** adds the staff side: an intake
 queue with state filters, a request detail whose controls follow the
 review/mark-ready capability split, and counter filing for residents with no
 online account — which goes through the resident's own submit function rather
-than a staff-only copy. Certificates and payments are not built, and
-notification *delivery* is not — the outbox enqueues intent only. See
+than a staff-only copy. **Slice 3D** completes it: supporting documents on a
+private bucket with server-verified uploads, a **public portal** where anyone
+can see what a barangay issues before travelling there, 44px shell touch
+targets, and eight contrast-validated accent palettes. Certificates and
+payments are not built, and notification *delivery* is not — the outbox
+enqueues intent only. See
 `docs/local-setup.md` to get running,
 `docs/architecture/identity-and-access.md` for the access model,
 `docs/architecture/resident-registry-and-verification.md` for the registry and
@@ -32,8 +36,9 @@ reads "Not set by the barangay yet" rather than `₱0.00`.
 **Plan of record:** [docs/PROJECT_SPECIFICATION.md](./docs/PROJECT_SPECIFICATION.md)
 (what the system is) and
 [docs/IMPLEMENTATION_ROADMAP.md](./docs/IMPLEMENTATION_ROADMAP.md)
-(the order it gets built — currently Slice 3, document requests; provisioning
-ruled as Option C hybrid, [ADR-0006](./docs/adr/0006-resident-provisioning-and-registry-decisions.md)).
+(the order it gets built — Slice 3 complete; next is Slice 4, certificate
+generation. Provisioning ruled as Option C hybrid,
+[ADR-0006](./docs/adr/0006-resident-provisioning-and-registry-decisions.md)).
 
 **This is the STANDALONE v2 repository** (DEC-REPO-01, resolved). It was
 promoted out of the legacy `barangayhub` repository with v2 history preserved

@@ -107,6 +107,41 @@ export const requestActionSchema = z.object({
 
 export type RequestActionInput = z.infer<typeof requestActionSchema>
 
+// ── Supporting evidence (Slice 3D) ──────────────────────────────────────────
+// Mirrors the Slice 2F schema set. The ceiling and the allow-list are restated
+// here rather than imported from the rules module, because a schema may not
+// import a rule (Phase 6 §16.1) — and all three layers are re-checked by the
+// database anyway.
+
+export const evidenceUploadRequestSchema = z.object({
+  requestId: z.string().uuid(),
+  mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], {
+    errorMap: () => ({ message: 'Attach a JPEG, PNG, WebP or PDF.' }),
+  }),
+  declaredSizeBytes: z.coerce
+    .number()
+    .int()
+    .min(1, 'That file is empty.')
+    .max(10 * 1024 * 1024, 'That file is larger than 10 MB.'),
+})
+
+export const evidenceFinalizeSchema = z.object({
+  evidenceId: z.string().uuid(),
+  requestId: z.string().uuid(),
+  /** sha-256, computed in the browser and recorded for integrity (D2-03). */
+  contentHash: z.string().regex(/^[a-f0-9]{64}$/, 'That upload could not be confirmed.'),
+})
+
+export const evidenceRemoveSchema = z.object({
+  evidenceId: z.string().uuid(),
+  requestId: z.string().uuid(),
+})
+
+export const evidenceReadSchema = z.object({
+  evidenceId: z.string().uuid(),
+  barangayId: z.string().uuid(),
+})
+
 /** The four request states, as a fixed vocabulary for URL parsing (3C). */
 export const REQUEST_STATE_KEYS = ['draft', 'submitted', 'in_review', 'ready_for_issue'] as const
 

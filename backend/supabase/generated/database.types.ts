@@ -163,6 +163,53 @@ export type Database = {
           },
         ]
       }
+      document_request_evidence: {
+        Row: {
+          barangay_id: string
+          content_hash: string | null
+          created_at: string
+          declared_size_bytes: number
+          id: string
+          mime_type: string
+          request_id: string
+          size_bytes: number | null
+          storage_path: string
+          uploaded_at: string | null
+        }
+        Insert: {
+          barangay_id: string
+          content_hash?: string | null
+          created_at?: string
+          declared_size_bytes: number
+          id?: string
+          mime_type: string
+          request_id: string
+          size_bytes?: number | null
+          storage_path: string
+          uploaded_at?: string | null
+        }
+        Update: {
+          barangay_id?: string
+          content_hash?: string | null
+          created_at?: string
+          declared_size_bytes?: number
+          id?: string
+          mime_type?: string
+          request_id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          uploaded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_request_evidence_request_id_barangay_id_fkey"
+            columns: ["request_id", "barangay_id"]
+            isOneToOne: false
+            referencedRelation: "document_requests"
+            referencedColumns: ["id", "barangay_id"]
+          },
+        ]
+      }
       document_requests: {
         Row: {
           barangay_id: string
@@ -873,6 +920,17 @@ export type Database = {
           storage_path: string
         }[]
       }
+      add_request_evidence_metadata: {
+        Args: {
+          p_declared_size_bytes: number
+          p_mime_type: string
+          p_request_id: string
+        }
+        Returns: {
+          evidence_id: string
+          storage_path: string
+        }[]
+      }
       append_audit_entry: {
         Args: {
           p_action: string
@@ -905,6 +963,7 @@ export type Database = {
         Returns: boolean
       }
       auth_is_platform_admin: { Args: never; Returns: boolean }
+      barangay_is_public: { Args: { p_barangay_id: string }; Returns: boolean }
       caller_has_request_for_type: {
         Args: { p_document_type_id: string }
         Returns: boolean
@@ -917,6 +976,10 @@ export type Database = {
       caller_owns_request: { Args: { p_request_id: string }; Returns: boolean }
       caller_person_in: { Args: { p_barangay_id: string }; Returns: string }
       confirm_evidence_upload: {
+        Args: { p_content_hash: string; p_evidence_id: string }
+        Returns: undefined
+      }
+      confirm_request_evidence_upload: {
         Args: { p_content_hash: string; p_evidence_id: string }
         Returns: undefined
       }
@@ -1045,6 +1108,14 @@ export type Database = {
           name: string
         }[]
       }
+      list_public_barangays: {
+        Args: never
+        Returns: {
+          code: string
+          id: string
+          name: string
+        }[]
+      }
       mark_request_ready: {
         Args: { p_correlation_id?: string; p_request_id: string }
         Returns: undefined
@@ -1074,6 +1145,18 @@ export type Database = {
         Returns: undefined
       }
       remove_evidence: { Args: { p_evidence_id: string }; Returns: undefined }
+      remove_request_evidence: {
+        Args: { p_evidence_id: string }
+        Returns: undefined
+      }
+      request_evidence_object_readable: {
+        Args: { p_object_name: string }
+        Returns: boolean
+      }
+      request_evidence_object_writable: {
+        Args: { p_object_name: string }
+        Returns: boolean
+      }
       request_information: {
         Args: {
           p_application_id: string

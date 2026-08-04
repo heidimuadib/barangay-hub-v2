@@ -29,7 +29,7 @@ comes) · `v1.5` (feature-flagged, post-MVP).
 | 0b | Hosted integration assessment | **COMPLETE** | Evidence base for DEC-ENV-01; PG 17 reconciliation | 0a | — | S |
 | 1 | Identity, tenant, RBAC, RLS, audit foundation | **COMPLETE** | Secure multi-tenant identity with forced RLS and append-only audit | 0a | — | XL |
 | 2 | Resident registration, registry, verification | **COMPLETE (2A–2G)** | Verified resident profiles; staff verification workflow; registry with duplicate handling | 1 | — (DEC-AUTH-01 resolved: Option C, [ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)) | XL |
-| 3 | Document catalog and request intake | **IN PROGRESS — 3A complete** | Residents and walk-ins submit document requests through one domain service | 2 | Fee/SLA confirmation (B-08) before pilot, not before build | L |
+| 3 | Document catalog and request intake | **COMPLETE (3A–3D)** | Residents and walk-ins submit document requests through one domain service | 2 | Fee/SLA confirmation (B-08) before pilot, not before build | L |
 | 4 | Certificate generation, serials, QR, public verification | SEQUENCED | Accountable certificate issuance with public verifiability | 3 | Template/signatory confirmation (B-05–B-07) before pilot | L |
 | 5 | Payments, exemptions, ORs, release, day closure, call list | SEQUENCED | Cash-accountable release workflow | 4 | OR series policy (B-11) before pilot | XL |
 | 6 | Complaint intake, category gate, triage, docketing, evidence, timeline | SEQUENCED | Katarungang Pambarangay case intake with jurisdiction gate | 2 | Non-mediable categories (B-09) before pilot | L |
@@ -443,16 +443,16 @@ project). Slice 3 builds on this layout.
 
 ---
 
-## Slice 3 — Document catalog and request intake — IN PROGRESS
+## Slice 3 — Document catalog and request intake — COMPLETE
 
-**Status:** delivered in subparts on `feature/slice-3-document-requests`:
+**Status:** **COMPLETE (2026-08-04).** Delivered in subparts on `feature/slice-3-document-requests`, reviewed as one unit in PR #17:
 
 | Subpart | Scope | State |
 | --- | --- | --- |
 | **3A** | Catalog and request domain foundation: `document_types` (with the B-08 `values_are_placeholder` flag), `document_type_requirements`, `document_requests`, `document_request_answers`; six capabilities and their role mapping; forced RLS + composite tenant FKs on all four tables; the four-state machine enforced at function *and* table; both creation channels converging on one record; audit triggers; two approved outbox intents; synthetic seeds; 86 new pgTAP + 44 new unit assertions | **COMPLETE** |
 | **3B** | Resident surfaces: catalog browse, document detail, draft composition, submission, own-request list and detail; the **verification gate** on request creation (migration `20260807010000`), own-request catalog visibility, US-RES-004 dashboard content; 35 new pgTAP + 81 new unit/component + 20 new Playwright assertions per viewport | **COMPLETE** |
 | **3C** | Staff intake queue (state filters, oldest-first, pagination), request detail with the capability-split transitions, and counter filing that files **and submits** through the resident's own functions; walk-in-equals-resident re-asserted at the surface; 32 new pgTAP + 20 new unit/component + 12 new Playwright assertions | **COMPLETE** |
-| 3D | Supporting evidence (Slice 2 pattern), outbox review, US-UI-002/UI-001 chrome, US-UI-006 public portal, hardening, docs, final PR | pending |
+| **3D** | Supporting evidence on the Slice 2F pattern (private bucket, signed one-object tickets, server-verified finalization, seventh capability) with `submit_request` gated on it; the US-UI-006 public portal and its narrow `anon` grant; US-UI-002 shell touch targets closing **R-2-05**; US-UI-001's seven accent palettes with a contrast + colour-distance test that parses the stylesheet; the outbox audited as a whole; slice-wide structural review; 42 new pgTAP + 44 new unit/component + 12 new Playwright assertions | **COMPLETE** |
 
 **Decisions taken in 3A**, recorded rather than assumed:
 
@@ -509,7 +509,28 @@ project). Slice 3 builds on this layout.
   forms rather than duplicated — a second copy is how the two channels start
   diverging.
 
-1–2. **3 — Document catalog & request intake**; IN PROGRESS.
+**Decisions taken in 3D:**
+
+- **The `anon` grant is exactly two tables and one function**, asserted as an
+  exhaustive inventory in three pgTAP files and in `db:reset:verified`. Every
+  other table refuses `anon` at the GRANT level, before any policy runs — the
+  stronger guarantee, and stated as such.
+- **Evidence has no `kind` taxonomy.** Verification needed identity *and*
+  residency; a request needs whatever its type asks for, and
+  `requires_supporting_evidence` already says whether anything is needed.
+- **A seventh capability, `requests.evidence.read`**, administrator-only,
+  mirroring D2-04's ruling that evidence is the most sensitive surface.
+- **R-2-05 is closed** and the accessibility spec's `nav` exemption removed
+  with it — an exemption that outlives its reason lets the fix regress.
+- **US-UI-002's bottom nav, notification centre and density controls remain
+  deferred.** A notification centre would be a facade while delivery is Slice
+  8 and no notification exists to show.
+- **The palette colour-distance threshold is ΔE 15, not 20**, because every
+  accent must also clear AAA contrast, which confines them to one end of the
+  space. Relaxing contrast to buy separation would trade the property that
+  serves users for one that serves tidiness.
+
+1–2. **3 — Document catalog & request intake**; COMPLETE.
 3. **Outcome:** a verified resident — or staff serving a walk-in through the
    same domain service — selects a document type, provides purpose and
    required inputs, and submits a tracked request; staff work an intake queue.

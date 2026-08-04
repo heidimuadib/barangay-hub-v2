@@ -21,7 +21,22 @@ export interface CatalogCard {
   readonly terms: PresentedTerms
 }
 
-export function CatalogList({ items }: { items: readonly CatalogCard[] }) {
+export function CatalogList({
+  items,
+  publicView = false,
+}: {
+  items: readonly CatalogCard[]
+  /**
+   * US-UI-006: the same cards, rendered for someone with no session.
+   *
+   * The document NAME stops being a link, because `/documents/[id]` is an
+   * authenticated route and sending an anonymous visitor there would bounce
+   * them to sign-in for information the page in front of them already shows.
+   * Everything else — terms, placeholder marking, requirement count — is
+   * identical, deliberately: one presentation rule, not two.
+   */
+  publicView?: boolean
+}) {
   if (items.length === 0) {
     return (
       <p className="rounded-lg border border-neutral-200 bg-white p-6 text-neutral-700">
@@ -40,14 +55,18 @@ export function CatalogList({ items }: { items: readonly CatalogCard[] }) {
         >
           <div>
             <h3 className="text-lg font-bold">
-              {/* The whole card title is the target: a 44px row beats a
-                  word-sized link on the phones most residents use. */}
-              <Link
-                href={`/documents/${entry.documentTypeId}`}
-                className="text-brand-700 inline-flex min-h-11 items-center hover:underline"
-              >
-                {entry.name}
-              </Link>
+              {publicView ? (
+                entry.name
+              ) : (
+                /* The whole card title is the target: a 44px row beats a
+                   word-sized link on the phones most residents use. */
+                <Link
+                  href={`/documents/${entry.documentTypeId}`}
+                  className="text-brand-700 inline-flex min-h-11 items-center hover:underline"
+                >
+                  {entry.name}
+                </Link>
+              )}
             </h3>
             {entry.description ? (
               <p className="mt-1 text-neutral-700">{entry.description}</p>

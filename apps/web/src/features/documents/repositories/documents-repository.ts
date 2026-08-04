@@ -44,6 +44,9 @@ export type DocumentFailure =
   | 'requirements-incomplete'
   | 'illegal-transition'
   | 'person-unavailable'
+  | 'evidence-required'
+  | 'evidence-already-confirmed'
+  | 'evidence-object-missing'
 
 const FAILURE_BY_MESSAGE: readonly (readonly [string, DocumentFailure])[] = [
   ['AUTHORIZATION_DENIED', 'denied'],
@@ -55,6 +58,10 @@ const FAILURE_BY_MESSAGE: readonly (readonly [string, DocumentFailure])[] = [
   ['REQUIREMENTS_INCOMPLETE', 'requirements-incomplete'],
   ['ILLEGAL_TRANSITION', 'illegal-transition'],
   ['PERSON_NOT_AVAILABLE', 'person-unavailable'],
+  ['EVIDENCE_REQUIRED', 'evidence-required'],
+  ['EVIDENCE_ALREADY_CONFIRMED', 'evidence-already-confirmed'],
+  ['EVIDENCE_OBJECT_MISSING', 'evidence-object-missing'],
+  ['EVIDENCE_SIZE_INVALID', 'evidence-object-missing'],
 ]
 
 export function mapDocumentError(message: string): DocumentFailure | null {
@@ -103,6 +110,20 @@ export function throwDocumentFailure(failure: DocumentFailure): never {
       throw new BusinessRuleError(
         'BR-REQ-3',
         'Answer every required question before submitting this request.',
+      )
+    case 'evidence-required':
+      throw new BusinessRuleError(
+        'BR-REQ-4',
+        'Attach the supporting document this request needs before submitting it.',
+      )
+    case 'evidence-already-confirmed':
+      throw new ConflictError('That document has already been uploaded.', 'state')
+    case 'evidence-object-missing':
+      // The upload did not land, or landed empty. Recoverable by retrying —
+      // the reserved row is still there and still satisfies nothing.
+      throw new BusinessRuleError(
+        'BR-REQ-5',
+        'That upload did not finish. Remove the item and try attaching it again.',
       )
   }
 }
@@ -159,6 +180,20 @@ export function reviewRequest(args: Rpc['review_request']['Args']) {
 
 export function markRequestReady(args: Rpc['mark_request_ready']['Args']) {
   return callRpc('mark_request_ready', args)
+}
+
+// ── Supporting evidence (Slice 3D) ──────────────────────────────────────────
+
+export function addRequestEvidenceMetadata(args: Rpc['add_request_evidence_metadata']['Args']) {
+  return callRpc('add_request_evidence_metadata', args)
+}
+
+export function confirmRequestEvidenceUpload(args: Rpc['confirm_request_evidence_upload']['Args']) {
+  return callRpc('confirm_request_evidence_upload', args)
+}
+
+export function removeRequestEvidence(args: Rpc['remove_request_evidence']['Args']) {
+  return callRpc('remove_request_evidence', args)
 }
 
 // ── Column lists ────────────────────────────────────────────────────────────

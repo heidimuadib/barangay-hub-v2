@@ -458,5 +458,143 @@ plausible-looking data.
 No decline or cancel — still **DEC-REQ-01**, and the queue now visibly
 accumulates requests that have no exit, which is the cost that decision was
 recorded to make visible. No issuance: `ready_for_issue` is the terminus and
-Slice 4 owns what follows. No supporting evidence and no US-UI-002 chrome —
-both 3D.
+Slice 4 owns what follows.
+
+---
+
+# Slice 3D — evidence, the public portal, and the slice review
+
+## Supporting evidence
+
+The roadmap said this reuses the Slice 2 evidence pattern verbatim (§12), and
+it does: private bucket, metadata row **before** any upload, an opaque
+server-generated path, Storage RLS that joins the object name back to that
+metadata, finalization that reads `storage.objects` rather than trusting a
+client claim, and a separate capability for reading it.
+
+```
+1. add_request_evidence_metadata  → row + opaque path {barangay}/{request}/{evidence}
+2. browser PUTs bytes to a one-object signed URL
+3. confirm_request_evidence_upload → verifies the object EXISTS, takes its size
+                                     from the object, records the sha-256
+```
+
+A row that stops after step 1 or 2 is **pending**. It is listed honestly,
+counts for nothing, and can be retried or removed — which is why a failed
+upload can never look like a successful one.
+
+Two deliberate differences from 2F, each because the domain differs:
+
+- **No `kind` enum.** Verification needed identity *and* residency, so it
+  needed a taxonomy to express a minimum. A request needs "whatever this type
+  asks for", and `requires_supporting_evidence` (3A) already says whether
+  anything is needed. Inventing categories would have been scope.
+- **The editable window is `draft` only**, not `draft`/`info_requested` — the
+  request machine has no information-request state (DEC-REQ-01).
+
+`submit_request` gained the gate 3A deferred: where the type requires
+supporting evidence, at least one **finalized** item must exist. A reserved
+row does not satisfy it, which is the same tightening 2F applied to
+`submit_verification`.
+
+The seventh capability, `requests.evidence.read`, mirrors D2-04's ruling that
+evidence is the most sensitive surface and carries its own permission —
+administrator-only, so ordinary staff work the queue without opening
+residents' documents. When a caller lacks it the staff page renders "your role
+can see this request but not its supporting documents" rather than an empty
+list: *no documents* and *not yours to see* are different facts.
+
+## The public portal (US-UI-006)
+
+3A withheld the `anon` catalog grant and said the decision belonged with the
+surface that needed it. This is that surface.
+
+**What `anon` may read:** the name, description, code and commercial terms of
+ACTIVE document types in ACTIVE barangays, their requirement labels, and a
+name-only barangay directory. That is the entire list, and it is asserted as
+an exhaustive inventory in three places — `02_identity_schema`,
+`13_document_catalog` and `17_slice3_review` — so an addition fails rather
+than passes quietly. `db:reset:verified` checks it too.
+
+**What `anon` cannot reach** is refused at the GRANT level, before any policy
+is consulted: requests, answers, evidence, persons, audit rows, outbox rows.
+The review suite asserts each as a `42501`, not as "the policy returned zero
+rows" — a policy can be edited into permitting something; a table with no
+grant cannot.
+
+The public pages reuse the resident `CatalogList` and `presentTerms`
+deliberately. A separate public component would eventually drift, and the
+difference nobody would notice is the B-08 marking — so an anonymous visitor
+sees the same "Not yet confirmed" chip a signed-in resident does.
+
+One implementation note worth keeping: the public policies call
+`barangay_is_public()`, a `SECURITY DEFINER` helper, rather than selecting
+from `barangays` directly. A policy expression evaluates as the querying role,
+so the direct form would have required granting `anon` a third table to
+satisfy an implementation detail. The first draft did exactly that and failed
+the review suite, which is what the suite is for.
+
+## US-UI-002 — the shell chrome, and what R-2-05 cost
+
+Every shell navigation link now carries `min-h-11`, closing **R-2-05**: the
+Slice 1 header links were 20–27px against a stated 44px Definition of Done,
+Slice 2 recorded it rather than fixing it from inside a registry PR, and 3B
+widened it to five links.
+
+The accessibility spec's exemption for `nav` links is **gone**. It existed to
+keep the gap visible rather than silently passing; with the gap closed,
+keeping it would mean the fix could regress unnoticed. Shell navigation is now
+held to the same 44px as every other control.
+
+Not built, and recorded as still deferred: the bottom navigation, the
+notification centre and the density controls named in the original US-UI-002
+deferral. A notification centre in particular would be a facade — delivery is
+Slice 8 and no notification exists to show. Building the shell for it now
+would mean shipping an empty tray that implies a feature.
+
+## US-UI-001 — palettes that were validated, not asserted
+
+Seven additional accent ramps, and a test that parses `globals.css` itself
+rather than a fixture copy of it. Two properties:
+
+- every accent's text shade clears **7:1 on white** (AAA — stricter than the
+  AA the project commits to, because these are used for links and headings);
+- every pair is separated by **ΔE ≥ 15** (CIE76), so two barangays never look
+  like the same brand.
+
+The threshold is 15 rather than the 20 first attempted, and the reason is
+recorded in the test: every accent must also be dark enough for AAA, which
+confines all eight to one end of the space. Relaxing the *contrast* rule to
+buy separation would have traded the property that serves users for one that
+serves tidiness.
+
+The test earned its place immediately. The first palette set included a rust
+(`#9a3412`) sitting ΔE 12.5 from `danger-700` — a barangay branded with it
+would have looked permanently in an error state. It was replaced with bronze
+before anyone saw it.
+
+## The outbox, audited as a whole
+
+Following 2G's precedent, the slice's outbox is asserted as an inventory
+rather than per-feature:
+
+| Property | Assertion |
+| --- | --- |
+| Approved intents | exactly `request.in_review` and `request.ready_for_issue` |
+| Asserted absences | `request.submitted`, any evidence event, any catalog event |
+| Payload keys | exactly `request_id` and `person_id` |
+| Payload values | **every** value in **every** request payload matches a UUID pattern |
+| Dispatch | nothing dispatched — delivery is still Slice 8 |
+
+The value assertion is the load-bearing one: it is a property of every row
+rather than of the rows someone remembered to check, so no future free-text
+key can pass.
+
+## What Slice 3 does not include, at close
+
+No issuance, serials, certificates or QR — Slice 4, and `ready_for_issue` is
+the hand-off. No payments — Slice 5. No notification delivery — Slice 8; the
+outbox still enqueues intent and nothing dispatches it. No decline or cancel
+state — **DEC-REQ-01**, still open, and now visible as a queue that
+accumulates requests with no exit. Whether the counter may file for an
+unverified person — **DEC-REQ-02**, still open.

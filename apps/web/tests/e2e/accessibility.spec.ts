@@ -121,17 +121,17 @@ async function assertBaseline(page: Page, label: string): Promise<void> {
 
           const rect = node.getBoundingClientRect()
           const hiddenUntilFocused = rect.height < 4
-          // Inline text links — in prose, a table cell, or the shell's nav
-          // bar — are measured by their line box, and the row or sentence
-          // provides the reachable area.
+          // Inline text links — in prose, a table cell or a list row — are
+          // measured by their line box, and the sentence or row provides the
+          // reachable area.
           //
-          // NOTE: the Slice 1 header links are 20–27px, below this project's
-          // stated 44px DoD. That is a REAL pre-existing gap in the shell
-          // chrome, recorded in the risk register for the US-UI-002 rework.
-          // It is exempted here rather than silently passed — and rather than
-          // redesigning Slice 1's header from inside Slice 2.
-          const inlineTextLink =
-            node.tagName === 'A' && node.closest('p,li,dd,span,nav,td') !== null
+          // `nav` was on this list until Slice 3D. It was there because the
+          // Slice 1 shell header's links were 20–27px (R-2-05), and exempting
+          // them made the gap VISIBLE in the test rather than silently passed.
+          // US-UI-002 was assigned to this slice, the links now carry
+          // `min-h-11`, and so the exemption is gone: shell navigation is held
+          // to the same 44px as everything else, and a regression fails here.
+          const inlineTextLink = node.tagName === 'A' && node.closest('p,li,dd,span,td') !== null
           return !hiddenUntilFocused && !inlineTextLink && rect.height > 0 && rect.height < 44
         })
         .map(
