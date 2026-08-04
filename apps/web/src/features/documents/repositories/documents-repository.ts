@@ -7,12 +7,15 @@ import type { Database } from '@barangay-hub/supabase/types'
 
 import type {
   CatalogEntry,
+  DocumentRequestState,
   DocumentTypeDetail,
   OwnRequestDetail,
   OwnRequestSummary,
   RequestAnswerView,
+  RequestQueueEntry,
   RequirementField,
   ResidentStanding,
+  StaffRequestDetail,
   VerificationState,
 } from '../types/documents'
 
@@ -139,6 +142,23 @@ export function setRequestAnswer(args: Rpc['set_request_answer']['Args']) {
 
 export function submitRequest(args: Rpc['submit_request']['Args']) {
   return callRpc('submit_request', args)
+}
+
+// ── Staff channel (Slice 3C) ────────────────────────────────────────────────
+// The SAME functions the resident path uses for answers and submission — the
+// roadmap's "one domain service, two doors" requirement. Only creation and the
+// two transitions differ, and they differ in authorization, not in behaviour.
+
+export function createWalkInRequest(args: Rpc['create_walk_in_request']['Args']) {
+  return callRpc('create_walk_in_request', args)
+}
+
+export function reviewRequest(args: Rpc['review_request']['Args']) {
+  return callRpc('review_request', args)
+}
+
+export function markRequestReady(args: Rpc['mark_request_ready']['Args']) {
+  return callRpc('mark_request_ready', args)
 }
 
 // ── Column lists ────────────────────────────────────────────────────────────
@@ -427,5 +447,154 @@ export async function fetchOwnRequest(
     documentType: toCatalogEntry(request.document_types, requirements.length),
     requirements,
     answers,
+  }
+}
+
+// ── Staff queue and detail (Slice 3C) ───────────────────────────────────────
+//
+// RLS admits these rows through `requests.read`. The requester's NAME comes
+// from `persons`, which is gated separately on `registry.read` — every role in
+// the ADR-0006 mapping that holds one holds the other, but the join is written
+// to degrade rather than break if a future mapping splits them.
+
+const REQUESTER_COLUMNS =
+  'id, first_name, middle_name, last_name, suffix, source_channel, person_accounts(user_id)'
+
+interface RequesterRow {
+  id: string
+  first_name: string
+  middle_name: string | null
+  last_name: string
+  suffix: string | null
+  source_channel: Database['public']['Enums']['person_source']
+  person_accounts: { user_id: string }[]
+}
+
+function fullName(person: RequesterRow): string {
+  return [person.first_name, person.middle_name, person.last_name, person.suffix]
+    .filter((part): part is string => Boolean(part && part.length > 0))
+    .join(' ')
+}
+
+export interface RequestQueuePage {
+  readonly entries: readonly RequestQueueEntry[]
+  readonly total: number
+}
+
+/**
+ * One page of the tenant intake queue, oldest waiting first.
+ *
+ * Ordered by `submitted_at` ascending so the person who has waited longest is
+ * served first — the same rule the Slice 2 verification queue uses, and the
+ * reason `document_requests_queue_idx` is `(barangay_id, state, submitted_at)`.
+ */
+export async function fetchRequestQueuePage(params: {
+  barangayId: string
+  states: readonly DocumentRequestState[]
+  limit: number
+  offset: number
+}): Promise<RequestQueuePage> {
+  const supabase = await createServerSupabaseClient()
+  const { data, count, error } = await supabase
+    .from('document_requests')
+    .select(
+      `id, state, submitted_at, created_at, source_channel,
+       document_types(name), persons(${REQUESTER_COLUMNS})`,
+      { count: 'exact' },
+    )
+    .eq('barangay_id', params.barangayId)
+    .in('state', [...params.states])
+    .order('submitted_at', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: true })
+    .range(params.offset, params.offset + params.limit - 1)
+
+  if (error) {
+    throw new Error(`request queue query failed: ${error.code}`)
+  }
+
+  return {
+    entries: (data ?? []).map((row) => ({
+      requestId: row.id,
+      state: row.state,
+      documentTypeName: row.document_types?.name ?? null,
+      requesterName: row.persons ? fullName(row.persons) : null,
+      sourceChannel: row.source_channel,
+      hasAccount: (row.persons?.person_accounts.length ?? 0) > 0,
+      submittedAt: row.submitted_at,
+      createdAt: row.created_at,
+    })),
+    total: count ?? 0,
+  }
+}
+
+/**
+ * One request as STAFF see it: everything the resident detail shows, plus the
+ * requester and the provenance the resident view deliberately omits.
+ */
+export async function fetchStaffRequest(
+  barangayId: string,
+  requestId: string,
+): Promise<StaffRequestDetail | null> {
+  const supabase = await createServerSupabaseClient()
+
+  const { data: request, error } = await supabase
+    .from('document_requests')
+    .select(
+      `id, state, purpose, created_at, submitted_at, review_started_at, ready_at,
+       source_channel, creation_reason,
+       document_types(${TYPE_COLUMNS}, document_type_requirements(${REQUIREMENT_COLUMNS})),
+       document_request_answers(requirement_id, value),
+       persons(${REQUESTER_COLUMNS})`,
+    )
+    .eq('barangay_id', barangayId)
+    .eq('id', requestId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`staff request detail query failed: ${error.code}`)
+  }
+  if (!request || !request.document_types) return null
+
+  const requirementRows = sortRequirements(request.document_types.document_type_requirements ?? [])
+  const requirements = requirementRows.map(toRequirementField)
+  const byId = new Map(requirements.map((requirement) => [requirement.requirementId, requirement]))
+
+  const answers: RequestAnswerView[] = []
+  for (const row of request.document_request_answers ?? []) {
+    const requirement = byId.get(row.requirement_id)
+    if (!requirement) continue
+    answers.push({
+      requirementId: requirement.requirementId,
+      key: requirement.key,
+      label: requirement.label,
+      value: row.value,
+    })
+  }
+  const order = new Map(
+    requirements.map((requirement, index) => [requirement.requirementId, index]),
+  )
+  answers.sort((a, b) => (order.get(a.requirementId) ?? 0) - (order.get(b.requirementId) ?? 0))
+
+  return {
+    requestId: request.id,
+    state: request.state,
+    purpose: request.purpose,
+    createdAt: request.created_at,
+    submittedAt: request.submitted_at,
+    reviewStartedAt: request.review_started_at,
+    readyAt: request.ready_at,
+    sourceChannel: request.source_channel,
+    creationReason: request.creation_reason,
+    documentType: toCatalogEntry(request.document_types, requirements.length),
+    requirements,
+    answers,
+    requester: request.persons
+      ? {
+          personId: request.persons.id,
+          fullName: fullName(request.persons),
+          personSource: request.persons.source_channel,
+          hasAccount: request.persons.person_accounts.length > 0,
+        }
+      : null,
   }
 }

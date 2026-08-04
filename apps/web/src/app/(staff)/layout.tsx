@@ -13,6 +13,7 @@ import {
   hasStaffCapability,
   resolveActiveBarangay,
 } from '@/features/identity'
+import { DOCUMENT_PERMISSIONS } from '@/features/documents'
 import { REGISTRY_PERMISSIONS } from '@/features/registry'
 
 export const metadata: Metadata = {
@@ -58,6 +59,11 @@ export default async function StaffLayout({ children }: { children: React.ReactN
             {active && can(context, active.barangayId, REGISTRY_PERMISSIONS.verificationRead) ? (
               <Link href="/staff/verification" className="text-sm text-neutral-700 hover:underline">
                 Verification
+              </Link>
+            ) : null}
+            {active && can(context, active.barangayId, DOCUMENT_PERMISSIONS.requestsRead) ? (
+              <Link href="/staff/requests" className="text-sm text-neutral-700 hover:underline">
+                Requests
               </Link>
             ) : null}
             {active && can(context, active.barangayId, PERMISSIONS.membershipRead) ? (

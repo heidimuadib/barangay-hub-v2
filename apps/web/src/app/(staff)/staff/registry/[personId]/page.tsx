@@ -9,6 +9,7 @@ import {
   getAuthorizationContext,
   resolveActiveBarangay,
 } from '@/features/identity'
+import { DOCUMENT_PERMISSIONS } from '@/features/documents'
 import {
   DuplicateResolutionPanel,
   REGISTRY_PERMISSIONS,
@@ -60,6 +61,7 @@ export default async function PersonDetailPage({
   // Resolution is administrator-only under the D2-04 mapping; the database
   // re-checks regardless of what this page renders.
   const canResolve = can(context, active.barangayId, REGISTRY_PERMISSIONS.resolveDuplicates)
+  const canFileRequest = can(context, active.barangayId, DOCUMENT_PERMISSIONS.createWalkIn)
 
   return (
     <div className="flex flex-col gap-6">
@@ -161,6 +163,20 @@ export default async function PersonDetailPage({
       <p className="text-sm text-neutral-500">
         Reviewing evidence documents arrives in the next update.
       </p>
+
+      {/* The counter entry point for Slice 3C. Offered from the registry
+          record rather than from a picker of its own, so the person is always
+          one that registry search already vetted for tenant and duplicates. */}
+      {canFileRequest ? (
+        <div>
+          <Link
+            href={`/staff/requests/new?person=${person.personId}`}
+            className="bg-brand-700 hover:bg-brand-800 inline-flex min-h-11 items-center rounded-md px-4 py-2 font-medium text-white"
+          >
+            File a document request
+          </Link>
+        </div>
+      ) : null}
 
       <p className="text-sm text-neutral-500">
         <Link href="/staff/registry" className="text-brand-700 underline">

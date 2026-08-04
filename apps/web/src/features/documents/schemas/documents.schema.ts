@@ -107,6 +107,22 @@ export const requestActionSchema = z.object({
 
 export type RequestActionInput = z.infer<typeof requestActionSchema>
 
+/** The four request states, as a fixed vocabulary for URL parsing (3C). */
+export const REQUEST_STATE_KEYS = ['draft', 'submitted', 'in_review', 'ready_for_issue'] as const
+
+/**
+ * Staff queue URL parameters.
+ *
+ * The ONLY values this route accepts are a state key from the fixed
+ * vocabulary and a page number — never a requester name, never a search term
+ * (P6-C-E). Anything else fails the parse and the queue falls back to its
+ * defaults rather than echoing the input back into the page.
+ */
+export const requestQueueFilterSchema = z.object({
+  state: z.enum(REQUEST_STATE_KEYS).optional(),
+  page: z.coerce.number().int().min(1).max(10_000).optional(),
+})
+
 /**
  * The form field name carrying one requirement's answer.
  *

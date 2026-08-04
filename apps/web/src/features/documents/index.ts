@@ -27,13 +27,16 @@ export type {
   DocumentTypeRow,
   OwnRequestDetail,
   OwnRequestSummary,
+  PersonSource,
   RequestActionKey,
+  RequestQueueEntry,
   RequestAnswerView,
   RequestReviewerCapabilities,
   RequestSource,
   RequirementField,
   RequirementInputKind,
   ResidentStanding,
+  StaffRequestDetail,
   VerificationState,
 } from './types/documents'
 
@@ -78,6 +81,17 @@ export {
 
 export { getDocumentTypeDetail, getResidentCatalog } from './services/catalog-service'
 export {
+  REQUEST_QUEUE_PAGE_SIZE,
+  fileWalkInRequest,
+  getStaffRequestDetail,
+  listRequestQueue,
+  markRequestReadyForIssue,
+  reviewerCapabilities,
+  startRequestReview,
+  submitWalkInRequest,
+  type RequestQueuePage,
+} from './services/staff-request-service'
+export {
   REQUESTS_PAGE_SIZE,
   getOwnRequestDetail,
   getResidentStanding,
@@ -86,8 +100,10 @@ export {
 } from './services/request-service'
 
 export {
+  REQUEST_STATE_KEYS,
   answerFieldName,
   answerSchemaFor,
+  requestQueueFilterSchema,
   createOwnRequestSchema,
   createWalkInRequestSchema,
   documentTypeCodeSchema,
@@ -107,12 +123,21 @@ export {
   submitRequestAction,
   type RequestActionData,
 } from './actions/requests'
+export {
+  createWalkInRequestAction,
+  markReadyAction,
+  startReviewAction,
+  type StaffRequestActionData,
+} from './actions/staff-requests'
 
 export { CatalogList, type CatalogCard } from './components/catalog-list'
 export { DocumentTerms, PlaceholderChip, PlaceholderNotice } from './components/document-terms'
 export { EligibilityNotice } from './components/eligibility-notice'
 export { AnswerForm, RequestForm } from './components/request-form'
 export { RequestList, RequestStateChip } from './components/request-list'
+export { RequestQueue, RequestQueueChip, RequestQueueFilters } from './components/request-queue'
+export { RequestReviewActions } from './components/request-review-actions'
+export { WalkInRequestForm } from './components/walk-in-request-form'
 export { RequestProgress } from './components/request-progress'
 export { RequirementList } from './components/requirement-list'
 export { SubmitRequest } from './components/submit-request'

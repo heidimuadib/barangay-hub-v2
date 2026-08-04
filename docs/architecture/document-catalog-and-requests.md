@@ -355,11 +355,108 @@ document detail, the request form and the request detail:
 - **confirmed** — plain. Unreachable while B-08 is open, and that is fine: the
   branch exists so confirming a schedule needs no code change.
 
-## What 3B deliberately does not include
+## What 3B does not include
 
-No staff surface — the intake queue, the request detail with reviewer
-controls, and walk-in creation are 3C. No supporting-evidence upload: the
-document detail says so plainly rather than offering a control that does
-nothing (3D). No public catalog: US-UI-006 needs the `anon` grant 3A withheld,
-and that decision belongs with the surface that needs it. No decline or cancel
-— still DEC-REQ-01.
+No supporting-evidence upload: the document detail says so plainly rather than
+offering a control that does nothing (3D). No public catalog: US-UI-006 needs
+the `anon` grant 3A withheld, and that decision belongs with the surface that
+needs it. No decline or cancel — still DEC-REQ-01.
+
+---
+
+# Slice 3C — the staff intake queue
+
+Three routes, inside the existing `(staff)` group:
+
+| Route | What it is |
+| --- | --- |
+| `/staff/requests` | the tenant intake queue, filtered and paginated |
+| `/staff/requests/[requestId]` | one request, with the reviewer controls |
+| `/staff/requests/new?person=&type=` | filing at the counter |
+
+## The queue
+
+Oldest waiting first — `submitted_at` ascending, which is the order
+`document_requests_queue_idx` was built for and the same rule the Slice 2
+verification queue uses. The default view is the ACTIONABLE set, derived by
+filtering the four states through `isActionableByStaff` rather than by writing
+a second list, so the queue cannot advertise a state the transition map would
+refuse to move.
+
+`draft` is deliberately **absent from the filters**. A draft belongs to the
+resident composing it and has been sent to nobody; a staff filter for other
+people's unfinished work would be a surveillance surface, not a queue. It
+remains visible on a request staff reach by id, because a counter-filed draft
+is theirs to finish.
+
+Only two parameters exist: a `state` key from a fixed vocabulary and a `page`
+number. An unparseable value falls back to the default view rather than being
+echoed into the page.
+
+## The capability split, on screen
+
+The controls come from `availableRequestActions(state, capabilities)`, computed
+on the server. It intersects the transition map the database enforces with the
+capabilities this caller actually holds, so a control is never rendered for a
+step either would refuse — and both refuse it again anyway.
+
+| | `requests.review` | `requests.mark_ready` |
+| --- | :---: | :---: |
+| `barangay_staff` | ✓ | |
+| `barangay_administrator` | ✓ | ✓ |
+
+That split is the roadmap's reason for two capabilities rather than one
+`requests.transition`: starting a review moves a queue along, while marking a
+document ready tells a resident to travel to the barangay hall. A barangay
+should be able to decide who may make that promise. pgTAP proves the database
+half; Playwright proves staff are never even offered the control.
+
+Neither transition takes a reason, unlike Slice 2's rejection. They are
+movements along a queue, not decisions about a person.
+
+## The counter workflow
+
+`/staff/requests/new` takes two opaque ids — `person` and `type` — and walks
+staff through them in that order. The person comes from the **registry**, which
+already owns search, duplicate warnings and tenant scope; the type comes from
+the tenant's own active catalog. Neither is re-implemented here, for the same
+reason 3B sent residents to the catalog instead of building a second picker.
+
+The entry point is the registry record itself, behind
+`requests.create_walk_in` — an administrator capability under ADR-0006, so
+front-desk staff who may review a request still cannot file one for somebody
+else.
+
+Filing **and submitting happen together**. A counter-filed draft would sit in
+nobody's queue: the resident cannot see it (they may have no account at all)
+and staff would have to remember to come back. So the action calls
+`create_walk_in_request`, then `set_request_answer` per answer, then
+`submit_request` — the last two being *the resident's own functions*, which
+admit staff holding `requests.create_walk_in` alongside the request's owner.
+
+That is the roadmap's "one domain service, two doors" requirement holding at
+the surface as well as in the schema, and 3C re-asserts it structurally: two
+requests created through the two paths are compared column-by-column and must
+still differ in exactly `source_channel`, `created_by` and `creation_reason`.
+
+## What staff see that residents do not
+
+The staff detail carries the requester, the channel and the creation reason.
+The resident detail carries none of them — they are separate view models
+(`StaffRequestDetail` vs `OwnRequestDetail`) precisely so a resident surface
+cannot render a staff field by reaching for the wrong type.
+
+One honest degradation: the requester's NAME comes from `persons`, gated on
+`registry.read`, while the queue itself is gated on `requests.read`. Every role
+in the ADR-0006 mapping holds both, but if a future mapping splits them the
+queue says *"Name not available to your role"* rather than printing "Unknown".
+A placeholder there would hide a capability-mapping mistake behind
+plausible-looking data.
+
+## What 3C does not include
+
+No decline or cancel — still **DEC-REQ-01**, and the queue now visibly
+accumulates requests that have no exit, which is the cost that decision was
+recorded to make visible. No issuance: `ready_for_issue` is the terminus and
+Slice 4 owns what follows. No supporting evidence and no US-UI-002 chrome —
+both 3D.

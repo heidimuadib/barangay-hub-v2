@@ -451,7 +451,7 @@ project). Slice 3 builds on this layout.
 | --- | --- | --- |
 | **3A** | Catalog and request domain foundation: `document_types` (with the B-08 `values_are_placeholder` flag), `document_type_requirements`, `document_requests`, `document_request_answers`; six capabilities and their role mapping; forced RLS + composite tenant FKs on all four tables; the four-state machine enforced at function *and* table; both creation channels converging on one record; audit triggers; two approved outbox intents; synthetic seeds; 86 new pgTAP + 44 new unit assertions | **COMPLETE** |
 | **3B** | Resident surfaces: catalog browse, document detail, draft composition, submission, own-request list and detail; the **verification gate** on request creation (migration `20260807010000`), own-request catalog visibility, US-RES-004 dashboard content; 35 new pgTAP + 81 new unit/component + 20 new Playwright assertions per viewport | **COMPLETE** |
-| 3C | Staff intake queue, request detail, walk-in creation through the same domain service | pending |
+| **3C** | Staff intake queue (state filters, oldest-first, pagination), request detail with the capability-split transitions, and counter filing that files **and submits** through the resident's own functions; walk-in-equals-resident re-asserted at the surface; 32 new pgTAP + 20 new unit/component + 12 new Playwright assertions | **COMPLETE** |
 | 3D | Supporting evidence (Slice 2 pattern), outbox review, US-UI-002/UI-001 chrome, US-UI-006 public portal, hardening, docs, final PR | pending |
 
 **Decisions taken in 3A**, recorded rather than assumed:
@@ -490,6 +490,24 @@ project). Slice 3 builds on this layout.
 - **Ineligibility is six states, not a boolean.** Never-registered,
   mid-registration, awaiting a decision, information requested and rejected
   each get their own explanation and next step.
+
+**Decisions taken in 3C:**
+
+- **The queue offers no `draft` filter.** A draft belongs to the resident
+  composing it and has been sent to nobody; a staff filter for other people's
+  unfinished work would be a surveillance surface. Drafts stay reachable by id,
+  because a counter-filed one is staff's to finish.
+- **Counter filing files AND submits in one action.** A walk-in draft would sit
+  in nobody's queue — the resident may have no account to return with. The
+  submit goes through `submit_request`, the resident's own function, rather
+  than a staff-only variant.
+- **The requester's name degrades honestly.** The queue needs `requests.read`
+  but the name needs `registry.read`; every current role holds both, and if
+  that ever changes the queue says the name is unavailable rather than printing
+  a placeholder that would hide the mapping mistake.
+- **The answer controls are now shared** between the resident and counter
+  forms rather than duplicated — a second copy is how the two channels start
+  diverging.
 
 1–2. **3 — Document catalog & request intake**; IN PROGRESS.
 3. **Outcome:** a verified resident — or staff serving a walk-in through the

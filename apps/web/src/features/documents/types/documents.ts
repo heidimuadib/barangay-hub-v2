@@ -105,6 +105,60 @@ export interface OwnRequestDetail {
 /** Verification standing, straight from the Slice 2 enum. */
 export type VerificationState = Database['public']['Enums']['verification_state']
 
+/** How the PERSON reached the registry — distinct from `RequestSource`. */
+export type PersonSource = Database['public']['Enums']['person_source']
+
+// ── Staff-facing view models (Slice 3C) ─────────────────────────────────────
+// These carry what counter work needs and what the resident views omit:
+// who the requester is, which door the request came through, and why staff
+// filed it. They are deliberately separate types from the resident ones, so a
+// resident surface cannot render a staff field by reaching for the wrong
+// model.
+
+/** One row of the staff intake queue. */
+export interface RequestQueueEntry {
+  readonly requestId: string
+  readonly state: DocumentRequestState
+  /** Null when the type is no longer readable — never a blank-looking name. */
+  readonly documentTypeName: string | null
+  /**
+   * Null when the caller holds `requests.read` but not `registry.read`.
+   * Stated rather than faked: a queue that invents "Unknown" would hide a
+   * capability-mapping mistake behind plausible-looking data.
+   */
+  readonly requesterName: string | null
+  readonly sourceChannel: RequestSource
+  /** False for a walk-in with no online account (ADR-0006 point 16). */
+  readonly hasAccount: boolean
+  readonly submittedAt: string | null
+  readonly createdAt: string
+}
+
+/** Everything the staff request detail shows. */
+export interface StaffRequestDetail {
+  readonly requestId: string
+  readonly state: DocumentRequestState
+  readonly purpose: string
+  readonly createdAt: string
+  readonly submittedAt: string | null
+  readonly reviewStartedAt: string | null
+  readonly readyAt: string | null
+  /** Provenance — immutable, and the whole point of the two channels. */
+  readonly sourceChannel: RequestSource
+  /** Required for the assisted channel, null for self-service. */
+  readonly creationReason: string | null
+  readonly documentType: CatalogEntry
+  readonly requirements: readonly RequirementField[]
+  readonly answers: readonly RequestAnswerView[]
+  /** Null on the same capability-mapping condition as the queue's name. */
+  readonly requester: {
+    readonly personId: string
+    readonly fullName: string
+    readonly personSource: PersonSource
+    readonly hasAccount: boolean
+  } | null
+}
+
 /**
  * Where the caller stands as a resident of ONE barangay.
  *

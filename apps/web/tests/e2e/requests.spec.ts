@@ -192,11 +192,19 @@ test.describe('resident request journey', () => {
     await expect(submit).toBeEnabled()
     await submit.click()
 
-    await expect(page.getByText(/waiting for review/i).first()).toBeVisible({ timeout: 20_000 })
+    // Asserted by RELOADING rather than by watching the chip change in place.
+    // R-1-06 (risk register): under a production server the client refetch
+    // after a committed Server Action can lag, leaving the old value rendered
+    // — and reliably only after the FIRST mutation in a page session, so an
+    // isolated run passes and a full one does not. The server always tells the
+    // truth. `toPass` also covers the action still being in flight.
+    await expect(async () => {
+      await page.goto(`/requests/${requestId}`)
+      await expect(page.getByText(/waiting for review/i).first()).toBeVisible({ timeout: 5_000 })
+    }).toPass({ timeout: 45_000 })
 
     // A submitted request is no longer editable, so the composition controls
     // are gone — the second submission the database refuses is not offered.
-    await page.goto(`/requests/${requestId}`)
     await expect(page.getByRole('button', { name: /submit to the barangay/i })).toHaveCount(0)
     await expect(page.getByRole('button', { name: /save answers/i })).toHaveCount(0)
   })

@@ -243,6 +243,22 @@ by an explanation and a link to their registration. The database refuses it
 too — `create_own_request` raises `RESIDENT_NOT_VERIFIED` — so the screen is
 explaining a rule rather than being the rule.
 
+**Working the intake queue (Slice 3C).** Sign in as `staff.sanisidro@` and open
+**Requests**. The default view is everything needing action, oldest first;
+the filter chips narrow it and put nothing but a state key in the URL. Open a
+submitted request and you are offered **Start review** — and *not* mark-ready,
+because `requests.mark_ready` is the administrator's. Sign in as
+`admin.sanisidro@` on the same request to finish it.
+
+**Filing at the counter (Slice 3C).** As `admin.sanisidro@`, open any registry
+record — `Juan Dela Cruz (Test)` has no online account, which is the case the
+counter exists for — and choose **File a document request**. Pick the document,
+answer the same questions the resident would, and record why you are filing it.
+The request is filed *and* submitted, so it lands in the queue rather than
+sitting as a draft nobody can reach. `staff.sanisidro@` is offered none of
+this: the call to action is absent from the registry record and the route
+redirects.
+
 **Uploading evidence and submitting (Slice 2F).** Sign up a fresh account,
 confirm it through Mailpit, onboard, then on **My registration** add one
 identity document and one proof of residency. Any small JPEG, PNG, WebP or PDF

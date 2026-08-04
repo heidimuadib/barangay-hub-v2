@@ -2,7 +2,7 @@
 
 Multi-tenant civic services platform for Philippine barangays.
 
-**Current state: Phase 7, Slice 2 complete; Slice 3 in progress (3A, 3B).**
+**Current state: Phase 7, Slice 2 complete; Slice 3 in progress (3A, 3B, 3C).**
 Slice 2 delivered public sign-up with email confirmation, the person registry
 and walk-in creation, the staff verification queue and its decision workflow,
 duplicate supersede-and-link resolution, and private evidence Storage with
@@ -11,10 +11,14 @@ signed upload/read. **Slice 3A** adds the document catalog and request-intake
 **Slice 3B** puts the resident surfaces on it: browse the catalog, read what a
 document needs, compose a draft, submit it, and track your own requests — with
 request creation gated on being a *verified* resident, enforced in the page,
-the Server Action and the database. The staff intake queue is still to come in
-3C. Certificates and payments are not built, and notification *delivery* is
-not — the outbox enqueues intent only. See `docs/local-setup.md` to get
-running, `docs/architecture/identity-and-access.md` for the access model,
+the Server Action and the database. **Slice 3C** adds the staff side: an intake
+queue with state filters, a request detail whose controls follow the
+review/mark-ready capability split, and counter filing for residents with no
+online account — which goes through the resident's own submit function rather
+than a staff-only copy. Certificates and payments are not built, and
+notification *delivery* is not — the outbox enqueues intent only. See
+`docs/local-setup.md` to get running,
+`docs/architecture/identity-and-access.md` for the access model,
 `docs/architecture/resident-registry-and-verification.md` for the registry and
 `docs/architecture/document-catalog-and-requests.md` for the catalog.
 
