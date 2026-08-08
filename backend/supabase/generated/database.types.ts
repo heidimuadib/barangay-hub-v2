@@ -118,6 +118,281 @@ export type Database = {
         }
         Relationships: []
       }
+      certificate_artifacts: {
+        Row: {
+          barangay_id: string
+          certificate_id: string
+          content_hash: string | null
+          created_at: string
+          generated_at: string | null
+          generated_by: string | null
+          id: string
+          mime_type: string
+          size_bytes: number | null
+          storage_path: string
+        }
+        Insert: {
+          barangay_id: string
+          certificate_id: string
+          content_hash?: string | null
+          created_at?: string
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          mime_type: string
+          size_bytes?: number | null
+          storage_path: string
+        }
+        Update: {
+          barangay_id?: string
+          certificate_id?: string
+          content_hash?: string | null
+          created_at?: string
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          mime_type?: string
+          size_bytes?: number | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_artifacts_certificate_id_barangay_id_fkey"
+            columns: ["certificate_id", "barangay_id"]
+            isOneToOne: false
+            referencedRelation: "certificates"
+            referencedColumns: ["id", "barangay_id"]
+          },
+        ]
+      }
+      certificate_series: {
+        Row: {
+          barangay_id: string
+          created_at: string
+          format_is_placeholder: boolean
+          id: string
+          is_active: boolean
+          next_sequence: number
+          prefix: string
+          sequence_width: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          barangay_id: string
+          created_at?: string
+          format_is_placeholder?: boolean
+          id?: string
+          is_active?: boolean
+          next_sequence?: number
+          prefix: string
+          sequence_width?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          barangay_id?: string
+          created_at?: string
+          format_is_placeholder?: boolean
+          id?: string
+          is_active?: boolean
+          next_sequence?: number
+          prefix?: string
+          sequence_width?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_series_barangay_id_fkey"
+            columns: ["barangay_id"]
+            isOneToOne: false
+            referencedRelation: "barangays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certificate_templates: {
+        Row: {
+          barangay_id: string
+          body: string
+          code: string
+          content_is_placeholder: boolean
+          created_at: string
+          document_type_id: string
+          id: string
+          is_active: boolean
+          name: string
+          requires_wet_signature: boolean
+          signatory_name: string | null
+          signatory_title: string | null
+          updated_at: string
+        }
+        Insert: {
+          barangay_id: string
+          body: string
+          code: string
+          content_is_placeholder?: boolean
+          created_at?: string
+          document_type_id: string
+          id?: string
+          is_active?: boolean
+          name: string
+          requires_wet_signature?: boolean
+          signatory_name?: string | null
+          signatory_title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          barangay_id?: string
+          body?: string
+          code?: string
+          content_is_placeholder?: boolean
+          created_at?: string
+          document_type_id?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          requires_wet_signature?: boolean
+          signatory_name?: string | null
+          signatory_title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_templates_barangay_id_fkey"
+            columns: ["barangay_id"]
+            isOneToOne: false
+            referencedRelation: "barangays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_templates_document_type_id_barangay_id_fkey"
+            columns: ["document_type_id", "barangay_id"]
+            isOneToOne: false
+            referencedRelation: "document_types"
+            referencedColumns: ["id", "barangay_id"]
+          },
+        ]
+      }
+      certificate_voids: {
+        Row: {
+          barangay_id: string
+          certificate_id: string
+          id: string
+          reason: string
+          voided_at: string
+          voided_by: string | null
+        }
+        Insert: {
+          barangay_id: string
+          certificate_id: string
+          id?: string
+          reason: string
+          voided_at?: string
+          voided_by?: string | null
+        }
+        Update: {
+          barangay_id?: string
+          certificate_id?: string
+          id?: string
+          reason?: string
+          voided_at?: string
+          voided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_voids_certificate_id_barangay_id_fkey"
+            columns: ["certificate_id", "barangay_id"]
+            isOneToOne: false
+            referencedRelation: "certificates"
+            referencedColumns: ["id", "barangay_id"]
+          },
+        ]
+      }
+      certificates: {
+        Row: {
+          barangay_id: string
+          created_at: string
+          id: string
+          issued_at: string
+          issued_by: string | null
+          person_id: string
+          request_id: string
+          serial_display: string
+          serial_is_placeholder: boolean
+          serial_sequence: number
+          series_id: string
+          status: Database["public"]["Enums"]["certificate_status"]
+          template_id: string
+          updated_at: string
+          verification_token: string
+        }
+        Insert: {
+          barangay_id: string
+          created_at?: string
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          person_id: string
+          request_id: string
+          serial_display: string
+          serial_is_placeholder?: boolean
+          serial_sequence: number
+          series_id: string
+          status?: Database["public"]["Enums"]["certificate_status"]
+          template_id: string
+          updated_at?: string
+          verification_token: string
+        }
+        Update: {
+          barangay_id?: string
+          created_at?: string
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          person_id?: string
+          request_id?: string
+          serial_display?: string
+          serial_is_placeholder?: boolean
+          serial_sequence?: number
+          series_id?: string
+          status?: Database["public"]["Enums"]["certificate_status"]
+          template_id?: string
+          updated_at?: string
+          verification_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_person_id_barangay_id_fkey"
+            columns: ["person_id", "barangay_id"]
+            isOneToOne: false
+            referencedRelation: "persons"
+            referencedColumns: ["id", "barangay_id"]
+          },
+          {
+            foreignKeyName: "certificates_request_id_barangay_id_fkey"
+            columns: ["request_id", "barangay_id"]
+            isOneToOne: false
+            referencedRelation: "document_requests"
+            referencedColumns: ["id", "barangay_id"]
+          },
+          {
+            foreignKeyName: "certificates_series_id_barangay_id_fkey"
+            columns: ["series_id", "barangay_id"]
+            isOneToOne: false
+            referencedRelation: "certificate_series"
+            referencedColumns: ["id", "barangay_id"]
+          },
+          {
+            foreignKeyName: "certificates_template_id_barangay_id_fkey"
+            columns: ["template_id", "barangay_id"]
+            isOneToOne: false
+            referencedRelation: "certificate_templates"
+            referencedColumns: ["id", "barangay_id"]
+          },
+        ]
+      }
       document_request_answers: {
         Row: {
           barangay_id: string
@@ -931,6 +1206,14 @@ export type Database = {
           storage_path: string
         }[]
       }
+      allocate_certificate_serial: {
+        Args: { p_series_id: string }
+        Returns: {
+          display: string
+          is_placeholder: boolean
+          sequence_number: number
+        }[]
+      }
       append_audit_entry: {
         Args: {
           p_action: string
@@ -972,6 +1255,10 @@ export type Database = {
         Args: { p_application_id: string }
         Returns: boolean
       }
+      caller_owns_certificate: {
+        Args: { p_certificate_id: string }
+        Returns: boolean
+      }
       caller_owns_person: { Args: { p_person_id: string }; Returns: boolean }
       caller_owns_request: { Args: { p_request_id: string }; Returns: boolean }
       caller_person_in: { Args: { p_barangay_id: string }; Returns: string }
@@ -982,6 +1269,27 @@ export type Database = {
       confirm_request_evidence_upload: {
         Args: { p_content_hash: string; p_evidence_id: string }
         Returns: undefined
+      }
+      create_certificate_series: {
+        Args: {
+          p_barangay_id: string
+          p_prefix: string
+          p_sequence_width?: number
+          p_year: number
+        }
+        Returns: string
+      }
+      create_certificate_template: {
+        Args: {
+          p_barangay_id: string
+          p_body: string
+          p_code: string
+          p_document_type_id: string
+          p_name: string
+          p_signatory_name?: string
+          p_signatory_title?: string
+        }
+        Returns: string
       }
       create_document_type: {
         Args: {
@@ -1096,6 +1404,23 @@ export type Database = {
         Args: { p_object_name: string }
         Returns: boolean
       }
+      format_certificate_serial: {
+        Args: {
+          p_prefix: string
+          p_sequence: number
+          p_width: number
+          p_year: number
+        }
+        Returns: string
+      }
+      issue_certificate: {
+        Args: {
+          p_correlation_id?: string
+          p_request_id: string
+          p_template_id: string
+        }
+        Returns: string
+      }
       link_person_account: {
         Args: { p_person_id: string; p_user_id: string }
         Returns: undefined
@@ -1134,6 +1459,13 @@ export type Database = {
           residency_basis_key: Database["public"]["Enums"]["residency_basis"]
           source_channel: Database["public"]["Enums"]["person_source"]
           superseded: boolean
+        }[]
+      }
+      register_certificate_artifact: {
+        Args: { p_certificate_id: string }
+        Returns: {
+          artifact_id: string
+          storage_path: string
         }[]
       }
       reject_verification: {
@@ -1201,8 +1533,17 @@ export type Database = {
         Args: { p_person_id: string; p_reason: string }
         Returns: undefined
       }
+      void_certificate: {
+        Args: {
+          p_certificate_id: string
+          p_correlation_id?: string
+          p_reason: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
+      certificate_status: "issued" | "voided"
       document_request_state:
         | "draft"
         | "submitted"
@@ -1365,6 +1706,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      certificate_status: ["issued", "voided"],
       document_request_state: [
         "draft",
         "submitted",

@@ -79,6 +79,16 @@ So the wrapper checks the resulting database rather than the exit status: every
 migration recorded, both synthetic tenants present, the registry fixtures
 present, and the private evidence bucket created. It prints which check failed
 and exits non-zero if any does — it never converts a real failure into a pass.
+
+Slice 4A added three more, two of which are invariants rather than presence
+checks. **Serial counters must agree with issued history**: every series'
+`next_sequence` must sit strictly above the highest serial its book has
+issued, because a counter that has fallen to or below it will collide on the
+next allocation. This is not hypothetical — it caught a genuine bug in the
+Slice 4 seed on its first run. **Certificate wording and serials must still be
+marked placeholder**: the reset fails if any seeded template claims approved
+wording or any series claims a confirmed format, so a synthetic body cannot
+quietly become an official one (B-05/-06, DEC-CERT-01).
 Use plain `pnpm db:reset` in CI, where the stack is fresh and the exit code is
 trustworthy.
 

@@ -53,8 +53,8 @@ const checks = [
   {
     name: 'migrations recorded',
     sql: 'select count(*) from supabase_migrations.schema_migrations',
-    ok: (value) => Number(value) >= 24,
-    detail: 'expected every Slice 0a–3D migration to be recorded',
+    ok: (value) => Number(value) >= 27,
+    detail: 'expected every Slice 0a–4A migration to be recorded',
   },
   {
     name: 'seed fixtures present',
@@ -119,6 +119,34 @@ const checks = [
           where grantee = 'anon' and table_schema = 'public'`,
     ok: (value) => value === 'document_type_requirements,document_types',
     detail: 'expected anon to hold SELECT on the two catalog tables ONLY (US-UI-006)',
+  },
+  {
+    name: 'certificate seed present',
+    sql: 'select count(*) from public.certificates',
+    ok: (value) => Number(value) >= 3,
+    detail: 'expected the Slice 4A certificate fixtures',
+  },
+  {
+    // The serial book must agree with its own history. If a seed ever issues a
+    // certificate without advancing the counter, the next allocation collides
+    // with an existing row and issuance breaks for everyone in that barangay.
+    name: 'serial counters agree with issued history',
+    sql: `select count(*) from public.certificate_series s
+          where s.next_sequence <= coalesce(
+            (select max(c.serial_sequence) from public.certificates c
+             where c.series_id = s.id), 0)`,
+    ok: (value) => Number(value) === 0,
+    detail: 'expected every series counter to sit above its highest issued serial',
+  },
+  {
+    // B-05/-06/-07 and the serial format are all unconfirmed. A local database
+    // claiming otherwise is how invented wording starts being quoted as real.
+    name: 'certificate wording and serials still marked placeholder',
+    sql: `select (select count(*) from public.certificate_templates where not content_is_placeholder)
+               + (select count(*) from public.certificate_series where not format_is_placeholder)`,
+    ok: (value) => Number(value) === 0,
+    detail:
+      'expected every seeded template and series to stay placeholder-flagged (B-05/-06/-07, serial format)',
   },
 ]
 

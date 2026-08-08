@@ -30,7 +30,7 @@ comes) · `v1.5` (feature-flagged, post-MVP).
 | 1 | Identity, tenant, RBAC, RLS, audit foundation | **COMPLETE** | Secure multi-tenant identity with forced RLS and append-only audit | 0a | — | XL |
 | 2 | Resident registration, registry, verification | **COMPLETE (2A–2G)** | Verified resident profiles; staff verification workflow; registry with duplicate handling | 1 | — (DEC-AUTH-01 resolved: Option C, [ADR-0006](./adr/0006-resident-provisioning-and-registry-decisions.md)) | XL |
 | 3 | Document catalog and request intake | **COMPLETE (3A–3D)** | Residents and walk-ins submit document requests through one domain service | 2 | Fee/SLA confirmation (B-08) before pilot, not before build | L |
-| 4 | Certificate generation, serials, QR, public verification | SEQUENCED | Accountable certificate issuance with public verifiability | 3 | Template/signatory confirmation (B-05–B-07) before pilot | L |
+| 4 | Certificate generation, serials, QR, public verification | **IN PROGRESS (4A done; 4B–4E open)** | Accountable certificate issuance with public verifiability | 3 | Template/signatory confirmation (B-05–B-07) before pilot; serial format (DEC-CERT-01) and issuing role (DEC-CERT-02) within slice | L |
 | 5 | Payments, exemptions, ORs, release, day closure, call list | SEQUENCED | Cash-accountable release workflow | 4 | OR series policy (B-11) before pilot | XL |
 | 6 | Complaint intake, category gate, triage, docketing, evidence, timeline | SEQUENCED | Katarungang Pambarangay case intake with jurisdiction gate | 2 | Non-mediable categories (B-09) before pilot | L |
 | 7 | Hearings, summons, service events, outcomes, settlement, CFA, closure | SEQUENCED | Full KP hearing lifecycle to certificate-to-file-action | 6, 4 (summons docs) | — | XL |
@@ -567,9 +567,21 @@ project). Slice 3 builds on this layout.
 24. **Risks:** placeholder fees mistaken for real (mitigated by RES-06/SET-04
     machinery). 25. **Effort:** L (XL if the deferred UI chrome proves heavy).
 
-## Slice 4 — Certificate generation, serial accountability, QR, public verification — SEQUENCED
+## Slice 4 — Certificate generation, serial accountability, QR, public verification — IN PROGRESS
 
-1–2. **4 — Certificates**; SEQUENCED.
+**Subpart status (2026-08-04).** 4A — domain foundation — is **COMPLETE**:
+five tables, the serial allocator, `issue_certificate` / `void_certificate` /
+`register_certificate_artifact`, RLS, audit triggers, synthetic fixtures, and
+the pure rules, with 79 pgTAP and 64 unit assertions. As built:
+[certificate-generation-and-verification.md](./architecture/certificate-generation-and-verification.md).
+**4B** (template rendering, PDF artifacts), **4C** (staff issuance and void
+surface), **4D** (QR and public verification) and **4E** (review, hardening,
+documentation) are open. Two within-slice decisions are recorded and
+**unresolved**: DEC-CERT-01 (serial format) and DEC-CERT-02 (which role may
+issue — the roadmap line in §6 below and the ADR-0005/-0006 precedent
+disagree, and 4A followed the precedent).
+
+1–2. **4 — Certificates**; IN PROGRESS.
 3. **Outcome:** an approved request becomes a numbered certificate with a QR
    code that anyone can verify publicly without exposing resident data.
 4. **Included:** per-tenant serial series with gap accountability (voids
@@ -581,6 +593,10 @@ project). Slice 3 builds on this layout.
 5. **Excluded:** payments/release (5); e-signature (v1.5) — wet-signature
    process per B-07 placeholders.
 6. **Roles:** staff issue per capability; public verifies anonymously.
+   — **Contested by DEC-CERT-02.** 4A gave `certificates.issue` to
+   `barangay_administrator` only, following the ADR-0005/-0006 and Slice 3
+   precedent that committing acts are administrator work. Awaiting an owner
+   ruling; reversing it is a `role_permissions` row, not a code change.
 7. **Depends:** 3. 8. **Decisions:** template wording, signatory titles,
    wet-signature process (B-05/-06/-07) gate pilot; serial format gates build
    of the series module (owner sign-off within slice).
@@ -806,7 +822,10 @@ after Slice 9's exit gate, with its own roadmap revision.
 | DEC-ENV-01/-02 (topology, production project) | Slice 9 hosted items, pilot | OPEN | Owner (+Captain) |
 | DEC-ENV-03 (residency) | any real ID files, pilot | OPEN | Owner + DPO + legal |
 | B-08 fees/SLAs | Slice 3 **pilot** exposure | OPEN | Owner |
-| B-05/-06/-07 templates & signatories | Slice 4/7 pilot | OPEN | Owner + Captain |
+| B-05/-06/-07 templates & signatories | Slice 4/7 pilot | OPEN — carried in data since 4A ([evidence](./decisions/blockers.md)) | Owner + Captain |
+| DEC-CERT-01 serial number format | Slice 4 pilot (not build) | OPEN — synthetic format flagged in data | Owner + Captain |
+| DEC-CERT-02 which role may issue | Slice 4C issuance surface | OPEN — implemented as administrator-only, sources disagree | Owner + Captain |
+| DEC-REQ-01 request refusal | Slice 4/5 — now load-bearing | OPEN — four alternatives recorded, none chosen | Product owner |
 | B-11 OR series | Slice 5 pilot | OPEN | Owner |
 | B-09 non-mediable categories | Slice 6 pilot | OPEN | Owner + legal |
 | B-13–B-15, B-21 | Slice 9 / release | OPEN | Owner |

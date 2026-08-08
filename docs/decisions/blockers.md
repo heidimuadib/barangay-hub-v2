@@ -206,6 +206,151 @@ Until this resolves, 3C's counter surface should not *advertise* filing for an
 unverified person; the database permits it, and that permission is now
 visible rather than accidental.
 
+### DEC-REQ-01 addendum — issuance refusal, raised again by Slice 4A (2026-08-04)
+
+Slice 4A implements **voiding**: withdrawing a certificate that was issued. It
+deliberately does **not** implement refusal: declining a request so that no
+certificate is ever issued. These are different acts on different tables, and
+4A has no mandate to invent the second one.
+
+The gap DEC-REQ-01 named is now load-bearing rather than theoretical. A
+request that reaches `ready_for_issue` and then turns out to be ineligible —
+wrong person, withdrawn by the resident, a fee never paid — has exactly two
+exits available today: issue a certificate nobody should have, or leave the
+row in the queue forever. The second is what will actually happen, and a queue
+that only grows is how a pilot fails quietly.
+
+**This needs an owner ruling. 4A did not choose one.** Four ways it could
+resolve, in ascending cost, with what each implies for Slice 4:
+
+1. **Slice 4 owns refusal as a request state.** Add `declined` to
+   `document_requests` with a mandatory reason, mirroring the Slice 2
+   rejection rule. Cheapest to build; changes a Slice 3 table from a Slice 4
+   branch, and the roadmap's four-state chain becomes five.
+2. **Slice 5 owns it, tied to payment.** Refusal is usually about money or
+   eligibility discovered at the counter, both of which Slice 5 already
+   models. Costs nothing now; leaves 4C's issuance screen with no "no" button
+   and the queue with no exit through all of Slice 4.
+3. **A resident-initiated `cancelled` state only**, leaving office refusal
+   unresolved. Solves the commonest case (filed in error, changed their mind)
+   without an office-refusal policy nobody has written. Partial by design.
+4. **Model refusal as an issuance outcome rather than a request state** — a
+   `certificate_refusals` row against the request, capability-gated and
+   audited, with the request staying `ready_for_issue`. Keeps Slice 3's chain
+   untouched and puts the record next to the issuance decision it belongs to;
+   costs a fifth table and makes "is this request finished" a two-table
+   question.
+
+The recommendation from the implementation side is **(1)**, on the grounds
+that a request's own lifecycle is where its ending belongs and a reader should
+not have to join a second table to learn a request is closed — but the
+consequence is a change to an approved state machine, which is the owner's
+call and not an implementer's.
+
+## B-05 / B-06 / B-07 — certificate wording, signatory titles, wet-signature process — **OPEN**
+
+- **Status:** OPEN — carried in data since Slice 4A (2026-08-04)
+- **Owner:** Product owner + Barangay Captain
+- **Blocking level:** **pilot**, not local build (roadmap Slice 4 §8)
+
+No barangay has approved the wording of any certificate, the title or name of
+any signatory, or the process by which a certificate is signed. Slice 4A ships
+the template table anyway, because the alternative — waiting — would leave
+the whole slice unbuildable; but it ships with the uncertainty carried as
+data, following the B-08 pattern:
+
+1. **`certificate_templates.content_is_placeholder boolean not null default
+   true`**, and `certificate_series.format_is_placeholder` alongside it.
+2. **`create_certificate_template` has no parameter that can set it.**
+   Approving wording is an owner act recorded here, not something a caller
+   asserts while inserting a row.
+3. **`pnpm db:reset:verified` fails** if any seeded template or series claims
+   to be confirmed.
+4. **The seeded bodies say so in their own text** — `SYNTHETIC TEST TEMPLATE
+   — NOT APPROVED WORDING (B-05)` — so a screenshot cannot be mistaken for a
+   draft of the real thing. Signatory fields are seeded `null`, not with a
+   plausible name.
+5. **`templateWarnings`** returns every applicable warning rather than the
+   first, so a template that is both unapproved *and* unsigned cannot have one
+   problem fixed while the other stays hidden.
+
+B-07 (wet signature) is modelled as `requires_wet_signature`, defaulting to
+`true`, and is deliberately **not** treated as a defect: signing on paper is a
+workflow fact, not a fault in the template. `templateIsApproved` ignores it.
+
+What resolution looks like: approved wording per document type, a named
+signatory and title per barangay, and a ruling on whether v1 signs on paper
+(the current assumption) or waits for the v1.5 e-signature flag.
+
+## DEC-CERT-01 — certificate serial number format — **OPEN**
+
+- **Status:** OPEN, raised during Slice 4A (2026-08-04)
+- **Owner:** Product owner + Barangay Captain
+- **Blocking level:** pilot; **does not block Slice 4** (roadmap Slice 4 §8
+  calls for owner sign-off "within slice")
+
+The roadmap requires an approved serial format before the series module is
+considered built. None exists. 4A therefore separates the two halves of a
+serial and treats them very differently:
+
+- The **number** is real, accountable and final from the moment it is
+  allocated. Nothing about this decision affects it.
+- The **rendering** is synthetic. `format_certificate_serial` produces
+  `PREFIX-YEAR-PADDED` (e.g. `SI-2026-00007`). This shape is invented for
+  local development, documented as such in the function body, and **is not a
+  proposal.**
+
+Every series carries `format_is_placeholder`, every issued certificate carries
+`serial_is_placeholder` forward from it, and `SERIAL_PLACEHOLDER_NOTICE`
+("Format not yet confirmed") is worded differently from B-08's fee notice so a
+reader can tell which decision is outstanding.
+
+What the owner needs to decide: the prefix scheme (per barangay? per document
+type?), whether the year is part of the number, the padding width, and whether
+the counter resets annually. 4A's schema supports all of these — `prefix`,
+`year` and `sequence_width` are columns, and the book is keyed
+`(barangay_id, year)` — so confirming a format is data plus a flag flip, not a
+migration.
+
+Until confirmed, no serial rendered anywhere may be presented as official.
+
+## DEC-CERT-02 — who may ISSUE a certificate — **OPEN, needs confirmation**
+
+- **Status:** OPEN, raised during Slice 4A (2026-08-04). **Implemented one
+  way; flagged because the source documents disagree.**
+- **Owner:** Product owner + Barangay Captain
+- **Blocking level:** not blocking 4A; should resolve before 4C builds the
+  issuance surface
+
+Three documents give three answers:
+
+| Source | Says |
+| --- | --- |
+| Project brief | staff "possibly issue" |
+| Roadmap Slice 4 §6 | "staff issue per capability" |
+| ADR-0005 / ADR-0006, and Slice 3 as built | reviewing is staff work; **committing** acts are administrator work |
+
+4A followed the **precedent**, not the roadmap line: `barangay_staff` holds
+`certificates.read` only; `certificates.issue`, `.void`, `.manage_templates`,
+`.manage_series` and `.artifact.read` go to `barangay_administrator`.
+
+The reasoning: issuing a certificate consumes a serial number that can never
+be reclaimed and produces a legal instrument in a resident's hands. That is
+the same class of act as approving a verification (D2-04) or marking a request
+ready (Slice 3), both of which are administrator-only in this codebase. Making
+issuance the *one* committing act staff can perform would be an inconsistency
+nobody decided.
+
+It is recorded here rather than silently resolved because the roadmap says
+otherwise in plain words, and "the implementer read the precedent differently"
+is not a decision.
+
+**Reversing it costs nothing structural**: it is an INSERT into
+`role_permissions`, because no code branches on a role key — capability checks
+go through `auth_has_permission`. If the owner rules that staff may issue,
+the change is one migration and the pgTAP expectations in
+`18_certificate_foundation`.
+
 ## DEC-REPO-01 — application location vs Git root
 
 - **Status:** **RESOLVED** — 2026-07-31, ADR-0004 Option 1 executed

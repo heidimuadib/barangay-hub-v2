@@ -2,7 +2,7 @@
 
 Multi-tenant civic services platform for Philippine barangays.
 
-**Current state: Phase 7, Slices 1–3 complete.**
+**Current state: Phase 7, Slices 1–3 complete; Slice 4 in progress (4A done).**
 Slice 2 delivered public sign-up with email confirmation, the person registry
 and walk-in creation, the staff verification queue and its decision workflow,
 duplicate supersede-and-link resolution, and private evidence Storage with
@@ -18,13 +18,20 @@ online account — which goes through the resident's own submit function rather
 than a staff-only copy. **Slice 3D** completes it: supporting documents on a
 private bucket with server-verified uploads, a **public portal** where anyone
 can see what a barangay issues before travelling there, 44px shell touch
-targets, and eight contrast-validated accent palettes. Certificates and
-payments are not built, and notification *delivery* is not — the outbox
-enqueues intent only. See
-`docs/local-setup.md` to get running,
+targets, and eight contrast-validated accent palettes. **Slice 4A** begins
+certificates with the domain only: a per-tenant serial book whose numbers can
+always be accounted for — guarded by a row lock, a counter that never rewinds
+and a unique constraint, any one of which would hold alone — issuance gated on
+Slice 3's `ready_for_issue` hand-off, and voiding that *keeps* the number
+consumed and records why, so a gap in the book is always explained. There is
+no certificate UI, no PDF and no QR yet; those are 4B–4D. Payments are not
+built, and notification *delivery* is not — the outbox enqueues intent only.
+See `docs/local-setup.md` to get running,
 `docs/architecture/identity-and-access.md` for the access model,
-`docs/architecture/resident-registry-and-verification.md` for the registry and
-`docs/architecture/document-catalog-and-requests.md` for the catalog.
+`docs/architecture/resident-registry-and-verification.md` for the registry,
+`docs/architecture/document-catalog-and-requests.md` for the catalog and
+`docs/architecture/certificate-generation-and-verification.md` for
+certificates.
 
 Fees, processing times and validity periods shown anywhere in this system are
 **not confirmed** by any barangay (blocker B-08) and are carried as data that
@@ -36,8 +43,8 @@ reads "Not set by the barangay yet" rather than `₱0.00`.
 **Plan of record:** [docs/PROJECT_SPECIFICATION.md](./docs/PROJECT_SPECIFICATION.md)
 (what the system is) and
 [docs/IMPLEMENTATION_ROADMAP.md](./docs/IMPLEMENTATION_ROADMAP.md)
-(the order it gets built — Slice 3 complete; next is Slice 4, certificate
-generation. Provisioning ruled as Option C hybrid,
+(the order it gets built — Slice 3 complete; Slice 4 under way, 4A shipped and
+4B–4E open. Provisioning ruled as Option C hybrid,
 [ADR-0006](./docs/adr/0006-resident-provisioning-and-registry-decisions.md)).
 
 **This is the STANDALONE v2 repository** (DEC-REPO-01, resolved). It was
