@@ -49,9 +49,15 @@ select bag_eq(
     'document_requests',
     'document_request_answers',
     -- Slice 3D
-    'document_request_evidence'
+    'document_request_evidence',
+    -- Slice 4A
+    'certificate_templates',
+    'certificate_series',
+    'certificates',
+    'certificate_voids',
+    'certificate_artifacts'
   ],
-  'public schema contains exactly the Slice 1 + Slice 2 + Slice 3 tables'
+  'public schema contains exactly the Slice 1 + Slice 2 + Slice 3 + Slice 4 tables'
 );
 
 select has_schema('extensions', 'the extensions schema exists');

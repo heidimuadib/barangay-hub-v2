@@ -12,7 +12,7 @@
 # ============================================================================
 
 version: 1
-slice: 3
+slice: 4
 
 placeholders:
   - id: DEC-ENV-01
@@ -71,9 +71,48 @@ placeholders:
     owner: product-owner-and-captain
     note: 'Blocks pilot exposure, not local build (roadmap Slice 3 §8). Enforced in four places: the NOT NULL column default, the domain function that cannot set it, `pnpm db:reset:verified` (which fails if any seeded row claims to be confirmed), and `presentTerms`, which is computed on the server and returns each figure together with its status so a component cannot render the amount while dropping the qualifier. Asserted by component tests and by Playwright on both viewports.'
 
+  - id: B-05
+    subject: Certificate template wording
+    current: 'UNCONFIRMED. Slice 4A (2026-08-04) ships `certificate_templates` with every row flagged `content_is_placeholder = true`. The seeded bodies are SYNTHETIC and say so in their own text ("SYNTHETIC TEST TEMPLATE — NOT APPROVED WORDING (B-05)"), so a screenshot cannot be mistaken for a draft of the real thing. No barangay has approved the wording of any certificate. The flag is not a parameter of `create_certificate_template`: approving wording is an owner act, not something a caller asserts.'
+    source: assumption
+    blocking_level: pilot
+    owner: product-owner-and-captain
+    note: 'Enforced by the NOT NULL column default, the domain function that cannot set it, `pnpm db:reset:verified` (which fails if any seeded template claims to be confirmed), and `templateIsApproved`, which returns false for every seeded template today. Summons wording arrives with Slice 6 and inherits the same mechanism.'
+
+  - id: B-06
+    subject: Signatory names and titles on issued certificates
+    current: 'UNCONFIRMED. Slice 4A seeds `signatory_name` and `signatory_title` as NULL rather than with a plausible name, so nothing reads as approved. `templateIsApproved` requires BOTH approved wording and a named signatory; `templateWarnings` reports `signatory_unconfirmed` separately from `wording_unapproved` so fixing one cannot hide the other.'
+    source: assumption
+    blocking_level: pilot
+    owner: product-owner-and-captain
+
+  - id: B-07
+    subject: Wet-signature process for issued certificates
+    current: 'UNCONFIRMED — assumed TRUE. `certificate_templates.requires_wet_signature` defaults to true: v1 assumes the printed certificate is signed by hand. This is modelled as a workflow fact, NOT as a defect — `templateIsApproved` ignores it, while `templateWarnings` still surfaces `requires_wet_signature` so an issuing surface can say so. E-signature stays behind FLAG_ESIGNATURE (v1.5).'
+    source: assumption
+    blocking_level: pilot
+    owner: product-owner-and-captain
+
+  - id: DEC-CERT-01
+    subject: Certificate serial number format
+    current: 'UNCONFIRMED. Slice 4A renders `PREFIX-YEAR-PADDED` (e.g. SI-2026-00007) via `format_certificate_serial`. That shape is SYNTHETIC, invented for local development, documented as such in the function body, and is NOT a proposal. The NUMBER is real and accountable from allocation; only its printed form is undecided. Every series carries `format_is_placeholder` and every issued certificate carries `serial_is_placeholder` forward from it.'
+    source: assumption
+    blocking_level: pilot
+    owner: product-owner-and-captain
+    resolves_in: docs/decisions/blockers.md
+    note: 'The notice wording ("Format not yet confirmed") is deliberately distinct from B-08''s fee notice so a reader can tell which decision is outstanding. Confirming a format is data plus a flag flip, not a migration: `prefix`, `year` and `sequence_width` are columns.'
+
+  - id: DEC-CERT-02
+    subject: Which role may ISSUE a certificate
+    current: 'IMPLEMENTED ONE WAY, AWAITING CONFIRMATION. Slice 4A gives `certificates.issue` / `.void` / `.manage_templates` / `.manage_series` / `.artifact.read` to `barangay_administrator` and only `certificates.read` to `barangay_staff`, following the ADR-0005/-0006 and Slice 3 precedent that committing acts are administrator work. The roadmap (Slice 4 §6) says "staff issue per capability" and the brief says staff "possibly issue" — the sources disagree, so this is flagged rather than silently resolved.'
+    source: assumption
+    blocking_level: pilot
+    owner: product-owner-and-captain
+    resolves_in: docs/decisions/blockers.md
+    note: 'Reversing it is an INSERT into `role_permissions` plus the pgTAP expectations in 18_certificate_foundation — no code branches on a role key.'
+
 # ── Registered now, populated when their slice lands ────────────────────────
-# Certificate and summons template wording   → Slice 4, blockers B-05 / B-06
-# Signatory titles and wet-signature process → Slice 4, blocker B-07
+# Summons template wording                   → Slice 6, blockers B-05 / B-06
 # Non-mediable categories and referrals      → Slice 6, blocker B-09
 # OR series format and voided-number policy  → Slice 5, blocker B-11
 # Retention periods                          → Slice 9, blocker B-21

@@ -22,7 +22,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(30);
+select plan(31);
 
 create function pg_temp.impersonate(p_user uuid) returns void language plpgsql as $$
 begin
@@ -119,14 +119,17 @@ select pg_temp.as_system();
 
 -- The approved inventory grows only when the ROADMAP grows it. Slice 3 adds
 -- exactly two (roadmap Slice 3 §13, "status-change intents"): the moments a
--- requester learns something they did not cause.
+-- requester learns something they did not cause. Slice 4 adds exactly one —
+-- the certificate is ready to collect, which is the same test: news the
+-- requester did not cause and cannot see without being told.
 select is(
   (select array_agg(distinct event_type order by event_type)
    from public.outbox_events),
-  array['request.in_review', 'request.ready_for_issue',
+  array['certificate.ready_for_release',
+        'request.in_review', 'request.ready_for_issue',
         'verification.approved', 'verification.info_requested',
         'verification.rejected', 'verification.resubmitted'],
-  'exactly the six approved intents exist — no subpart invented a notification');
+  'exactly the seven approved intents exist — no subpart invented a notification');
 
 -- The deliberate absences, asserted so they stay deliberate.
 select is(
@@ -170,6 +173,18 @@ select is(
        select 1 from jsonb_object_keys(o.payload) k
        where k not in ('request_id', 'person_id'))),
   0, 'every request payload carries ONLY request_id and person_id — nothing else');
+
+-- The certificate intent is the one place a SERIAL could plausibly leak into a
+-- notification payload ("your CERT-2026-00042 is ready"). It must not: the
+-- serial is on the printed document, and Slice 8 will fetch what it needs
+-- under the recipient's own authority rather than carry it here.
+select is(
+  (select count(*)::int from public.outbox_events o
+   where o.event_type like 'certificate.%'
+     and exists (
+       select 1 from jsonb_object_keys(o.payload) k
+       where k not in ('certificate_id', 'request_id', 'person_id'))),
+  0, 'every certificate payload carries ONLY certificate_id, request_id and person_id');
 
 -- Every value in every payload is an opaque identifier. This is the assertion
 -- that survives a future slice adding a key nobody here anticipated: a uuid

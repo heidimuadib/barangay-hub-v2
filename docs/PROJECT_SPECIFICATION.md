@@ -532,7 +532,27 @@ For each slice: scope as recorded in-repo, and status.
   **DEC-REQ-01**, no decline/cancel state — now visible as a queue that
   accumulates requests with no exit; **DEC-REQ-02**, whether the staff walk-in
   path should carry the same verification gate.
-- **Slices 4–9 and v1.5 — Sequenced.** Scope, dependencies, gates and effort
+- **Slice 4 — IN PROGRESS (4A complete, 2026-08-04):** the certificate and
+  serial-accountability domain. Five tenant-scoped tables with forced RLS
+  (`certificate_templates`, `certificate_series`, `certificates`,
+  `certificate_voids`, `certificate_artifacts`), an internal serial allocator
+  guarded three independent ways (row lock, forward-only counter, unique
+  constraint), `issue_certificate` gated on Slice 3's `ready_for_issue`
+  hand-off with one live certificate per request, additive voiding that keeps
+  the number consumed and the gap explained, 256-bit immutable verification
+  tokens generated in the database, six capabilities, audit that records the
+  act and never the content, and one new outbox intent
+  (`certificate.ready_for_release`). No UI, no PDF, no QR, no public route —
+  4B–4E own those. See
+  [architecture](./architecture/certificate-generation-and-verification.md).
+  Open: **DEC-CERT-01** (serial format — the rendering is synthetic and
+  flagged in data), **DEC-CERT-02** (which role may issue — the roadmap and
+  the ADR precedent disagree; 4A followed the precedent), **B-05/-06/-07**
+  (wording, signatories, wet signature — carried in data), and **DEC-REQ-01**,
+  which 4A makes load-bearing rather than theoretical: voiding withdraws a
+  certificate that was issued, and nothing yet declines a request that should
+  never be issued. Four alternatives are recorded; none was chosen.
+- **Slices 5–9 and v1.5 — Sequenced.** Scope, dependencies, gates and effort
   per slice in the roadmap.
 
 ### Known conflicts between planning artefacts and implementation
