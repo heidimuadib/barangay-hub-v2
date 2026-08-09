@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
+import { Card, PageHeader } from '@/components/ui'
 import { ProfileForm, getAuthorizationContext } from '@/features/identity'
 
 export const metadata: Metadata = {
@@ -16,9 +17,11 @@ export default async function AccountPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-bold">My account</h1>
-      <ProfileForm initialDisplayName={context.displayName} />
-      <p className="text-sm text-neutral-500">
+      <PageHeader title="My account" />
+      <Card>
+        <ProfileForm initialDisplayName={context.displayName} />
+      </Card>
+      <p className="text-dense text-neutral-500">
         Email address and password changes are handled by your barangay office in this release.
       </p>
     </div>

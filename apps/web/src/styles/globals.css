@@ -4,35 +4,78 @@
    Barangay Hub v2 — design token foundation
    Source: Phase 5 §8 (Design System Foundations)
 
-   Slice 0a established the semantic scale and the DEFAULT tenant accent
-   ("Barangay Teal"). Slice 3D / US-UI-001 adds the remaining seven curated
-   accent palettes together with their automated contrast + colour-distance
-   test — an unvalidated palette must not exist (Phase 6 §4.9 / P6-C-D).
-   See `tests/unit/styles/palette-contrast.test.ts`: it parses THIS file, so a
-   palette added here without meeting the bar fails the build rather than
-   shipping.
+   Slice 0a established the semantic scale and a DEFAULT tenant accent
+   ("Barangay Teal"). Slice 3D / US-UI-001 added seven curated accents together
+   with their automated contrast + colour-distance test.
+
+   UI-A (DEC-UI-01) replaces the default accent with the legacy Barangay Hub
+   GREEN, so that v2 is recognisably the same product as the barangay's existing
+   dashboards. The legacy palette could not be adopted verbatim, and the reason
+   is recorded here rather than in a commit message, because it is the constraint
+   that shapes every green in this file:
+
+     legacy #319366 is 3.82:1 on white.
+
+   That is below AA (4.5:1) for normal text and far below the 7:1 this project
+   holds every `-700` text shade to. It is therefore kept as `brand-500` and
+   marked NON-TEXT: gradients, tinted icon plates, active rules, hover washes.
+   A darker sibling, #15603f (7.56:1), carries every label, link and button.
 
    Tenant branding may change the accent ramp only. Semantic colours, status
    meanings, and the focus indicator are NOT tenant-configurable (Phase 2 §8.1).
+   See `tests/unit/styles/palette-contrast.test.ts`: it parses THIS file, so a
+   palette added here without meeting the bar fails the build rather than
+   shipping.
    ─────────────────────────────────────────────────────────────────────────── */
 
 @theme {
-  /* ── Brand accent — default palette: Barangay Teal ─────────────────────── */
-  --color-brand-50: #f0faf8;
-  --color-brand-100: #dcf2ee;
-  --color-brand-600: #0f7266;
-  --color-brand-700: #0e5d52; /* 7.4:1 on white */
-  --color-brand-800: #0a463e;
+  /* ── Brand accent — default palette: Barangay Green (DEC-UI-01) ─────────────
 
-  /* ── Semantic — locked, never tenant-configurable ──────────────────────── */
-  --color-success-100: #dcfce7;
-  --color-success-700: #166534; /* 7.5:1 */
+     Six steps, and each one has exactly one job. The middle of the ramp is the
+     legacy hue and the ends are the accessible ones, which is unusual enough to
+     spell out:
+
+       50   page-level wash behind a branded panel
+       100  subtle fill — tinted icon plate, active nav row on a light surface
+       500  THE LEGACY HUE. Decorative only: 3.82:1 on white. Never text, never
+            a fill that carries white text. Enforced by the palette test.
+       600  hover/pressed for a brand-700 fill (6.46:1 with white)
+       700  brand strong — labels, links, primary fills (7.56:1 with white)
+       800  gradient terminus and pressed states (10.28:1 with white)
+
+     The sidebar gradient runs 700 → 800, NOT from 500 as the legacy stylesheet
+     did: legacy put white nav labels on #319366 at 3.82:1. Same look, because
+     the hue family is unchanged; legible, because the stops are not. */
+  --color-brand-50: #f0f8f4;
+  --color-brand-100: #dcefe5;
+  --color-brand-500: #319366; /* legacy hue — decorative only, 3.82:1 */
+  --color-brand-600: #1b6b4a; /* 6.46:1 */
+  --color-brand-700: #15603f; /* 7.56:1 on white */
+  --color-brand-800: #0f4a30; /* 10.28:1 */
+
+  /* ── Semantic — locked, never tenant-configurable ────────────────────────
+
+     `success` moved from green (#166534) to teal (#115e59) in UI-A, and this is
+     a swap rather than an addition: the brand vacated teal to take the legacy
+     green, and success moved into it.
+
+     The reason is measured, not aesthetic. Against the new brand green,
+     #166534 sat at ΔE 9.8 — below the 15 this project treats as "two colours a
+     user can tell apart" — so a primary brand button and an approved chip would
+     have read as the same green. DEC-UI-01 requires them to be distinct.
+     #115e59 sits at ΔE 17.9 and, unlike every green dark enough to separate,
+     keeps its AAA contrast (7.58:1 on white, 6.34:1 on its own tint).
+
+     Teal is additionally now unclaimable as a tenant accent, so no barangay's
+     branding can ever collide with the success colour again. */
+  --color-success-100: #d7f0ec;
+  --color-success-700: #115e59; /* 7.58:1 */
   --color-warning-100: #fef3c7;
-  --color-warning-700: #92400e; /* 7.2:1 */
+  --color-warning-700: #92400e; /* 7.09:1 */
   --color-danger-100: #fee2e2;
-  --color-danger-700: #991b1b; /* 8.2:1 */
+  --color-danger-700: #991b1b; /* 8.31:1 */
   --color-info-100: #dbeafe;
-  --color-info-700: #1e40af; /* 8.6:1 */
+  --color-info-700: #1e40af; /* 8.72:1 */
 
   /* ── Neutral ──────────────────────────────────────────────────────────── */
   --color-neutral-50: #f9fafb;
@@ -40,16 +83,23 @@
   --color-neutral-200: #e5e7eb;
   --color-neutral-300: #d1d5db;
   --color-neutral-400: #9ca3af; /* decorative only — never text */
-  --color-neutral-500: #6b7280; /* 4.8:1 — minimum for body text */
+  --color-neutral-500: #6b7280; /* 4.83:1 — minimum for body text */
   --color-neutral-700: #374151;
   --color-neutral-900: #111827;
 
   /* ── Focus — locked ───────────────────────────────────────────────────── */
   --color-focus: #2563eb;
 
-  /* ── Typography (Phase 5 §8.2, UX-ADR-14: one step up) ────────────────── */
+  /* ── Typography (Phase 5 §8.2, UX-ADR-14: one step up) ──────────────────
+
+     `--font-inter` is supplied by `next/font/local` in the root layout, from a
+     woff2 committed under `src/fonts`. Before UI-A this stack named Inter
+     without anything ever loading it, so every screen rendered in the OS
+     fallback — the identity was declared and not applied. The fallbacks remain
+     because a variable font can still fail to load. */
   --font-sans:
-    Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    var(--font-inter), system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
   --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
 
   --text-body-resident: 1.0625rem; /* 17px */
@@ -59,16 +109,33 @@
   --text-dense: 0.9375rem; /* 15px — staff tables */
   --text-dense--line-height: 1.45;
 
+  /* Section eyebrows and table column heads. Legacy set these by hand on every
+     page (`text-xs uppercase tracking-wider`); one token keeps them identical. */
+  --text-eyebrow: 0.75rem; /* 12px */
+  --text-eyebrow--line-height: 1.4;
+  --text-eyebrow--letter-spacing: 0.06em;
+  --text-eyebrow--font-weight: 600;
+
   /* ── Radius (Phase 5 §8.6) ────────────────────────────────────────────── */
   --radius-control: 6px;
   --radius-surface: 8px;
+
+  /* ── Elevation ────────────────────────────────────────────────────────────
+
+     Two levels, both lifted from the legacy dashboard's Tailwind config so a
+     card sits at the weight staff already recognise. `raised` is for the one
+     thing that floats: the mobile navigation drawer (UI-B). Legacy also lifted
+     cards by -2px on hover; that is deliberately not reproduced — it moved
+     content under the pointer for no informational reason. */
+  --shadow-card: 0 4px 15px rgb(0 0 0 / 0.05);
+  --shadow-raised: 0 10px 30px rgb(0 0 0 / 0.12);
 
   /* ── Minimum touch target (Phase 5 §8.3, exceeds WCAG 2.2 AA) ─────────── */
   --spacing-touch: 44px;
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
-   Tenant accent palettes (US-UI-001)
+   Tenant accent palettes (US-UI-001, roster revised by DEC-UI-01)
 
    Eight curated ramps, one per barangay identity. A tenant may change the
    ACCENT only: semantic colours, status meanings and the focus indicator are
@@ -80,16 +147,31 @@
    `bg-brand-700` and `border-brand-700` follows automatically — there is no
    per-palette utility class to forget.
 
+   Two ramps left the roster in UI-A and one joined, all three for measured
+   reasons rather than taste:
+
+     - `teal` became the SUCCESS colour (see above) and so cannot also be a
+       tenant brand;
+     - `forest` (#14532d) sat ΔE 6.7 from the new default green — two barangays
+       branded green and forest would have been indistinguishable;
+     - `violet` (#5b21b6) joined to keep the roster at eight, at ΔE 19.1 from
+       its nearest neighbour.
+
    Every `-700` below is the TEXT shade and clears 7:1 on white (AAA), which is
    stricter than the AA 4.5:1 the project commits to; every pair is separated
    by ΔE ≥ 15 in CIE76 so two barangays never look like the same brand. Both
    properties are asserted by the palette test, computed from these very
    values — not from a copy of them in a fixture.
+
+   Each ramp also carries a `-500`. It is the decorative stop the shells use for
+   gradients and icon plates, and it exists per-accent on purpose: without it a
+   maroon-branded barangay would inherit the default green's decoration.
    ─────────────────────────────────────────────────────────────────────────── */
 
 [data-accent='indigo'] {
   --color-brand-50: #eef2ff;
   --color-brand-100: #e0e7ff;
+  --color-brand-500: #6366f1;
   --color-brand-600: #4338ca;
   --color-brand-700: #3730a3; /* 9.93:1 on white */
   --color-brand-800: #312e81;
@@ -98,6 +180,7 @@
 [data-accent='magenta'] {
   --color-brand-50: #fdf4ff;
   --color-brand-100: #fae8ff;
+  --color-brand-500: #d946ef;
   --color-brand-600: #a21caf;
   --color-brand-700: #86198f; /* 8.24:1 */
   --color-brand-800: #701a75;
@@ -106,6 +189,7 @@
 [data-accent='maroon'] {
   --color-brand-50: #fff1f2;
   --color-brand-100: #ffe4e6;
+  --color-brand-500: #f43f5e;
   --color-brand-600: #be123c;
   --color-brand-700: #9f1239; /* 8.02:1 */
   --color-brand-800: #881337;
@@ -118,6 +202,7 @@
 [data-accent='bronze'] {
   --color-brand-50: #fdf8f3;
   --color-brand-100: #f5e9d9;
+  --color-brand-500: #c08a2e;
   --color-brand-600: #92610f;
   --color-brand-700: #713f12; /* 8.67:1 */
   --color-brand-800: #5b3310;
@@ -126,6 +211,7 @@
 [data-accent='olive'] {
   --color-brand-50: #f7fee7;
   --color-brand-100: #ecfccb;
+  --color-brand-500: #84cc16;
   --color-brand-600: #4d7c0f;
   --color-brand-700: #3f6212; /* 7.08:1 */
   --color-brand-800: #365314;
@@ -134,17 +220,21 @@
 [data-accent='ocean'] {
   --color-brand-50: #f0f9ff;
   --color-brand-100: #e0f2fe;
+  --color-brand-500: #0ea5e9;
   --color-brand-600: #0369a1;
   --color-brand-700: #0c4a6e; /* 9.46:1 */
   --color-brand-800: #082f49;
 }
 
-[data-accent='forest'] {
-  --color-brand-50: #f0fdf4;
-  --color-brand-100: #dcfce7;
-  --color-brand-600: #15803d;
-  --color-brand-700: #14532d; /* 9.11:1 */
-  --color-brand-800: #052e16;
+/* Added by DEC-UI-01 to restore the roster to eight after `teal` became the
+   success colour and `forest` collided with the new default green. */
+[data-accent='violet'] {
+  --color-brand-50: #f5f3ff;
+  --color-brand-100: #ede9fe;
+  --color-brand-500: #8b5cf6;
+  --color-brand-600: #6d28d9;
+  --color-brand-700: #5b21b6; /* 8.98:1 */
+  --color-brand-800: #4c1d95;
 }
 
 /* ── Base layer ──────────────────────────────────────────────────────────── */
@@ -173,7 +263,10 @@
     text-wrap: balance;
   }
 
-  /* Focus is never removed. 3px ring + 2px offset, visible on every surface. */
+  /* Focus is never removed. 3px ring + 2px offset, visible on every surface.
+     The ring colour is deliberately NOT the brand: on a brand-700 fill a
+     brand-coloured ring would vanish, and the indicator has to survive the
+     darkest surface in the product — the sidebar. */
   :focus-visible {
     outline: 3px solid var(--color-focus);
     outline-offset: 2px;
@@ -229,5 +322,12 @@
     background-color: #ffffff;
     border-radius: var(--radius-control);
     box-shadow: 0 4px 12px rgb(0 0 0 / 0.16);
+  }
+
+  /* The legacy sidebar's signature: a vertical green gradient. Its stops are
+     brand-700 → brand-800 rather than legacy's #319366 → #26734f, because
+     white labels sit on it (see the brand ramp note above). */
+  .brand-gradient {
+    background-image: linear-gradient(to bottom, var(--color-brand-700), var(--color-brand-800));
   }
 }

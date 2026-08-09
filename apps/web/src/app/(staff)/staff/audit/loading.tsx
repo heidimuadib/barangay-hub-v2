@@ -1,7 +1,9 @@
+import { Card, SkeletonRows } from '@/components/ui'
+
 export default function AuditLoading() {
   return (
-    <p role="status" className="rounded-lg border border-neutral-200 bg-white p-6 text-neutral-500">
-      Loading audit events…
-    </p>
+    <Card padding="none">
+      <SkeletonRows label="Loading audit events…" />
+    </Card>
   )
 }

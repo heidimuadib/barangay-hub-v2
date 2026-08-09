@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
+import { Alert, Card, PageHeader } from '@/components/ui'
 import {
   ACTIVE_BARANGAY_COOKIE,
   getAuthorizationContext,
@@ -14,9 +15,14 @@ export const metadata: Metadata = {
 }
 
 /**
- * Slice 1 staff home: proves the tenant context. The real staff home —
- * today's queues, SLA breach counts, pending approvals — is Slice 2 /
- * US-STF-003.
+ * Staff home.
+ *
+ * Still a landing page rather than a dashboard: the statistic row, the
+ * needs-action panel and the recent-activity list that the legacy
+ * `admindash.php` had are UI-D work, and they read from the queues Slice 3
+ * built. What UI-A changes is only the presentation — the page now uses the
+ * shared `PageHeader` and `Card` instead of restating their classes — so that
+ * UI-D adds widgets to a shell rather than replacing hand-written markup.
  */
 export default async function StaffHomePage() {
   const context = await getAuthorizationContext()
@@ -28,21 +34,33 @@ export default async function StaffHomePage() {
   const active = resolveActiveBarangay(context, cookieStore.get(ACTIVE_BARANGAY_COOKIE)?.value)
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-6">
-      <h1 className="text-xl font-bold">Staff workspace</h1>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Staff workspace"
+        {...(active
+          ? {
+              description: (
+                <>
+                  You are working in <span className="font-medium">{active.barangayName}</span> as{' '}
+                  {active.roles.length > 0 ? active.roles.join(', ') : 'a member'}.
+                </>
+              ),
+            }
+          : {})}
+      />
+
       {active ? (
-        <>
-          <p className="mt-2 text-neutral-700">
-            You are working in <span className="font-medium">{active.barangayName}</span> as{' '}
-            {active.roles.length > 0 ? active.roles.join(', ') : 'a member'}.
-          </p>
-          <p className="mt-2 text-sm text-neutral-500">
+        <Card>
+          <p className="text-dense text-neutral-500">
             Queues, requests and reports arrive with their slices. Member administration and the
             audit log are available from the navigation above.
           </p>
-        </>
+        </Card>
       ) : (
-        <p className="mt-2 text-neutral-700">No active barangay membership was found.</p>
+        <Alert tone="warning" title="No active barangay membership" live="none">
+          No active barangay membership was found. Contact your barangay administrator to be added
+          before using the staff workspace.
+        </Alert>
       )}
     </div>
   )

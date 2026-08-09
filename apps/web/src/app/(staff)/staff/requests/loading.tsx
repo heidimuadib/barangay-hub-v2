@@ -1,7 +1,9 @@
+import { Card, SkeletonRows } from '@/components/ui'
+
 export default function StaffRequestsLoading() {
   return (
-    <p role="status" className="rounded-lg border border-neutral-200 bg-white p-6 text-neutral-500">
-      Loading the document request queue…
-    </p>
+    <Card padding="none">
+      <SkeletonRows label="Loading the document request queue…" />
+    </Card>
   )
 }
