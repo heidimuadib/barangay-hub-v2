@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useActionState, useId, useRef, useState } from 'react'
 
+import { Alert, Badge, Button, Card, CardBody, CardHeader } from '@/components/ui'
 import { useRefreshOnSuccess } from '@/hooks/use-refresh-on-success'
 import type { Result } from '@/lib/errors'
 
@@ -93,24 +94,17 @@ function EvidencePicker({
       }
 
       // 2. Upload straight to the private bucket with that ticket.
-      //    A plain fetch on purpose: pulling supabase-js into the browser
-      //    would inline the environment schema — and therefore the NAMES of
-      //    every server secret — into the client bundle, which the
-      //    `check:bundle-secrets` gate rightly refuses.
       const uploaded = await fetch(prepared.data.signedUrl, {
         method: 'PUT',
         headers: { 'content-type': file.type },
         body: file,
       })
       if (!uploaded.ok) {
-        // The metadata row stays PENDING: it counts for nothing, and the
-        // resident can retry or remove it.
         setPhase({ status: 'failed', message: 'The upload did not finish. Please try again.' })
         return
       }
 
-      // 3. Ask the server to verify the object and finalize. Only this makes
-      //    the document count toward submission.
+      // 3. Ask the server to verify the object and finalize.
       const finalized = await finalizeEvidenceAction({
         evidenceId: prepared.data.evidenceId,
         contentHash: await sha256Hex(file),
@@ -129,49 +123,54 @@ function EvidencePicker({
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <label htmlFor={inputId} className="text-sm font-medium text-neutral-900">
-        Add {evidenceKindLabel(kind).toLowerCase()}
-      </label>
-      <input
-        ref={inputRef}
-        id={inputId}
-        type="file"
-        accept={EVIDENCE_FILE_EXTENSIONS}
-        disabled={busy}
-        aria-describedby={`${inputId}-hint`}
-        onChange={(event) => {
-          const file = event.target.files?.[0]
-          if (file) void upload(file)
-        }}
-        className="min-h-11 rounded-md border border-neutral-300 bg-white px-3 py-2 text-neutral-900 disabled:opacity-60"
-      />
-      <p id={`${inputId}-hint`} className="text-sm text-neutral-500">
-        JPEG, PNG, WebP or PDF, up to 10 MB. Use a photo or scan of a real document you already have
-        — nothing is shared outside your barangay office.
-      </p>
-
-      {/* Progress and failure are announced, not just coloured. */}
-      {busy ? (
-        <p role="status" className="text-sm text-neutral-700">
-          Uploading…
+    <div className="rounded-md border border-dashed border-neutral-300 bg-neutral-50 p-4 transition-colors hover:border-neutral-400">
+      <div className="flex flex-col gap-2">
+        <label htmlFor={inputId} className="text-sm font-semibold text-neutral-900">
+          Add {evidenceKindLabel(kind).toLowerCase()}
+        </label>
+        <input
+          ref={inputRef}
+          id={inputId}
+          type="file"
+          accept={EVIDENCE_FILE_EXTENSIONS}
+          disabled={busy}
+          aria-describedby={`${inputId}-hint`}
+          onChange={(event) => {
+            const file = event.target.files?.[0]
+            if (file) void upload(file)
+          }}
+          className="min-h-11 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 file:mr-3 file:rounded-md file:border-0 file:bg-neutral-100 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-neutral-700 hover:file:bg-neutral-200 disabled:opacity-60"
+        />
+        <p id={`${inputId}-hint`} className="text-dense text-neutral-500">
+          JPEG, PNG, WebP or PDF, up to 10 MB. Use a photo or scan of a real document you already
+          have — nothing is shared outside your barangay office.
         </p>
-      ) : null}
-      {phase.status === 'failed' ? (
-        <div role="alert" className="flex flex-col gap-2">
-          <p className="text-danger-700 text-sm">{phase.message}</p>
-          <button
-            type="button"
-            onClick={() => {
-              setPhase({ status: 'idle' })
-              inputRef.current?.click()
-            }}
-            className="min-h-11 self-start rounded-md border border-neutral-300 bg-white px-4 py-2 font-medium hover:bg-neutral-100"
-          >
-            Try again
-          </button>
-        </div>
-      ) : null}
+
+        {/* Progress and failure are announced, not just coloured. */}
+        {busy ? (
+          <p role="status" className="text-dense text-brand-700 font-medium">
+            Uploading…
+          </p>
+        ) : null}
+        {phase.status === 'failed' ? (
+          <div className="mt-2 space-y-2">
+            <Alert tone="danger" live="alert">
+              {phase.message}
+            </Alert>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setPhase({ status: 'idle' })
+                inputRef.current?.click()
+              }}
+            >
+              Try again
+            </Button>
+          </div>
+        ) : null}
+      </div>
     </div>
   )
 }
@@ -191,30 +190,33 @@ function EvidenceRow({
   const finalized = item.uploadedAt !== null
 
   return (
-    <li className="flex flex-wrap items-center justify-between gap-2 py-3">
-      <div className="flex flex-col">
-        <span className="font-medium text-neutral-900">{evidenceKindLabel(item.kind)}</span>
-        <span className="text-sm text-neutral-500">
-          {evidenceMimeLabel(item.mimeType)}
-          {finalized && item.sizeBytes !== null
-            ? ` · ${formatEvidenceSize(item.sizeBytes)}`
-            : ''} ·{' '}
+    <li className="flex flex-wrap items-center justify-between gap-3 py-3">
+      <div className="flex flex-col gap-1">
+        <span className="font-semibold text-neutral-900">{evidenceKindLabel(item.kind)}</span>
+        <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-500">
+          <span>{evidenceMimeLabel(item.mimeType)}</span>
+          {finalized && item.sizeBytes !== null ? (
+            <span>&bull; {formatEvidenceSize(item.sizeBytes)}</span>
+          ) : null}
+          <span>&bull;</span>
           {finalized ? (
-            <span className="text-success-700">added</span>
+            <Badge tone="success">added</Badge>
           ) : (
-            <span className="text-warning-700">not finished</span>
+            <Badge tone="warning">not finished</Badge>
           )}
-        </span>
+        </div>
         {error ? (
-          <span role="alert" className="text-danger-700 text-sm">
+          <span role="alert" className="text-dense text-danger-700 font-medium">
             {error}
           </span>
         ) : null}
       </div>
 
       {editable ? (
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
           disabled={removing}
           onClick={() => {
             void (async () => {
@@ -229,10 +231,9 @@ function EvidenceRow({
               onRemoved()
             })()
           }}
-          className="min-h-11 rounded-md border border-neutral-300 bg-white px-4 py-2 font-medium hover:bg-neutral-100 disabled:opacity-60"
         >
           {removing ? 'Removing…' : 'Remove'}
-        </button>
+        </Button>
       ) : null}
     </li>
   )
@@ -256,95 +257,115 @@ export function EvidenceManager({
 
   useRefreshOnSuccess([submitState])
 
-  // A completed upload or removal changes server state; refetch so the list
-  // and readiness summary report what the database actually holds rather than
-  // what the browser believes.
   const router = useRouter()
   const refresh = () => router.refresh()
 
   const submitError = submitState && !submitState.ok ? submitState.error.message : null
 
   return (
-    <section
-      aria-labelledby="evidence-heading"
-      className="flex flex-col gap-4 rounded-lg border border-neutral-200 bg-white p-6"
-    >
-      <div>
-        <h2 id="evidence-heading" className="text-lg font-bold">
-          Your documents
-        </h2>
-        <p className="mt-1 text-neutral-700">
-          Your barangay needs one document that shows who you are, and one that shows you live in
-          the barangay.
-        </p>
-      </div>
-
-      {items.length > 0 ? (
-        <ul aria-label="Documents you added" className="flex flex-col divide-y divide-neutral-100">
-          {items.map((item) => (
-            <EvidenceRow
-              key={item.evidenceId}
-              item={item}
-              editable={editable}
-              onRemoved={refresh}
-            />
-          ))}
-        </ul>
-      ) : (
-        <p className="text-neutral-700">You have not added any documents yet.</p>
-      )}
-
-      {editable ? (
-        <div className="flex flex-col gap-4">
-          <EvidencePicker applicationId={applicationId} kind="identity" onUploaded={refresh} />
-          <EvidencePicker applicationId={applicationId} kind="residency" onUploaded={refresh} />
-        </div>
-      ) : null}
-
-      {/* Readiness in words and symbols — never colour alone. */}
-      <div className="border-t border-neutral-100 pt-4">
-        <h3 className="text-sm font-medium text-neutral-900">Before you send this</h3>
-        <ul className="mt-2 flex flex-col gap-1 text-neutral-700">
-          <li>
-            {readiness.hasIdentity ? '✓' : '•'} Identity evidence —{' '}
-            {readiness.hasIdentity ? 'added' : 'still needed'}
-          </li>
-          <li>
-            {readiness.hasResidency ? '✓' : '•'} Proof of residency —{' '}
-            {readiness.hasResidency ? 'added' : 'still needed'}
-          </li>
-          {readiness.pendingCount > 0 ? (
-            <li role="status">
-              • {readiness.pendingCount} document
-              {readiness.pendingCount === 1 ? '' : 's'} did not finish uploading and will not be
-              sent. Remove or replace {readiness.pendingCount === 1 ? 'it' : 'them'}.
-            </li>
-          ) : null}
-        </ul>
-      </div>
-
-      {editable ? (
-        <form action={submitAction} className="flex flex-col gap-2">
-          <input type="hidden" name="applicationId" value={applicationId} />
-          {submitError ? (
-            <p role="alert" className="text-danger-700 text-sm">
-              {submitError}
-            </p>
-          ) : null}
-          <button
-            type="submit"
-            disabled={submitPending || !readiness.canSubmit}
-            className="bg-brand-700 hover:bg-brand-800 min-h-11 self-start rounded-md px-4 py-2 font-medium text-white disabled:opacity-60"
+    <Card>
+      <CardHeader
+        id="evidence-heading"
+        as="h2"
+        title="Your documents"
+        description="Your barangay needs one document that shows who you are, and one that shows you live in the barangay."
+      />
+      <CardBody className="space-y-6">
+        {items.length > 0 ? (
+          <ul
+            aria-label="Documents you added"
+            className="divide-y divide-neutral-200 rounded-md border border-neutral-200 px-4"
           >
-            {submitPending ? 'Sending…' : 'Send for verification'}
-          </button>
-          {!readiness.canSubmit ? (
-            <p className="text-sm text-neutral-500">
-              Add both documents above before you can send your registration.
-            </p>
-          ) : null}
-        </form>
-      ) : null}
-    </section>
+            {items.map((item) => (
+              <EvidenceRow
+                key={item.evidenceId}
+                item={item}
+                editable={editable}
+                onRemoved={refresh}
+              />
+            ))}
+          </ul>
+        ) : (
+          <p className="text-neutral-600">You have not added any documents yet.</p>
+        )}
+
+        {editable ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <EvidencePicker applicationId={applicationId} kind="identity" onUploaded={refresh} />
+            <EvidencePicker applicationId={applicationId} kind="residency" onUploaded={refresh} />
+          </div>
+        ) : null}
+
+        {/* Readiness in words and symbols — never colour alone. */}
+        <div className="border-t border-neutral-200 pt-4">
+          <h3 className="text-sm font-semibold text-neutral-900">Before you send this</h3>
+          <ul className="mt-2 space-y-1 text-sm text-neutral-700">
+            <li className="flex items-center gap-2">
+              <span
+                className={
+                  readiness.hasIdentity ? 'text-success-700 font-bold' : 'text-neutral-400'
+                }
+              >
+                {readiness.hasIdentity ? '✓' : '•'}
+              </span>
+              <span>
+                Identity evidence —{' '}
+                <strong className="font-medium">
+                  {readiness.hasIdentity ? 'added' : 'still needed'}
+                </strong>
+              </span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span
+                className={
+                  readiness.hasResidency ? 'text-success-700 font-bold' : 'text-neutral-400'
+                }
+              >
+                {readiness.hasResidency ? '✓' : '•'}
+              </span>
+              <span>
+                Proof of residency —{' '}
+                <strong className="font-medium">
+                  {readiness.hasResidency ? 'added' : 'still needed'}
+                </strong>
+              </span>
+            </li>
+            {readiness.pendingCount > 0 ? (
+              <li role="status" className="text-warning-700">
+                • {readiness.pendingCount} document
+                {readiness.pendingCount === 1 ? '' : 's'} did not finish uploading and will not be
+                sent. Remove or replace {readiness.pendingCount === 1 ? 'it' : 'them'}.
+              </li>
+            ) : null}
+          </ul>
+        </div>
+
+        {editable ? (
+          <form action={submitAction} className="space-y-3 border-t border-neutral-200 pt-4">
+            <input type="hidden" name="applicationId" value={applicationId} />
+            {submitError ? (
+              <Alert tone="danger" live="alert">
+                {submitError}
+              </Alert>
+            ) : null}
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                disabled={submitPending || !readiness.canSubmit}
+              >
+                {submitPending ? 'Sending…' : 'Send for verification'}
+              </Button>
+              {!readiness.canSubmit ? (
+                <p className="text-dense text-neutral-500">
+                  Add both documents above before you can send your registration.
+                </p>
+              ) : null}
+            </div>
+          </form>
+        ) : null}
+      </CardBody>
+    </Card>
   )
 }

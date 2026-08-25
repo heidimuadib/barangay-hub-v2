@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
+import { Badge, Card, CardBody, CardHeader, PageHeader, buttonClasses } from '@/components/ui'
 import {
   ACTIVE_BARANGAY_COOKIE,
   getAuthorizationContext,
@@ -48,136 +49,157 @@ export default async function ResidentDashboardPage() {
   ])
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="rounded-lg border border-neutral-200 bg-white p-6">
-        <h1 className="text-xl font-bold">Welcome, {context.displayName}</h1>
-        <p className="mt-2 text-neutral-700">
-          Your account, barangay membership and document requests are below.
-        </p>
-      </div>
-
-      {requests === null ? null : (
-        <section
-          aria-labelledby="requests-heading"
-          className="rounded-lg border border-neutral-200 bg-white p-6"
-        >
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 id="requests-heading" className="text-lg font-bold">
-              My document requests
-            </h2>
-            <Link
-              href="/documents"
-              className="text-brand-700 inline-flex min-h-11 items-center underline"
-            >
-              Request a document
-            </Link>
-          </div>
-
-          {requests.entries.length === 0 ? (
-            <p className="mt-3 text-neutral-700">
-              You have not requested any documents yet. Browse what your barangay offers to get
-              started.
-            </p>
-          ) : (
-            <>
-              <ul className="mt-3 flex flex-col gap-2">
-                {requests.entries.slice(0, 3).map((entry) => (
-                  <li
-                    key={entry.requestId}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-neutral-200 px-4 py-3"
-                  >
-                    <Link
-                      href={`/requests/${entry.requestId}`}
-                      className="text-brand-700 inline-flex min-h-11 items-center font-medium hover:underline"
-                    >
-                      {entry.documentTypeName ?? 'Document no longer offered'}
-                    </Link>
-                    <RequestStateChip state={entry.state} />
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/requests"
-                className="text-brand-700 mt-3 inline-flex min-h-11 items-center underline"
-              >
-                See all {requests.total} request{requests.total === 1 ? '' : 's'}
-              </Link>
-            </>
-          )}
-        </section>
-      )}
+    <div className="space-y-6">
+      <PageHeader
+        title={`Welcome, ${context.displayName}`}
+        description="Your account, barangay membership, and document requests are organized below."
+      />
 
       {/* Verification card: the single next action for a resident who has not
           finished registering, and a status readout once they have. */}
-      <section
-        aria-labelledby="verification-heading"
-        className="rounded-lg border border-neutral-200 bg-white p-6"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="verification-heading" className="text-lg font-bold">
-            Resident registration
-          </h2>
-          {registry?.state ? (
-            <VerificationStatusBadge state={registry.state as VerificationState} />
-          ) : null}
-        </div>
-
-        {registry === null ? (
-          <>
-            <p className="mt-3 text-neutral-700">
-              You have not registered as a resident yet. Registering lets your barangay confirm who
-              you are before you request documents.
-            </p>
-            <Link
-              href="/onboarding"
-              className="bg-brand-700 hover:bg-brand-800 mt-4 inline-block min-h-11 rounded-md px-4 py-2 font-medium text-white"
-            >
-              Start my registration
-            </Link>
-          </>
-        ) : (
-          <>
-            <p className="mt-3 text-neutral-700">
-              Registered with <span className="font-medium">{registry.barangay_name}</span>.
-            </p>
-            {/* Same 44px target as its sibling CTA above: this is the
-                resident's primary next action once registered, and it was
-                sitting at 27px (Slice 2G accessibility review). */}
-            <Link
-              href="/verification"
-              className="text-brand-700 mt-3 inline-flex min-h-11 items-center underline"
-            >
-              View my registration
-            </Link>
-          </>
-        )}
+      <section aria-labelledby="verification-heading">
+        <Card accent={registry?.state === 'approved'}>
+          <CardHeader
+            id="verification-heading"
+            as="h2"
+            title="Resident registration"
+            action={
+              registry?.state ? (
+                <VerificationStatusBadge state={registry.state as VerificationState} />
+              ) : (
+                <Badge tone="warning">Not registered</Badge>
+              )
+            }
+          />
+          <CardBody>
+            {registry === null ? (
+              <div className="space-y-4">
+                <p className="text-neutral-700">
+                  You have not registered as a resident yet. Registering lets your barangay confirm
+                  who you are before you request documents.
+                </p>
+                <div>
+                  <Link href="/onboarding" className={buttonClasses({ variant: 'primary' })}>
+                    Start my registration
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-neutral-700">
+                  Registered with{' '}
+                  <span className="font-semibold text-neutral-900">{registry.barangay_name}</span>.
+                </p>
+                <div>
+                  <Link
+                    href="/verification"
+                    className="text-brand-700 hover:text-brand-800 inline-flex min-h-11 items-center font-medium underline underline-offset-2"
+                  >
+                    View my registration &rarr;
+                  </Link>
+                </div>
+              </div>
+            )}
+          </CardBody>
+        </Card>
       </section>
 
-      <section
-        aria-labelledby="memberships-heading"
-        className="rounded-lg border border-neutral-200 bg-white p-6"
-      >
-        <h2 id="memberships-heading" className="text-lg font-bold">
-          Your barangay memberships
-        </h2>
-        {context.memberships.length === 0 ? (
-          <p className="mt-3 text-neutral-700">
-            Your account is not yet a member of any barangay. Contact your barangay office to be
-            added.
-          </p>
-        ) : (
-          <ul className="mt-3 flex flex-col gap-2">
-            {context.memberships.map((membership) => (
-              <li
-                key={membership.membershipId}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-neutral-200 px-4 py-3"
-              >
-                <span className="font-medium text-neutral-900">{membership.barangayName}</span>
-                <span className="text-sm text-neutral-500">{STATUS_COPY[membership.status]}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+      {requests === null ? null : (
+        <section aria-labelledby="requests-heading">
+          <Card>
+            <CardHeader
+              id="requests-heading"
+              as="h2"
+              title="My document requests"
+              action={
+                <Link
+                  href="/documents"
+                  className={buttonClasses({ variant: 'secondary', size: 'sm' })}
+                >
+                  Request a document
+                </Link>
+              }
+            />
+            <CardBody>
+              {requests.entries.length === 0 ? (
+                <p className="text-neutral-600">
+                  You have not requested any documents yet. Browse what your barangay offers to get
+                  started.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  <ul className="divide-y divide-neutral-200 rounded-md border border-neutral-200">
+                    {requests.entries.slice(0, 3).map((entry) => (
+                      <li
+                        key={entry.requestId}
+                        className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-neutral-50"
+                      >
+                        <Link
+                          href={`/requests/${entry.requestId}`}
+                          className="text-brand-700 hover:text-brand-800 inline-flex min-h-11 items-center font-medium hover:underline"
+                        >
+                          {entry.documentTypeName ?? 'Document no longer offered'}
+                        </Link>
+                        <RequestStateChip state={entry.state} />
+                      </li>
+                    ))}
+                  </ul>
+                  <div>
+                    <Link
+                      href="/requests"
+                      className="text-brand-700 hover:text-brand-800 inline-flex min-h-11 items-center font-medium underline underline-offset-2"
+                    >
+                      See all {requests.total} request{requests.total === 1 ? '' : 's'} &rarr;
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        </section>
+      )}
+
+      <section aria-labelledby="memberships-heading">
+        <Card>
+          <CardHeader
+            id="memberships-heading"
+            as="h2"
+            title="Your barangay memberships"
+            description="Barangays you are affiliated with for citizen services."
+          />
+          <CardBody>
+            {context.memberships.length === 0 ? (
+              <p className="text-neutral-600">
+                Your account is not yet a member of any barangay. Contact your barangay office to be
+                added.
+              </p>
+            ) : (
+              <ul className="divide-y divide-neutral-200 rounded-md border border-neutral-200">
+                {context.memberships.map((membership) => (
+                  <li
+                    key={membership.membershipId}
+                    className="flex flex-wrap items-center justify-between gap-3 p-4"
+                  >
+                    <span className="font-semibold text-neutral-900">
+                      {membership.barangayName}
+                    </span>
+                    <Badge
+                      tone={
+                        membership.status === 'active'
+                          ? 'success'
+                          : membership.status === 'invited'
+                            ? 'warning'
+                            : 'neutral'
+                      }
+                    >
+                      {STATUS_COPY[membership.status]}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
       </section>
     </div>
   )

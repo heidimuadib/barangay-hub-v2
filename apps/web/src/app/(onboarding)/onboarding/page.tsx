@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
+import { Alert, PageHeader } from '@/components/ui'
 import { getAuthorizationContext } from '@/features/identity'
 import { OnboardingForm, getBarangayDirectory, getOwnRegistryState } from '@/features/registry'
 
@@ -30,19 +31,16 @@ export default async function OnboardingPage() {
   const barangays = await getBarangayDirectory()
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-bold">Complete your registration</h1>
-        <p className="mt-2 max-w-prose text-neutral-700">
-          Tell us who you are and where you live. Your barangay reviews these details before you are
-          registered as a resident — creating an account on its own does not register you.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Complete your registration"
+        description="Tell us who you are and where you live. Your barangay reviews these details before you are registered as a resident — creating an account on its own does not register you."
+      />
 
       {barangays.length === 0 ? (
-        <p className="rounded-lg border border-neutral-200 bg-white p-6 text-neutral-700">
+        <Alert tone="warning" title="Registrations not currently available" live="none">
           No barangay is accepting registrations online yet. Please visit your barangay office.
-        </p>
+        </Alert>
       ) : (
         <OnboardingForm barangays={barangays} />
       )}

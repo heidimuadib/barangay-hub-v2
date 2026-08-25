@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
+import { PageHeader } from '@/components/ui'
 import {
   ACTIVE_BARANGAY_COOKIE,
   getAuthorizationContext,
@@ -58,13 +59,11 @@ export default async function DocumentCatalogPage() {
   const items = entries.map((entry) => ({ entry, terms: presentTerms(entry.terms) }))
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-bold">Documents from {active.barangayName}</h1>
-        <p className="mt-2 text-neutral-700">
-          Choose a document to see what it needs before you request it.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title={`Documents from ${active.barangayName}`}
+        description="Choose a document to see what it needs before you request it."
+      />
 
       {eligibility === 'eligible' ? null : (
         <EligibilityNotice

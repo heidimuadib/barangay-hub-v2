@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import { Card } from '@/components/ui'
 import type { PresentedTerms } from '@/features/documents'
 
 import type { CatalogEntry } from '../types/documents'
@@ -39,50 +40,53 @@ export function CatalogList({
 }) {
   if (items.length === 0) {
     return (
-      <p className="rounded-lg border border-neutral-200 bg-white p-6 text-neutral-700">
-        Your barangay has not published any documents yet. Contact the barangay office if you need
-        one.
-      </p>
+      <Card>
+        <p className="text-neutral-700">
+          Your barangay has not published any documents yet. Contact the barangay office if you need
+          one.
+        </p>
+      </Card>
     )
   }
 
   return (
-    <ul className="grid gap-4 sm:grid-cols-2">
+    <ul className="grid gap-6 sm:grid-cols-2">
       {items.map(({ entry, terms }) => (
-        <li
-          key={entry.documentTypeId}
-          className="flex flex-col gap-3 rounded-lg border border-neutral-200 bg-white p-6"
-        >
-          <div>
-            <h3 className="text-lg font-bold">
-              {publicView ? (
-                entry.name
-              ) : (
-                /* The whole card title is the target: a 44px row beats a
-                   word-sized link on the phones most residents use. */
-                <Link
-                  href={`/documents/${entry.documentTypeId}`}
-                  className="text-brand-700 inline-flex min-h-11 items-center hover:underline"
-                >
-                  {entry.name}
-                </Link>
-              )}
-            </h3>
-            {entry.description ? (
-              <p className="mt-1 text-neutral-700">{entry.description}</p>
-            ) : null}
-          </div>
+        <li key={entry.documentTypeId} className="h-full">
+          <Card className="flex h-full flex-col justify-between space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold text-neutral-900">
+                {publicView ? (
+                  entry.name
+                ) : (
+                  /* The whole card title is the target: a 44px row beats a
+                     word-sized link on the phones most residents use. */
+                  <Link
+                    href={`/documents/${entry.documentTypeId}`}
+                    className="text-brand-700 hover:text-brand-800 focus-visible:outline-brand-700 inline-flex min-h-11 items-center hover:underline"
+                  >
+                    {entry.name}
+                  </Link>
+                )}
+              </h3>
+              {entry.description ? (
+                <p className="text-dense text-neutral-600">{entry.description}</p>
+              ) : null}
+            </div>
 
-          <DocumentTerms terms={terms} />
+            <div className="space-y-3 pt-2">
+              <DocumentTerms terms={terms} />
 
-          <p className="text-sm text-neutral-500">
-            {entry.requirementCount === 0
-              ? 'No extra questions.'
-              : entry.requirementCount === 1
-                ? '1 question to answer.'
-                : `${entry.requirementCount} questions to answer.`}
-            {entry.requiresSupportingEvidence ? ' Supporting documents are requested.' : ''}
-          </p>
+              <p className="text-dense border-t border-neutral-100 pt-3 text-neutral-500">
+                {entry.requirementCount === 0
+                  ? 'No extra questions.'
+                  : entry.requirementCount === 1
+                    ? '1 question to answer.'
+                    : `${entry.requirementCount} questions to answer.`}
+                {entry.requiresSupportingEvidence ? ' Supporting documents are requested.' : ''}
+              </p>
+            </div>
+          </Card>
         </li>
       ))}
     </ul>

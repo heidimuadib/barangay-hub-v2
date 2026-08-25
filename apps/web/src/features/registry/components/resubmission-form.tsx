@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 
+import { Alert, Button, Card, CardBody, CardHeader } from '@/components/ui'
 import { useRefreshOnSuccess } from '@/hooks/use-refresh-on-success'
 
 import { resubmitApplicationAction, type VerificationActionResult } from '../actions/verification'
@@ -30,43 +31,37 @@ export function ResubmissionForm({ applicationId }: { applicationId: string }) {
 
   if (resubmitted) {
     return (
-      <div role="status" className="rounded-lg border border-neutral-200 bg-white p-6">
-        <h2 className="text-lg font-bold">Sent back for review</h2>
-        <p className="mt-2 text-neutral-700">
-          Your registration is back with the barangay. No further action is needed from you right
-          now.
-        </p>
-      </div>
+      <Alert tone="success" title="Sent back for review">
+        Your registration is back with the barangay. No further action is needed from you right now.
+      </Alert>
     )
   }
 
   return (
-    <form
-      action={formAction}
-      aria-labelledby="resubmit-heading"
-      className="rounded-lg border border-neutral-200 bg-white p-6"
-    >
-      <input type="hidden" name="applicationId" value={applicationId} />
-      <h2 id="resubmit-heading" className="text-lg font-bold">
-        Ready to resubmit?
-      </h2>
-      <p className="mt-2 text-neutral-700">
-        Once you have what the barangay asked for, send your registration back for review. If it
-        involves documents, you can bring them to the barangay office — staff will attach them to
-        your registration with you.
-      </p>
-      {error ? (
-        <p role="alert" className="text-danger-700 mt-3 text-sm">
-          {error}
-        </p>
-      ) : null}
-      <button
-        type="submit"
-        disabled={isPending}
-        className="bg-brand-700 hover:bg-brand-800 mt-4 min-h-11 rounded-md px-4 py-2 font-medium text-white disabled:opacity-60"
-      >
-        {isPending ? 'Sending…' : 'Resubmit for review'}
-      </button>
+    <form action={formAction} aria-labelledby="resubmit-heading">
+      <Card>
+        <CardHeader id="resubmit-heading" as="h2" title="Ready to resubmit?" />
+        <CardBody>
+          <input type="hidden" name="applicationId" value={applicationId} />
+          <p className="text-neutral-700">
+            Once you have uploaded what the barangay asked for, send your registration back for
+            review. If it involves physical documents, you can also bring them to the barangay
+            office.
+          </p>
+          {error ? (
+            <div className="mt-3">
+              <Alert tone="danger" live="alert">
+                {error}
+              </Alert>
+            </div>
+          ) : null}
+          <div className="mt-4">
+            <Button type="submit" variant="primary" size="md" disabled={isPending}>
+              {isPending ? 'Sending…' : 'Resubmit for review'}
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
     </form>
   )
 }

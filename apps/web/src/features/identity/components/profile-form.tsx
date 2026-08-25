@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 
+import { Alert, Button, FormField, Input } from '@/components/ui'
 import { useRefreshOnSuccess } from '@/hooks/use-refresh-on-success'
 import type { Result } from '@/lib/errors'
 
@@ -22,55 +23,41 @@ export function ProfileForm({ initialDisplayName }: { initialDisplayName: string
   const savedName = state?.ok === true ? state.data.displayName : null
 
   return (
-    <form
-      action={formAction}
-      noValidate
-      className="rounded-lg border border-neutral-200 bg-white p-6"
-    >
-      <div className="flex flex-col gap-1">
-        <label htmlFor="displayName" className="text-sm font-medium text-neutral-900">
-          Display name
-        </label>
-        <p id="displayName-help" className="text-sm text-neutral-500">
-          Shown to barangay staff on the member roster. This is the only profile field you can
-          change here.
-        </p>
-        <input
-          id="displayName"
-          name="displayName"
-          type="text"
-          required
-          maxLength={120}
-          defaultValue={savedName ?? initialDisplayName}
-          aria-describedby="displayName-help"
-          {...(fieldError === null ? {} : { 'aria-invalid': true })}
-          className="mt-1 min-h-11 rounded-md border border-neutral-300 bg-white px-3 py-2"
-        />
-        {fieldError === null ? null : (
-          <p role="alert" className="text-danger-700 text-sm">
-            {fieldError}
-          </p>
-        )}
-      </div>
+    <form action={formAction} noValidate className="space-y-4">
+      {errorMessage === null ? null : (
+        <Alert tone="danger" live="alert">
+          {errorMessage}
+        </Alert>
+      )}
 
       {savedName === null ? null : (
-        <p role="status" className="text-success-700 mt-3 text-sm">
+        <p role="status" className="text-dense text-success-700 font-medium">
           Display name saved.
         </p>
       )}
-      {errorMessage === null ? null : (
-        <p role="alert" className="text-danger-700 mt-3 text-sm">
-          {errorMessage}
-        </p>
-      )}
 
-      <button
-        type="submit"
-        disabled={isPending}
-        className="bg-brand-700 hover:bg-brand-800 mt-4 min-h-11 rounded-md px-4 py-2 font-medium text-white disabled:opacity-60"
+      <FormField
+        id="displayName"
+        label="Display name"
+        description="Shown to barangay staff on the member roster. This is the only profile field you can change here."
+        error={fieldError}
+        required
       >
-        {isPending ? 'Saving…' : 'Save'}
-      </button>
+        {(field) => (
+          <Input
+            {...field}
+            name="displayName"
+            maxLength={120}
+            defaultValue={savedName ?? initialDisplayName}
+          />
+        )}
+      </FormField>
+
+      <div className="pt-2">
+        <Button type="submit" variant="primary" size="md" disabled={isPending}>
+          {isPending ? 'Saving…' : 'Save'}
+        </Button>
+      </div>
     </form>
   )
 }

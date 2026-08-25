@@ -3,12 +3,13 @@
 import { useRouter } from 'next/navigation'
 import { useActionState, useEffect, useId, useState } from 'react'
 
+import { Button, Card, FormField, Textarea } from '@/components/ui'
 import { useRefreshOnSuccess } from '@/hooks/use-refresh-on-success'
 import type { Result } from '@/lib/errors'
 
 import { createRequestAction, saveAnswersAction, type RequestActionData } from '../actions/requests'
 import type { RequirementField } from '../types/documents'
-import { FieldError, FormError, RequirementFieldset, type AnswerValues } from './requirement-fields'
+import { FormError, RequirementFieldset, type AnswerValues } from './requirement-fields'
 
 /**
  * Resident request composition (Slice 3B).
@@ -58,37 +59,37 @@ export function RequestForm({
     state && !state.ok && Object.keys(fieldErrors).length === 0 ? state.error.message : null
 
   return (
-    <form action={formAction} noValidate className="flex flex-col gap-6">
+    <form action={formAction} noValidate className="space-y-6">
       <input type="hidden" name="barangayId" value={barangayId} />
       <input type="hidden" name="documentTypeId" value={documentTypeId} />
 
       <FormError message={generalError} />
 
-      <fieldset className="rounded-lg border border-neutral-200 bg-white p-6">
-        <legend className="px-1 text-lg font-bold">Why do you need this document?</legend>
-        <div className="mt-2 flex flex-col gap-1">
-          <label htmlFor={purposeId} className="text-sm font-medium text-neutral-900">
-            Purpose
-          </label>
-          <textarea
+      <Card>
+        <fieldset className="space-y-4">
+          <legend className="text-base font-bold text-neutral-900">
+            Why do you need this document?
+          </legend>
+          <FormField
             id={purposeId}
-            name="purpose"
+            label="Purpose"
+            description={`For example “for a job application”. The barangay reads this when they process your request for ${documentTypeName}.`}
+            error={fieldErrors.purpose?.[0]}
             required
-            rows={3}
-            maxLength={500}
-            aria-describedby={`${purposeId}-hint`}
-            value={purpose}
-            onChange={(event) => setPurpose(event.target.value)}
-            {...(fieldErrors.purpose ? { 'aria-invalid': true } : {})}
-            className="rounded-md border border-neutral-300 bg-white px-3 py-2"
-          />
-          <p id={`${purposeId}-hint`} className="text-sm text-neutral-500">
-            For example “for a job application”. The barangay reads this when they process your
-            request for {documentTypeName}.
-          </p>
-          <FieldError messages={fieldErrors.purpose} />
-        </div>
-      </fieldset>
+          >
+            {(field) => (
+              <Textarea
+                {...field}
+                name="purpose"
+                rows={3}
+                maxLength={500}
+                value={purpose}
+                onChange={(event) => setPurpose(event.target.value)}
+              />
+            )}
+          </FormField>
+        </fieldset>
+      </Card>
 
       <RequirementFieldset
         requirements={requirements}
@@ -97,15 +98,11 @@ export function RequestForm({
         onChange={(key, value) => setValues((previous) => ({ ...previous, [key]: value }))}
       />
 
-      <div>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="bg-brand-700 hover:bg-brand-800 min-h-11 rounded-md px-4 py-2 font-medium text-white disabled:opacity-60"
-        >
+      <div className="pt-2">
+        <Button type="submit" variant="primary" size="md" disabled={isPending}>
           {isPending ? 'Saving…' : 'Save my request'}
-        </button>
-        <p className="mt-2 text-sm text-neutral-500">
+        </Button>
+        <p className="text-dense mt-2 text-neutral-500">
           This saves a draft. Nothing reaches the barangay until you submit it on the next screen.
         </p>
       </div>
@@ -145,7 +142,7 @@ export function AnswerForm({
     state && !state.ok && Object.keys(fieldErrors).length === 0 ? state.error.message : null
 
   return (
-    <form action={formAction} noValidate className="flex flex-col gap-6">
+    <form action={formAction} noValidate className="space-y-6">
       <input type="hidden" name="barangayId" value={barangayId} />
       <input type="hidden" name="requestId" value={requestId} />
 
@@ -158,16 +155,12 @@ export function AnswerForm({
         onChange={(key, value) => setValues((previous) => ({ ...previous, [key]: value }))}
       />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="submit"
-          disabled={isPending}
-          className="min-h-11 rounded-md border border-neutral-300 bg-white px-4 py-2 font-medium hover:bg-neutral-100 disabled:opacity-60"
-        >
+      <div className="flex flex-wrap items-center gap-3 pt-2">
+        <Button type="submit" variant="secondary" size="md" disabled={isPending}>
           {isPending ? 'Saving…' : 'Save answers'}
-        </button>
+        </Button>
         {state?.ok === true ? (
-          <span role="status" className="text-success-700 text-sm font-medium">
+          <span role="status" className="text-dense text-success-700 font-medium">
             Answers saved.
           </span>
         ) : null}

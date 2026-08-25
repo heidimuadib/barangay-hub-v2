@@ -1,20 +1,11 @@
+import { PublicShell } from '@/components/shell'
+
 /**
- * Public shell placeholder.
+ * Public shell (UI-B, closing the US-UI-002 placeholder for this group).
  *
- * The real PublicShell — barangay identity, service navigation, accessibility
- * control, language placeholder and footer — is built in Part 1B / US-UI-002.
- * The skip link is present from the start because it must be the first focusable
- * element on every page (Phase 5 §33).
+ * The skip link, the header, the container and the footer all live in
+ * `PublicShell` — this file only chooses it. Portal *content* is UI-E.
  */
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <a href="#main" className="sr-only-focusable">
-        Skip to main content
-      </a>
-      <main id="main" className="mx-auto w-full max-w-[1120px] px-4 py-10 sm:px-6 lg:px-8">
-        {children}
-      </main>
-    </>
-  )
+  return <PublicShell>{children}</PublicShell>
 }

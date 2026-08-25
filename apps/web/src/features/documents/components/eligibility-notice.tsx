@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import { Card, CardBody, CardHeader, buttonClasses } from '@/components/ui'
 import type { RequestEligibility } from '@/features/documents'
 
 /**
@@ -56,23 +57,20 @@ export function EligibilityNotice({
   const copy = COPY[eligibility]
 
   return (
-    <section
-      role="note"
-      aria-labelledby="eligibility-heading"
-      className="border-warning-100 rounded-lg border bg-white p-6"
-    >
-      <h2 id="eligibility-heading" className="text-lg font-bold">
-        {copy.heading}
-      </h2>
-      <p className="mt-2 text-neutral-700">{copy.body}</p>
-      {nextRoute ? (
-        <Link
-          href={nextRoute}
-          className="bg-brand-700 hover:bg-brand-800 mt-4 inline-flex min-h-11 items-center rounded-md px-4 py-2 font-medium text-white"
-        >
-          {copy.cta}
-        </Link>
-      ) : null}
+    <section role="note" aria-labelledby="eligibility-heading">
+      <Card className="border-warning-200 bg-warning-50/40">
+        <CardHeader id="eligibility-heading" as="h2" title={copy.heading} />
+        <CardBody>
+          <p className="text-neutral-700">{copy.body}</p>
+          {nextRoute ? (
+            <div className="mt-4">
+              <Link href={nextRoute} className={buttonClasses({ variant: 'primary' })}>
+                {copy.cta}
+              </Link>
+            </div>
+          ) : null}
+        </CardBody>
+      </Card>
     </section>
   )
 }

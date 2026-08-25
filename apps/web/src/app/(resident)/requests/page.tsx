@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
+import { PageHeader, buttonClasses } from '@/components/ui'
 import {
   ACTIVE_BARANGAY_COOKIE,
   getAuthorizationContext,
@@ -56,18 +57,18 @@ export default async function RequestsPage({
   const eligibility = requestEligibility(standing)
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold">My document requests</h1>
-        {eligibility === 'eligible' ? (
-          <Link
-            href="/documents"
-            className="bg-brand-700 hover:bg-brand-800 inline-flex min-h-11 items-center rounded-md px-4 py-2 font-medium text-white"
-          >
-            Request a document
-          </Link>
-        ) : null}
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="My document requests"
+        description="Track the status of your submitted certificates and clearance applications."
+        action={
+          eligibility === 'eligible' ? (
+            <Link href="/documents" className={buttonClasses({ variant: 'primary' })}>
+              Request a document
+            </Link>
+          ) : undefined
+        }
+      />
 
       {eligibility === 'eligible' ? null : (
         <EligibilityNotice
