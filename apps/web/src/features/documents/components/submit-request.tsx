@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 
+import { Alert, Button } from '@/components/ui'
 import { useRefreshOnSuccess } from '@/hooks/use-refresh-on-success'
 import type { Result } from '@/lib/errors'
 
@@ -43,35 +44,28 @@ export function SubmitRequest({
   const error = state && !state.ok ? state.error.message : null
 
   return (
-    <form action={formAction} className="flex flex-col gap-3">
+    <form action={formAction} className="space-y-4">
       <input type="hidden" name="barangayId" value={barangayId} />
       <input type="hidden" name="requestId" value={requestId} />
 
       {error === null ? null : (
-        <p
-          role="alert"
-          className="border-danger-100 text-danger-700 rounded-md border bg-white px-3 py-2 text-sm"
-        >
+        <Alert tone="danger" live="alert">
           {error}
-        </p>
+        </Alert>
       )}
 
       <div>
-        <button
-          type="submit"
-          disabled={isPending || !canSubmit}
-          className="bg-brand-700 hover:bg-brand-800 min-h-11 rounded-md px-4 py-2 font-medium text-white disabled:opacity-60"
-        >
+        <Button type="submit" variant="primary" size="md" disabled={isPending || !canSubmit}>
           {isPending ? 'Sending…' : 'Submit to the barangay'}
-        </button>
+        </Button>
         {canSubmit ? (
-          <p className="mt-2 text-sm text-neutral-500">
+          <p className="text-dense mt-2 text-neutral-500">
             Once you submit, your answers can no longer be changed.
           </p>
         ) : (
           // Both reasons are stated, because fixing one and still being
           // blocked by the other is exactly how people give up.
-          <p className="mt-2 text-sm text-neutral-700">
+          <p className="text-dense mt-2 text-neutral-700">
             {missingCount > 0
               ? `Answer ${missingCount} more required question${missingCount === 1 ? '' : 's'}`
               : ''}

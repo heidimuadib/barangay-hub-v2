@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 
+import { Card, CardBody, CardHeader, DetailList, PageHeader } from '@/components/ui'
 import {
   ACTIVE_BARANGAY_COOKIE,
   getAuthorizationContext,
@@ -88,108 +89,97 @@ export default async function RequestDetailPage({
     detail.documentType.requiresSupportingEvidence,
   )
 
+  const answerItems = detail.answers.map((answer) => ({
+    label: answer.label,
+    value: answer.value,
+  }))
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="space-y-6">
       <div>
         <Link
           href="/requests"
-          className="text-brand-700 inline-flex min-h-11 items-center hover:underline"
+          className="text-brand-700 hover:text-brand-800 inline-flex min-h-11 items-center text-sm font-medium hover:underline"
         >
-          ← My requests
+          &larr; My requests
         </Link>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-xl font-bold">{detail.documentType.name}</h1>
-          <RequestStateChip state={detail.state} />
+        <div className="mt-2">
+          <PageHeader
+            title={detail.documentType.name}
+            action={<RequestStateChip state={detail.state} />}
+          />
         </div>
       </div>
 
-      <section
-        aria-labelledby="progress-heading"
-        className="rounded-lg border border-neutral-200 bg-white p-6"
-      >
-        <h2 id="progress-heading" className="text-lg font-bold">
-          Progress
-        </h2>
-        <div className="mt-3">
-          <RequestProgress steps={steps} />
-        </div>
+      <section aria-labelledby="progress-heading">
+        <Card>
+          <CardHeader id="progress-heading" as="h2" title="Progress" />
+          <CardBody>
+            <RequestProgress steps={steps} />
+          </CardBody>
+        </Card>
       </section>
 
-      <section
-        aria-labelledby="purpose-heading"
-        className="rounded-lg border border-neutral-200 bg-white p-6"
-      >
-        <h2 id="purpose-heading" className="text-lg font-bold">
-          Why you need it
-        </h2>
-        <p className="mt-2 text-neutral-700">{detail.purpose}</p>
+      <section aria-labelledby="purpose-heading">
+        <Card>
+          <CardHeader id="purpose-heading" as="h2" title="Why you need it" />
+          <CardBody>
+            <p className="text-neutral-800">{detail.purpose}</p>
+          </CardBody>
+        </Card>
       </section>
 
-      <section
-        aria-labelledby="terms-heading"
-        className="rounded-lg border border-neutral-200 bg-white p-6"
-      >
-        <h2 id="terms-heading" className="text-lg font-bold">
-          Fee and processing
-        </h2>
-        <div className="mt-3">
-          <DocumentTerms terms={terms} headingId="terms-heading" />
-        </div>
+      <section aria-labelledby="terms-heading">
+        <Card>
+          <CardHeader id="terms-heading" as="h2" title="Fee and processing" />
+          <CardBody>
+            <DocumentTerms terms={terms} headingId="terms-heading" />
+          </CardBody>
+        </Card>
       </section>
 
-      <section
-        aria-labelledby="answers-heading"
-        className="rounded-lg border border-neutral-200 bg-white p-6"
-      >
-        <h2 id="answers-heading" className="text-lg font-bold">
-          Your answers
-        </h2>
-        {detail.answers.length === 0 ? (
-          <p className="mt-2 text-neutral-700">You have not answered anything yet.</p>
-        ) : (
-          <dl className="mt-3 flex flex-col gap-3">
-            {detail.answers.map((answer) => (
-              <div key={answer.requirementId} className="flex flex-col gap-1">
-                <dt className="text-sm font-medium text-neutral-500">{answer.label}</dt>
-                <dd className="text-neutral-900">{answer.value}</dd>
-              </div>
-            ))}
-          </dl>
-        )}
+      <section aria-labelledby="answers-heading">
+        <Card>
+          <CardHeader id="answers-heading" as="h2" title="Your answers" />
+          <CardBody>
+            {detail.answers.length === 0 ? (
+              <p className="text-neutral-700">You have not answered anything yet.</p>
+            ) : (
+              <DetailList items={answerItems} />
+            )}
+          </CardBody>
+        </Card>
       </section>
 
       {detail.documentType.requiresSupportingEvidence || evidence.length > 0 ? (
-        <section
-          aria-labelledby="evidence-heading"
-          className="rounded-lg border border-neutral-200 bg-white p-6"
-        >
-          <h2 id="evidence-heading" className="text-lg font-bold">
-            Supporting documents
-          </h2>
-          <div className="mt-3">
-            {draft ? (
-              <RequestEvidenceManager
-                requestId={detail.requestId}
-                items={evidence}
-                required={detail.documentType.requiresSupportingEvidence}
-              />
-            ) : evidence.length === 0 ? (
-              <p className="text-neutral-700">Nothing was attached.</p>
-            ) : (
-              <p className="text-neutral-700">
-                {evidenceReady.finalizedCount} document
-                {evidenceReady.finalizedCount === 1 ? '' : 's'} attached. They can no longer be
-                changed.
-              </p>
-            )}
-          </div>
+        <section aria-labelledby="evidence-heading">
+          <Card>
+            <CardHeader id="evidence-heading" as="h2" title="Supporting documents" />
+            <CardBody>
+              {draft ? (
+                <RequestEvidenceManager
+                  requestId={detail.requestId}
+                  items={evidence}
+                  required={detail.documentType.requiresSupportingEvidence}
+                />
+              ) : evidence.length === 0 ? (
+                <p className="text-neutral-700">Nothing was attached.</p>
+              ) : (
+                <p className="text-neutral-700">
+                  {evidenceReady.finalizedCount} document
+                  {evidenceReady.finalizedCount === 1 ? '' : 's'} attached. They can no longer be
+                  changed.
+                </p>
+              )}
+            </CardBody>
+          </Card>
         </section>
       ) : null}
 
       {draft ? (
         <>
-          <section aria-labelledby="edit-heading" className="flex flex-col gap-3">
-            <h2 id="edit-heading" className="text-lg font-bold">
+          <section aria-labelledby="edit-heading" className="space-y-4">
+            <h2 id="edit-heading" className="text-lg font-bold text-neutral-900">
               Change your answers
             </h2>
             <AnswerForm
@@ -200,22 +190,19 @@ export default async function RequestDetailPage({
             />
           </section>
 
-          <section
-            aria-labelledby="submit-heading"
-            className="rounded-lg border border-neutral-200 bg-white p-6"
-          >
-            <h2 id="submit-heading" className="text-lg font-bold">
-              Send it to the barangay
-            </h2>
-            <div className="mt-3">
-              <SubmitRequest
-                barangayId={active.barangayId}
-                requestId={detail.requestId}
-                canSubmit={missing.length === 0 && evidenceReady.satisfied}
-                missingCount={missing.length}
-                evidenceMissing={!evidenceReady.satisfied}
-              />
-            </div>
+          <section aria-labelledby="submit-heading">
+            <Card>
+              <CardHeader id="submit-heading" as="h2" title="Send it to the barangay" />
+              <CardBody>
+                <SubmitRequest
+                  barangayId={active.barangayId}
+                  requestId={detail.requestId}
+                  canSubmit={missing.length === 0 && evidenceReady.satisfied}
+                  missingCount={missing.length}
+                  evidenceMissing={!evidenceReady.satisfied}
+                />
+              </CardBody>
+            </Card>
           </section>
         </>
       ) : null}

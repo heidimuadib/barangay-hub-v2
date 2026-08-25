@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react'
 
+import { Alert, Button, Card, FormField, Input, Select, Textarea } from '@/components/ui'
 import { useRefreshOnSuccess } from '@/hooks/use-refresh-on-success'
 import type { Result } from '@/lib/errors'
 
@@ -39,178 +40,135 @@ export function OnboardingForm({
   const errorFor = (field: string) => fieldErrors[field]?.[0]
 
   return (
-    <form action={formAction} noValidate className="flex flex-col gap-6">
+    <form action={formAction} noValidate className="space-y-6">
       {generalError === null ? null : (
-        <p
-          role="alert"
-          className="border-danger-100 text-danger-700 rounded-md border bg-white px-3 py-2 text-sm"
-        >
+        <Alert tone="danger" live="alert">
           {generalError}
-        </p>
+        </Alert>
       )}
 
-      <fieldset className="rounded-lg border border-neutral-200 bg-white p-6">
-        <legend className="px-1 text-lg font-bold">Your barangay</legend>
-        <div className="mt-2 flex flex-col gap-1">
-          <label htmlFor="barangayId" className="text-sm font-medium text-neutral-900">
-            Which barangay do you live in?
-          </label>
-          <select
+      <Card>
+        <fieldset className="space-y-4">
+          <legend className="text-base font-bold text-neutral-900">Your barangay</legend>
+          <FormField
             id="barangayId"
-            name="barangayId"
+            label="Which barangay do you live in?"
+            error={errorFor('barangayId')}
             required
-            defaultValue={barangays[0]?.id ?? ''}
-            className="min-h-11 rounded-md border border-neutral-300 bg-white px-3 py-2"
           >
-            {barangays.map((barangay) => (
-              <option key={barangay.id} value={barangay.id}>
-                {barangay.name}
-              </option>
-            ))}
-          </select>
-          {errorFor('barangayId') ? (
-            <p role="alert" className="text-danger-700 text-sm">
-              {errorFor('barangayId')}
-            </p>
-          ) : null}
-        </div>
-      </fieldset>
+            {(field) => (
+              <Select {...field} name="barangayId" defaultValue={barangays[0]?.id ?? ''}>
+                {barangays.map((barangay) => (
+                  <option key={barangay.id} value={barangay.id}>
+                    {barangay.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </FormField>
+        </fieldset>
+      </Card>
 
-      <fieldset className="rounded-lg border border-neutral-200 bg-white p-6">
-        <legend className="px-1 text-lg font-bold">Your name</legend>
-        <div className="mt-2 grid gap-4 sm:grid-cols-2">
-          <Field
-            id="firstName"
-            label="First name"
-            required
-            autoComplete="given-name"
-            error={errorFor('firstName')}
-          />
-          <Field id="middleName" label="Middle name (optional)" autoComplete="additional-name" />
-          <Field
-            id="lastName"
-            label="Last name"
-            required
-            autoComplete="family-name"
-            error={errorFor('lastName')}
-          />
-          <Field id="suffix" label="Suffix (optional)" autoComplete="honorific-suffix" />
-        </div>
-      </fieldset>
+      <Card>
+        <fieldset className="space-y-4">
+          <legend className="text-base font-bold text-neutral-900">Your name</legend>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField id="firstName" label="First name" error={errorFor('firstName')} required>
+              {(field) => <Input {...field} name="firstName" autoComplete="given-name" />}
+            </FormField>
 
-      <fieldset className="rounded-lg border border-neutral-200 bg-white p-6">
-        <legend className="px-1 text-lg font-bold">Contact and residence</legend>
-        <div className="mt-2 grid gap-4 sm:grid-cols-2">
-          <Field
-            id="birthdate"
-            label="Date of birth (optional)"
-            type="date"
-            error={errorFor('birthdate')}
-          />
-          <Field id="contactPhone" label="Mobile number (optional)" type="tel" autoComplete="tel" />
-        </div>
-        <div className="mt-4">
-          <Field
-            id="addressLine"
-            label="House number and street (optional)"
-            autoComplete="street-address"
-          />
-        </div>
+            <FormField id="middleName" label="Middle name (optional)">
+              {(field) => <Input {...field} name="middleName" autoComplete="additional-name" />}
+            </FormField>
 
-        <div className="mt-4 flex flex-col gap-1">
-          <label htmlFor="residencyBasis" className="text-sm font-medium text-neutral-900">
-            How do you live at this address?
-          </label>
-          <select
-            id="residencyBasis"
-            name="residencyBasis"
-            required
-            value={basis}
-            onChange={(event) => setBasis(event.target.value as ResidencyBasisKey)}
-            className="min-h-11 rounded-md border border-neutral-300 bg-white px-3 py-2"
-          >
-            {BASIS_ORDER.map((key) => (
-              <option key={key} value={key}>
-                {RESIDENCY_BASES[key].label}
-              </option>
-            ))}
-          </select>
-        </div>
+            <FormField id="lastName" label="Last name" error={errorFor('lastName')} required>
+              {(field) => <Input {...field} name="lastName" autoComplete="family-name" />}
+            </FormField>
 
-        {explanationRequired ? (
-          <div className="mt-4 flex flex-col gap-1">
-            <label htmlFor="residencyExplanation" className="text-sm font-medium text-neutral-900">
-              Please explain your arrangement
-            </label>
-            <textarea
-              id="residencyExplanation"
-              name="residencyExplanation"
-              required
-              rows={3}
-              maxLength={500}
-              {...(errorFor('residencyExplanation') ? { 'aria-invalid': true } : {})}
-              className="rounded-md border border-neutral-300 bg-white px-3 py-2"
-            />
-            {errorFor('residencyExplanation') ? (
-              <p role="alert" className="text-danger-700 text-sm">
-                {errorFor('residencyExplanation')}
-              </p>
-            ) : null}
+            <FormField id="suffix" label="Suffix (optional)">
+              {(field) => <Input {...field} name="suffix" autoComplete="honorific-suffix" />}
+            </FormField>
           </div>
-        ) : null}
-      </fieldset>
+        </fieldset>
+      </Card>
 
-      <div>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="bg-brand-700 hover:bg-brand-800 min-h-11 rounded-md px-4 py-2 font-medium text-white disabled:opacity-60"
-        >
+      <Card>
+        <fieldset className="space-y-4">
+          <legend className="text-base font-bold text-neutral-900">Contact and residence</legend>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField
+              id="birthdate"
+              label="Date of birth (optional)"
+              error={errorFor('birthdate')}
+            >
+              {(field) => <Input {...field} name="birthdate" type="date" />}
+            </FormField>
+
+            <FormField id="contactPhone" label="Mobile number (optional)">
+              {(field) => (
+                <Input
+                  {...field}
+                  name="contactPhone"
+                  type="tel"
+                  autoComplete="tel"
+                  placeholder="09XX XXX XXXX"
+                />
+              )}
+            </FormField>
+          </div>
+
+          <FormField id="addressLine" label="House number and street (optional)">
+            {(field) => (
+              <Input
+                {...field}
+                name="addressLine"
+                autoComplete="street-address"
+                placeholder="House / Unit / Block / Street"
+              />
+            )}
+          </FormField>
+
+          <FormField id="residencyBasis" label="How do you live at this address?" required>
+            {(field) => (
+              <Select
+                {...field}
+                name="residencyBasis"
+                value={basis}
+                onChange={(event) => setBasis(event.target.value as ResidencyBasisKey)}
+              >
+                {BASIS_ORDER.map((key) => (
+                  <option key={key} value={key}>
+                    {RESIDENCY_BASES[key].label}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </FormField>
+
+          {explanationRequired ? (
+            <FormField
+              id="residencyExplanation"
+              label="Please explain your arrangement"
+              error={errorFor('residencyExplanation')}
+              required
+            >
+              {(field) => (
+                <Textarea {...field} name="residencyExplanation" rows={3} maxLength={500} />
+              )}
+            </FormField>
+          ) : null}
+        </fieldset>
+      </Card>
+
+      <div className="pt-2">
+        <Button type="submit" variant="primary" size="md" disabled={isPending} className="min-h-11">
           {isPending ? 'Saving…' : 'Save and continue'}
-        </button>
-        <p className="mt-3 text-sm text-neutral-500">
+        </Button>
+        <p className="text-dense mt-2 text-neutral-500">
           Saving your details does not verify you yet — a barangay reviewer checks them and may ask
           for more information.
         </p>
       </div>
     </form>
-  )
-}
-
-function Field({
-  id,
-  label,
-  required = false,
-  type = 'text',
-  autoComplete,
-  error,
-}: {
-  id: string
-  label: string
-  required?: boolean
-  type?: string
-  autoComplete?: string
-  error?: string | undefined
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium text-neutral-900">
-        {label}
-      </label>
-      <input
-        id={id}
-        name={id}
-        type={type}
-        required={required}
-        {...(autoComplete === undefined ? {} : { autoComplete })}
-        {...(error ? { 'aria-invalid': true } : {})}
-        className="min-h-11 rounded-md border border-neutral-300 bg-white px-3 py-2"
-      />
-      {error ? (
-        <p role="alert" className="text-danger-700 text-sm">
-          {error}
-        </p>
-      ) : null}
-    </div>
   )
 }

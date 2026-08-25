@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
+import { Card, CardBody, CardHeader, PageHeader } from '@/components/ui'
 import { getAuthorizationContext } from '@/features/identity'
 import {
   EvidenceManager,
@@ -37,8 +38,11 @@ export default async function VerificationPage() {
   const editable = isEditable(state)
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-bold">My registration</h1>
+    <div className="space-y-6">
+      <PageHeader
+        title="My registration"
+        description="View your verification status and manage supporting identity and residency documents."
+      />
 
       <VerificationStatusPanel
         state={state}
@@ -54,18 +58,17 @@ export default async function VerificationPage() {
       ) : null}
 
       {state === 'rejected' ? (
-        <section
-          aria-labelledby="next-steps-heading"
-          className="rounded-lg border border-neutral-200 bg-white p-6"
-        >
-          <h2 id="next-steps-heading" className="text-lg font-bold">
-            What you can do next
-          </h2>
-          <p className="mt-2 text-neutral-700">
-            This decision is final for this application. If your situation has changed or you
-            believe something was missed, visit the barangay office — staff can start a new
-            registration with you.
-          </p>
+        <section aria-labelledby="next-steps-heading">
+          <Card>
+            <CardHeader id="next-steps-heading" as="h2" title="What you can do next" />
+            <CardBody>
+              <p className="text-neutral-700">
+                This decision is final for this application. If your situation has changed or you
+                believe something was missed, visit the barangay office — staff can start a new
+                registration with you.
+              </p>
+            </CardBody>
+          </Card>
         </section>
       ) : null}
 
@@ -80,11 +83,14 @@ export default async function VerificationPage() {
         />
       ) : null}
 
-      <p className="text-sm text-neutral-500">
-        <Link href="/dashboard" className="text-brand-700 underline">
-          Back to my dashboard
+      <div className="pt-2">
+        <Link
+          href="/dashboard"
+          className="text-brand-700 hover:text-brand-800 inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-2"
+        >
+          &larr; Back to my dashboard
         </Link>
-      </p>
+      </div>
     </div>
   )
 }

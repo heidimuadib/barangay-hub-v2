@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation'
 import { useId, useRef, useState } from 'react'
 
+import { Alert, Badge, Button } from '@/components/ui'
+
 import {
   finalizeRequestEvidenceAction,
   prepareRequestEvidenceAction,
@@ -92,9 +94,7 @@ export function RequestEvidenceManager({
         return
       }
 
-      // 2. Straight to Storage. A plain fetch rather than supabase-js, which
-      //    would inline the environment schema — and therefore the NAMES of
-      //    every server secret — into the client bundle.
+      // 2. Straight to Storage.
       const uploaded = await fetch(prepared.data.signedUrl, {
         method: 'PUT',
         headers: { 'content-type': file.type },
@@ -106,8 +106,7 @@ export function RequestEvidenceManager({
         return
       }
 
-      // 3. The server verifies the object and finalizes. Only this makes the
-      //    document count toward submission.
+      // 3. The server verifies the object and finalizes.
       const done = await finalizeRequestEvidenceAction({
         evidenceId: prepared.data.evidenceId,
         requestId,
@@ -136,7 +135,7 @@ export function RequestEvidenceManager({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="space-y-4">
       <p className="text-neutral-700">
         {required
           ? 'This document needs at least one supporting file before you can submit it.'
@@ -144,70 +143,77 @@ export function RequestEvidenceManager({
       </p>
 
       {items.length === 0 ? (
-        <p className="text-sm text-neutral-500">Nothing attached yet.</p>
+        <p className="text-dense text-neutral-500">Nothing attached yet.</p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="divide-y divide-neutral-200 rounded-md border border-neutral-200 px-4">
           {items.map((item) => (
             <li
               key={item.evidenceId}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-neutral-200 px-4 py-3"
+              className="flex flex-wrap items-center justify-between gap-3 py-3"
             >
-              <span className="text-neutral-900">
-                {requestEvidenceMimeLabel(item.mimeType)}
-                <span className="ml-2 text-sm text-neutral-500">
-                  {item.uploadedAt === null
-                    ? 'not uploaded — does not count yet'
-                    : `added · ${formatRequestEvidenceSize(item.sizeBytes ?? item.declaredSizeBytes)}`}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-semibold text-neutral-900">
+                  {requestEvidenceMimeLabel(item.mimeType)}
                 </span>
-              </span>
-              <button
+                <span className="text-dense text-neutral-500">
+                  {item.uploadedAt === null ? (
+                    <Badge tone="warning">not uploaded — does not count yet</Badge>
+                  ) : (
+                    <span>
+                      &bull; {formatRequestEvidenceSize(item.sizeBytes ?? item.declaredSizeBytes)}{' '}
+                      &bull; <Badge tone="success">added</Badge>
+                    </span>
+                  )}
+                </span>
+              </div>
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => void remove(item.evidenceId)}
-                className="min-h-11 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm font-medium hover:bg-neutral-100"
               >
                 Remove
-              </button>
+              </Button>
             </li>
           ))}
         </ul>
       )}
 
       {pending > 0 ? (
-        <p role="status" className="text-warning-700 text-sm">
+        <p role="status" className="text-dense text-warning-700 font-medium">
           {pending} attachment{pending === 1 ? '' : 's'} did not finish uploading. Remove and try
           again — {pending === 1 ? 'it does' : 'they do'} not count toward submitting.
         </p>
       ) : null}
 
       {phase.status === 'failed' ? (
-        <p
-          role="alert"
-          className="border-danger-100 text-danger-700 rounded-md border bg-white px-3 py-2 text-sm"
-        >
+        <Alert tone="danger" live="alert">
           {phase.message}
-        </p>
+        </Alert>
       ) : null}
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor={inputId} className="text-sm font-medium text-neutral-900">
-          Attach a supporting document
-        </label>
-        <input
-          id={inputId}
-          ref={inputRef}
-          type="file"
-          accept={REQUEST_EVIDENCE_FILE_EXTENSIONS}
-          disabled={busy}
-          onChange={(event) => {
-            const file = event.target.files?.[0]
-            if (file) void upload(file)
-          }}
-          className="min-h-11 rounded-md border border-neutral-300 bg-white px-3 py-2"
-        />
-        <p className="text-sm text-neutral-500">
-          JPEG, PNG, WebP or PDF, up to 10 MB. Use a real document — never someone else’s.
-          {busy ? ' Uploading…' : ''}
-        </p>
+      <div className="rounded-md border border-dashed border-neutral-300 bg-neutral-50 p-4">
+        <div className="flex flex-col gap-2">
+          <label htmlFor={inputId} className="text-sm font-semibold text-neutral-900">
+            Attach a supporting document
+          </label>
+          <input
+            id={inputId}
+            ref={inputRef}
+            type="file"
+            accept={REQUEST_EVIDENCE_FILE_EXTENSIONS}
+            disabled={busy}
+            onChange={(event) => {
+              const file = event.target.files?.[0]
+              if (file) void upload(file)
+            }}
+            className="min-h-11 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-neutral-100 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-neutral-700 hover:file:bg-neutral-200 disabled:opacity-60"
+          />
+          <p className="text-dense text-neutral-500">
+            JPEG, PNG, WebP or PDF, up to 10 MB. Use a real document — never someone else’s.
+            {busy ? ' Uploading…' : ''}
+          </p>
+        </div>
       </div>
     </div>
   )

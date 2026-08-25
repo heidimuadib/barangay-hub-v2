@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 
+import { Card, CardBody, CardHeader, PageHeader, buttonClasses } from '@/components/ui'
 import {
   ACTIVE_BARANGAY_COOKIE,
   getAuthorizationContext,
@@ -56,8 +57,8 @@ export default async function NewRequestPage({
 
   if (eligibility !== 'eligible') {
     return (
-      <div className="flex flex-col gap-6">
-        <h1 className="text-xl font-bold">Request a document</h1>
+      <div className="space-y-6">
+        <PageHeader title="Request a document" />
         <EligibilityNotice
           eligibility={eligibility}
           nextRoute={eligibilityNextRoute(eligibility)}
@@ -72,14 +73,10 @@ export default async function NewRequestPage({
   // second, competing picker that would drift from it.
   if (!type) {
     return (
-      <div className="flex flex-col gap-6">
-        <h1 className="text-xl font-bold">Request a document</h1>
-        <p className="text-neutral-700">Choose the document you need first.</p>
+      <div className="space-y-6">
+        <PageHeader title="Request a document" description="Choose the document you need first." />
         <div>
-          <Link
-            href="/documents"
-            className="bg-brand-700 hover:bg-brand-800 inline-flex min-h-11 items-center rounded-md px-4 py-2 font-medium text-white"
-          >
+          <Link href="/documents" className={buttonClasses({ variant: 'primary' })}>
             Browse documents
           </Link>
         </div>
@@ -95,27 +92,29 @@ export default async function NewRequestPage({
   const terms = presentTerms(detail.entry.terms)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="space-y-6">
       <div>
         <Link
           href={`/documents/${detail.entry.documentTypeId}`}
-          className="text-brand-700 inline-flex min-h-11 items-center hover:underline"
+          className="text-brand-700 hover:text-brand-800 inline-flex min-h-11 items-center text-sm font-medium hover:underline"
         >
-          ← {detail.entry.name}
+          &larr; {detail.entry.name}
         </Link>
-        <h1 className="mt-2 text-xl font-bold">Request {detail.entry.name}</h1>
+        <div className="mt-2">
+          <PageHeader
+            title={`Request ${detail.entry.name}`}
+            description="Fill in the required information to create a draft request."
+          />
+        </div>
       </div>
 
-      <section
-        aria-labelledby="terms-heading"
-        className="rounded-lg border border-neutral-200 bg-white p-6"
-      >
-        <h2 id="terms-heading" className="text-lg font-bold">
-          Fee and processing
-        </h2>
-        <div className="mt-3">
-          <DocumentTerms terms={terms} headingId="terms-heading" />
-        </div>
+      <section aria-labelledby="terms-heading">
+        <Card>
+          <CardHeader id="terms-heading" as="h2" title="Fee and processing" />
+          <CardBody>
+            <DocumentTerms terms={terms} headingId="terms-heading" />
+          </CardBody>
+        </Card>
       </section>
 
       <RequestForm

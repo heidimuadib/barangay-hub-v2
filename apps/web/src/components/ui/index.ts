@@ -37,6 +37,7 @@ export {
   type CardHeaderProps,
   type CardProps,
 } from './card'
+export { DetailList, type DetailItem, type DetailListProps } from './detail-list'
 export { EmptyState, type EmptyStateProps } from './empty-state'
 export {
   Fieldset,

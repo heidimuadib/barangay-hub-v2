@@ -2,6 +2,8 @@
 
 import { useId } from 'react'
 
+import { Alert, Card, FormField, Input, Select, Textarea } from '@/components/ui'
+
 import { answerFieldName } from '../schemas/documents.schema'
 import type { RequirementField } from '../types/documents'
 
@@ -38,20 +40,22 @@ export function RequirementFieldset({
   if (requirements.length === 0) return null
 
   return (
-    <fieldset className="rounded-lg border border-neutral-200 bg-white p-6">
-      <legend className="px-1 text-lg font-bold">{legend}</legend>
-      <div className="mt-2 flex flex-col gap-4">
-        {requirements.map((requirement) => (
-          <RequirementControl
-            key={requirement.requirementId}
-            requirement={requirement}
-            value={values[requirement.key] ?? ''}
-            messages={fieldErrors[answerFieldName(requirement.key)]}
-            onChange={(next) => onChange(requirement.key, next)}
-          />
-        ))}
-      </div>
-    </fieldset>
+    <Card>
+      <fieldset className="space-y-4">
+        <legend className="text-base font-bold text-neutral-900">{legend}</legend>
+        <div className="space-y-4">
+          {requirements.map((requirement) => (
+            <RequirementControl
+              key={requirement.requirementId}
+              requirement={requirement}
+              value={values[requirement.key] ?? ''}
+              messages={fieldErrors[answerFieldName(requirement.key)]}
+              onChange={(next) => onChange(requirement.key, next)}
+            />
+          ))}
+        </div>
+      </fieldset>
+    </Card>
   )
 }
 
@@ -67,82 +71,87 @@ export function RequirementControl({
   onChange: (next: string) => void
 }) {
   const id = useId()
-  const hintId = requirement.helpText ? `${id}-hint` : undefined
-  const errorId = messages ? `${id}-error` : undefined
-  const describedBy = [hintId, errorId].filter(Boolean).join(' ')
-
-  const shared = {
-    id,
-    name: answerFieldName(requirement.key),
-    required: requirement.isRequired,
-    ...(describedBy ? { 'aria-describedby': describedBy } : {}),
-    ...(messages ? { 'aria-invalid': true as const } : {}),
-    className: 'min-h-11 rounded-md border border-neutral-300 bg-white px-3 py-2',
-  }
+  const error = messages?.[0]
 
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium text-neutral-900">
-        {requirement.label}
-        <span className="ml-2 font-normal text-neutral-500">
-          {requirement.isRequired ? 'Required' : 'Optional'}
-        </span>
-      </label>
+    <FormField
+      id={id}
+      label={requirement.label}
+      description={requirement.helpText}
+      error={error}
+      required={requirement.isRequired}
+    >
+      {(field) => {
+        const name = answerFieldName(requirement.key)
 
-      {requirement.inputKind === 'textarea' ? (
-        <textarea
-          {...shared}
-          rows={3}
-          maxLength={1000}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="rounded-md border border-neutral-300 bg-white px-3 py-2"
-        />
-      ) : requirement.inputKind === 'select' ? (
-        <select {...shared} value={value} onChange={(event) => onChange(event.target.value)}>
-          <option value="">Choose one…</option>
-          {requirement.options.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      ) : requirement.inputKind === 'boolean' ? (
-        // A select rather than a checkbox: an unchecked box posts nothing,
-        // which is indistinguishable from "not answered" — and "no" is a real
-        // answer that a required question must be able to receive.
-        <select {...shared} value={value} onChange={(event) => onChange(event.target.value)}>
-          <option value="">Choose one…</option>
-          <option value="true">Yes</option>
-          <option value="false">No</option>
-        </select>
-      ) : (
-        <input
-          {...shared}
-          type={
-            requirement.inputKind === 'number'
-              ? 'number'
-              : requirement.inputKind === 'date'
-                ? 'date'
-                : 'text'
-          }
-          {...(requirement.inputKind === 'number'
-            ? { step: 'any', inputMode: 'decimal' as const }
-            : {})}
-          maxLength={1000}
-          autoComplete="off"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-        />
-      )}
+        if (requirement.inputKind === 'textarea') {
+          return (
+            <Textarea
+              {...field}
+              name={name}
+              rows={3}
+              maxLength={1000}
+              value={value}
+              onChange={(event) => onChange(event.target.value)}
+            />
+          )
+        }
 
-      {requirement.helpText ? (
-        <p id={hintId} className="text-sm text-neutral-500">
-          {requirement.helpText}
-        </p>
-      ) : null}
-      <FieldError messages={messages} id={errorId} />
-    </div>
+        if (requirement.inputKind === 'select') {
+          return (
+            <Select
+              {...field}
+              name={name}
+              value={value}
+              onChange={(event) => onChange(event.target.value)}
+            >
+              <option value="">Choose one…</option>
+              {requirement.options.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </Select>
+          )
+        }
+
+        if (requirement.inputKind === 'boolean') {
+          return (
+            <Select
+              {...field}
+              name={name}
+              value={value}
+              onChange={(event) => onChange(event.target.value)}
+            >
+              <option value="">Choose one…</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </Select>
+          )
+        }
+
+        return (
+          <Input
+            {...field}
+            name={name}
+            type={
+              requirement.inputKind === 'number'
+                ? 'number'
+                : requirement.inputKind === 'date'
+                  ? 'date'
+                  : 'text'
+            }
+            {...(requirement.inputKind === 'number'
+              ? { step: 'any', inputMode: 'decimal' as const }
+              : {})}
+            maxLength={1000}
+            autoComplete="off"
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+          />
+        )
+      }}
+    </FormField>
   )
 }
 
@@ -155,7 +164,7 @@ export function FieldError({
 }) {
   if (!messages || messages.length === 0) return null
   return (
-    <p {...(id ? { id } : {})} role="alert" className="text-danger-700 text-sm">
+    <p {...(id ? { id } : {})} role="alert" className="text-dense text-danger-700 font-medium">
       {messages[0]}
     </p>
   )
@@ -164,11 +173,8 @@ export function FieldError({
 export function FormError({ message }: { message: string | null }) {
   if (message === null) return null
   return (
-    <p
-      role="alert"
-      className="border-danger-100 text-danger-700 rounded-md border bg-white px-3 py-2 text-sm"
-    >
+    <Alert tone="danger" live="alert">
       {message}
-    </p>
+    </Alert>
   )
 }

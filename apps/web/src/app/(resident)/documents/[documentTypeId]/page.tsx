@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 
+import { Card, CardBody, CardHeader, PageHeader, buttonClasses } from '@/components/ui'
 import {
   ACTIVE_BARANGAY_COOKIE,
   getAuthorizationContext,
@@ -63,55 +64,48 @@ export default async function DocumentTypePage({
   const terms = presentTerms(detail.entry.terms)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="space-y-6">
       <div>
         <Link
           href="/documents"
-          className="text-brand-700 inline-flex min-h-11 items-center hover:underline"
+          className="text-brand-700 hover:text-brand-800 inline-flex min-h-11 items-center text-sm font-medium hover:underline"
         >
-          ← All documents
+          &larr; All documents
         </Link>
-        <h1 className="mt-2 text-xl font-bold">{detail.entry.name}</h1>
-        {detail.entry.description ? (
-          <p className="mt-2 text-neutral-700">{detail.entry.description}</p>
-        ) : null}
+        <div className="mt-2">
+          <PageHeader title={detail.entry.name} description={detail.entry.description} />
+        </div>
       </div>
 
-      <section
-        aria-labelledby="terms-heading"
-        className="rounded-lg border border-neutral-200 bg-white p-6"
-      >
-        <h2 id="terms-heading" className="text-lg font-bold">
-          Fee and processing
-        </h2>
-        <div className="mt-3">
-          <DocumentTerms terms={terms} headingId="terms-heading" />
-        </div>
+      <section aria-labelledby="terms-heading">
+        <Card>
+          <CardHeader id="terms-heading" as="h2" title="Fee and processing" />
+          <CardBody>
+            <DocumentTerms terms={terms} headingId="terms-heading" />
+          </CardBody>
+        </Card>
       </section>
 
-      <section
-        aria-labelledby="requirements-heading"
-        className="rounded-lg border border-neutral-200 bg-white p-6"
-      >
-        <h2 id="requirements-heading" className="text-lg font-bold">
-          What you will be asked
-        </h2>
-        <div className="mt-3">
-          <RequirementList requirements={detail.requirements} />
-        </div>
-        {detail.entry.requiresSupportingEvidence ? (
-          <p className="mt-3 text-sm text-neutral-700">
-            This document also needs supporting documents. Uploading them here is not available yet
-            — bring them to the barangay office.
-          </p>
-        ) : null}
+      <section aria-labelledby="requirements-heading">
+        <Card>
+          <CardHeader id="requirements-heading" as="h2" title="What you will be asked" />
+          <CardBody className="space-y-4">
+            <RequirementList requirements={detail.requirements} />
+            {detail.entry.requiresSupportingEvidence ? (
+              <p className="text-dense rounded-md bg-neutral-50 p-3 text-neutral-600">
+                This document also needs supporting documents. Uploading them here is not available
+                yet — bring them to the barangay office.
+              </p>
+            ) : null}
+          </CardBody>
+        </Card>
       </section>
 
       {eligibility === 'eligible' ? (
-        <div>
+        <div className="pt-2">
           <Link
             href={`/requests/new?type=${detail.entry.documentTypeId}`}
-            className="bg-brand-700 hover:bg-brand-800 inline-flex min-h-11 items-center rounded-md px-4 py-2 font-medium text-white"
+            className={buttonClasses({ variant: 'primary' })}
           >
             Request this document
           </Link>

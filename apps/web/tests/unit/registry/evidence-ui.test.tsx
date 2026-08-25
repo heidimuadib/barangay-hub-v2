@@ -58,8 +58,10 @@ function renderManager(items: readonly EvidenceItem[], editable = true) {
 describe('EvidenceManager — readiness summary', () => {
   it('names what is still needed, in words rather than colour', () => {
     renderManager([])
-    expect(screen.getByText(/identity evidence — still needed/i)).toBeInTheDocument()
-    expect(screen.getByText(/proof of residency — still needed/i)).toBeInTheDocument()
+    const readiness = screen.getByRole('heading', { name: /before you send this/i }).parentElement
+      ?.parentElement
+    expect(readiness).toHaveTextContent(/identity evidence — still needed/i)
+    expect(readiness).toHaveTextContent(/proof of residency — still needed/i)
   })
 
   it('blocks submission until both required kinds are finalized', () => {
@@ -71,7 +73,9 @@ describe('EvidenceManager — readiness summary', () => {
   it('enables submission once both are finalized', () => {
     renderManager([item({ kind: 'identity' }), item({ evidenceId: 'e2', kind: 'residency' })])
     expect(screen.getByRole('button', { name: /send for verification/i })).toBeEnabled()
-    expect(screen.getByText(/identity evidence — added/i)).toBeInTheDocument()
+    const readiness = screen.getByRole('heading', { name: /before you send this/i }).parentElement
+      ?.parentElement
+    expect(readiness).toHaveTextContent(/identity evidence — added/i)
   })
 
   it('says plainly that a failed upload will not be sent', () => {

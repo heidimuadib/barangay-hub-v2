@@ -69,8 +69,9 @@ export function FormField({
   required,
   className,
 }: FormFieldProps) {
+  const hasError = error !== undefined && error !== null
   const descriptionId = description === undefined ? undefined : `${id}-description`
-  const errorId = error === undefined ? undefined : `${id}-error`
+  const errorId = hasError ? `${id}-error` : undefined
   const describedBy = [descriptionId, errorId].filter(Boolean).join(' ') || undefined
 
   return (
@@ -93,18 +94,18 @@ export function FormField({
       {children({
         id,
         'aria-describedby': describedBy,
-        'aria-invalid': error === undefined ? undefined : true,
+        'aria-invalid': hasError ? true : undefined,
         required,
       })}
 
-      {error === undefined ? null : (
+      {hasError ? (
         // `role="alert"` so a message that appears after a failed submit is
         // announced, rather than sitting silently below a field the user has
         // already tabbed past.
         <p id={errorId} role="alert" className="text-dense text-danger-700 font-medium">
           {error}
         </p>
-      )}
+      ) : null}
     </div>
   )
 }
